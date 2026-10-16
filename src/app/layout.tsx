@@ -1,16 +1,17 @@
 import { Metadata } from "next";
 import "@/app/styles/globals.scss";
-import Header from "@/app/components/Header/Header";
-import SnsBox from "@/app/components/SnsBox";
-import ScrollButton from "@/app/components/ScrollButton";
-import Footer from "@/app/components/Footer/Footer";
+import {
+  PortfolioHeader,
+  PortfolioFooter,
+} from "./components/portfolio/Portfolio";
 import JsonLd from "@/app/components/JsonLd";
 import Script from "next/script";
 
 export const metadata: Metadata = {
-  title: "프론트엔드 개발자 김도훈 포트폴리오",
+  metadataBase: new URL("https://kdhportfolio.vercel.app"),
+  title: "김도훈 — Frontend Developer",
   description:
-    "항상 도전하고 성장해나가는 삶을 추구하는 프론트엔드 개발자 입니다.",
+    "섬세한 인터랙션과 견고한 코드로 기억에 남는 웹 경험을 만드는 프론트엔드 개발자 김도훈의 포트폴리오.",
   keywords:
     "프론트엔드 개발자, 포트폴리오, 프론트엔드 포트폴리오, 개발자 포트폴리오",
   openGraph: {
@@ -62,11 +63,12 @@ export default function RootLayout({
         <JsonLd />
 
         <div>
-          <Header />
-          <SnsBox />
-          <ScrollButton />
-          {children}
-          <Footer />
+          <a className="skip-link" href="#main-content">
+            본문으로 바로가기
+          </a>
+          <PortfolioHeader />
+          <div id="main-content">{children}</div>
+          <PortfolioFooter />
         </div>
       </body>
     </html>
