@@ -51,6 +51,29 @@ test("footer lettering is rendered by WebGL and survives context restoration", a
         .evaluate((e) => Math.abs(e.getBoundingClientRect().top)),
     )
     .toBeLessThan(1.5);
+  // Reproduce late font/story sizing deterministically: before user input the
+  // initial deep link must stay aligned even if preceding content grows.
+  await page.locator("#contact").evaluate((footer) => {
+    const spacer = document.createElement("div");
+    spacer.id = "late-layout-spacer";
+    spacer.style.height = "80px";
+    footer.before(spacer);
+  });
+  await expect
+    .poll(() =>
+      page
+        .locator("#contact")
+        .evaluate((e) => Math.abs(e.getBoundingClientRect().top)),
+    )
+    .toBeLessThan(1.5);
+  await page.locator("#late-layout-spacer").evaluate((e) => e.remove());
+  await expect
+    .poll(() =>
+      page
+        .locator("#contact")
+        .evaluate((e) => Math.abs(e.getBoundingClientRect().top)),
+    )
+    .toBeLessThan(1.5);
   await expect(scene).toHaveAttribute("data-scene", "thank-you");
   await expect(heading).toHaveCSS("color", "rgba(0, 0, 0, 0)");
   const rect = (await heading.boundingBox())!;
@@ -121,6 +144,35 @@ test("footer lettering is rendered by WebGL and survives context restoration", a
     path,
     contentType: "image/png",
   });
+  // Following layout must stop as soon as the user chooses another position.
+  const { width, height } = page.viewportSize()!;
+  const inputScale = await page.evaluate(() =>
+    navigator.maxTouchPoints > 0 ? devicePixelRatio : 1,
+  );
+  await page.mouse.move(width * 0.7, height * 0.5);
+  await page.mouse.wheel(0, -80 * inputScale);
+  await expect
+    .poll(() =>
+      page.locator("#contact").evaluate((e) => e.getBoundingClientRect().top),
+    )
+    .toBeGreaterThan(40);
+  const topBeforeLayout = await page
+    .locator("[data-scroll-viewport]")
+    .evaluate((e) => e.scrollTop);
+  await page.locator("#contact").evaluate((footer) => {
+    const spacer = document.createElement("div");
+    spacer.style.height = "80px";
+    footer.before(spacer);
+  });
+  await page.evaluate(
+    () =>
+      new Promise<void>((resolve) =>
+        requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
+      ),
+  );
+  expect(
+    await page.locator("[data-scroll-viewport]").evaluate((e) => e.scrollTop),
+  ).toBe(topBeforeLayout);
 });
 
 test("unavailable WebGL leaves the original readable typography", async ({

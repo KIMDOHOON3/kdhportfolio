@@ -137,14 +137,37 @@ export default function ScrollViewport({ children }: { children: ReactNode }) {
   useLayoutEffect(() => {
     const element = viewport.current;
     if (!element) return;
-    engine?.resize();
     const id = location.hash.slice(1);
     const target = id ? document.getElementById(decodeURIComponent(id)) : null;
-    const top = target
-      ? target.getBoundingClientRect().top + element.scrollTop
-      : 0;
-    if (engine) engine.scrollTo(top, { immediate: true, force: true });
-    else element.scrollTop = top;
+    let following = true;
+    const align = () => {
+      if (!following || (id && location.hash.slice(1) !== id)) return;
+      engine?.resize();
+      const top = target
+        ? target.getBoundingClientRect().top + element.scrollTop
+        : 0;
+      if (engine) engine.scrollTo(top, { immediate: true, force: true });
+      else element.scrollTop = top;
+    };
+    align();
+    if (!target || !content.current) return;
+    // Fonts and the enhanced story can change the initial anchor's offset
+    // after hydration. Follow that layout only until the user takes control.
+    const resize = new ResizeObserver(align);
+    resize.observe(content.current);
+    const stop = () => {
+      following = false;
+      resize.disconnect();
+    };
+    const inputs = ["wheel", "touchstart", "pointerdown", "keydown"] as const;
+    inputs.forEach((type) =>
+      element.addEventListener(type, stop, { passive: true }),
+    );
+    document.fonts.ready.then(align);
+    return () => {
+      stop();
+      inputs.forEach((type) => element.removeEventListener(type, stop));
+    };
   }, [pathname]);
   return (
     <div
