@@ -163,10 +163,6 @@ $label: "Paperlogy-Medium", "Pretendard-Regular", sans-serif;
   text-shadow:
     0 3px 2px #f1f9ff,
     0 12px 18px #7194bb66;
-  transition: opacity 0.3s;
-}
-.glassReady {
-  opacity: 0;
 }
 .glassScene[data-ready="false"] canvas {
   opacity: 0;
@@ -2007,7 +2003,7 @@ $label: "Paperlogy-Medium", "Pretendard-Regular", sans-serif;
   }
 }
 
-// A readable closing message replaces the unrelated glass knot.
+// HTML anchors the actual glass mesh and remains the accessible fallback.
 .footer .contactMain {
   flex-direction: column;
   justify-content: center;
@@ -2022,6 +2018,12 @@ $label: "Paperlogy-Medium", "Pretendard-Regular", sans-serif;
   font: 400 clamp(64px, 12.5vw, 168px) / 1.05 $display;
   letter-spacing: -0.045em;
   color: $ink;
+}
+:global([data-home="true"])
+  .footer
+  .contactMain
+  .thankYou[data-glass-ready="true"] {
+  color: transparent;
 }
 .contactThanks {
   margin-top: 20px;

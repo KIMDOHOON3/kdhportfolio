@@ -5,6 +5,7 @@ import styles from "./Portfolio.module.scss";
 import { glassVertexShader, glassFragmentShader } from "./glassShaders";
 import { pointerRefractionShader } from "./pointerRefractionShader";
 import { createStudioEnvironment } from "./studioEnvironment";
+import thankYouFont from "./thankYouFont.json";
 import {
   readScroll,
   subscribeScroll,
@@ -83,13 +84,18 @@ const strokes: number[][][] = [
 export default function GlassScene() {
   const host = useRef<HTMLDivElement>(null);
   const [ready, setReady] = useState(false);
+  const [failed, setFailed] = useState(false);
   useEffect(() => {
     const element = host.current;
     if (!element) return;
     let disposed = false;
     let cleanup = () => {};
-    import("three")
-      .then((THREE) => {
+    Promise.all([
+      import("three"),
+      import("three/addons/loaders/FontLoader.js"),
+      import("three/addons/geometries/TextGeometry.js"),
+    ])
+      .then(([THREE, { FontLoader }, { TextGeometry }]) => {
         if (disposed) return;
         let renderer: InstanceType<typeof THREE.WebGLRenderer>;
         try {
@@ -99,6 +105,7 @@ export default function GlassScene() {
             powerPreference: "low-power",
           });
         } catch {
+          setFailed(true);
           return;
         }
         renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
@@ -234,6 +241,37 @@ export default function GlassScene() {
             group.add(cap);
           }
         });
+        // The very same local NewYork outlines used by the HTML heading become
+        // beveled, extruded meshes. Keep HTML for layout, semantics and fallback.
+        const footerHeading = document.querySelector<HTMLElement>(
+          "[data-footer-thanks]",
+        );
+        const font = new FontLoader().parse(thankYouFont);
+        const footerGroup = new THREE.Group();
+        const footerWords = ["THANK", "YOU"].map((word) => {
+          const geometry = new TextGeometry(word, {
+            font,
+            size: 1,
+            depth: 0.11,
+            curveSegments: 16,
+            bevelEnabled: true,
+            bevelThickness: 0.025,
+            bevelSize: 0.006,
+            bevelSegments: 5,
+          });
+          geometry.computeBoundingBox();
+          const box = geometry.boundingBox!;
+          const extent = box.getSize(new THREE.Vector3());
+          geometry.center();
+          const mesh = new THREE.Mesh(geometry, material);
+          // A shallow viewing angle exposes the clear extrusion and beveled
+          // edges without changing the heading's responsive composition.
+          mesh.rotation.set(0.07, -0.09, 0);
+          footerGroup.add(mesh);
+          return { mesh, extent };
+        });
+        footerGroup.visible = false;
+        scene.add(footerGroup);
         const motion = window.matchMedia("(prefers-reduced-motion: reduce)");
         const pointer = { x: 0, y: 0 };
         const lightTarget = new THREE.Vector3();
@@ -250,6 +288,31 @@ export default function GlassScene() {
         const bounds = new THREE.Box3().setFromObject(group);
         const size = bounds.getSize(new THREE.Vector3());
         const center = bounds.getCenter(new THREE.Vector3());
+        const placeFooter = () => {
+          if (!footerHeading) return;
+          const { width, height } = element.getBoundingClientRect();
+          footerWords.forEach(({ mesh, extent }, index) => {
+            const span = footerHeading.children[index];
+            if (!span) return;
+            const range = document.createRange();
+            range.selectNodeContents(span);
+            const rect = range.getBoundingClientRect();
+            // Fit visible outlines to the existing responsive line, including
+            // its letter spacing. Center each word on its own HTML text range.
+            const scale =
+              ((rect.width / width) * worldHeight * camera.aspect) / extent.x;
+            mesh.scale.setScalar(scale);
+            mesh.position.set(
+              center.x +
+                ((rect.left + rect.width / 2) / width - 0.5) *
+                  worldHeight *
+                  camera.aspect,
+              center.y +
+                (0.5 - (rect.top + rect.height / 2) / height) * worldHeight,
+              0,
+            );
+          });
+        };
         const resize = () => {
           const { width, height } = element.getBoundingClientRect();
           renderer.setSize(width, height);
@@ -278,6 +341,7 @@ export default function GlassScene() {
             2 * Math.tan(halfFov) * (distance - backdrop.position.z);
           backdrop.scale.set(viewHeight * camera.aspect, viewHeight, 1);
           backdropMaterial.uniforms.uAspect.value = camera.aspect;
+          placeFooter();
         };
         const move = (event: PointerEvent) => {
           if (event.pointerType === "touch" || motion.matches || !exposed)
@@ -349,16 +413,17 @@ export default function GlassScene() {
           }
           // Render the backdrop first, excluding the glass from its own texture.
           group.visible = false;
+          footerGroup.visible = false;
           renderer.setRenderTarget(refractionTarget);
           renderer.render(scene, camera);
           group.visible = !contactVisible;
-          element.dataset.scene = contactVisible
-            ? "footer-background"
-            : "hello";
+          footerGroup.visible = contactVisible;
+          element.dataset.scene = contactVisible ? "thank-you" : "hello";
           renderer.setRenderTarget(sceneTarget);
           renderer.render(scene, camera);
           renderer.setRenderTarget(null);
           renderer.render(displayScene, displayCamera);
+          footerHeading?.setAttribute("data-glass-ready", "true");
           if (!motion.matches) frame = requestAnimationFrame(render);
         };
         const resume = () => {
@@ -376,6 +441,7 @@ export default function GlassScene() {
             document.getElementById("contact")?.getBoundingClientRect().top ??
             viewportHeight;
           contactVisible = footerTop < viewportHeight;
+          if (contactVisible) placeFooter();
           exposed = heroBottom > 0 || contactVisible;
           if (!exposed) {
             cancelAnimationFrame(frame);
@@ -407,6 +473,8 @@ export default function GlassScene() {
           event.preventDefault();
           contextLost = true;
           setReady(false);
+          setFailed(true);
+          footerHeading?.removeAttribute("data-glass-ready");
           cancelAnimationFrame(frame);
           frame = 0;
         };
@@ -417,15 +485,25 @@ export default function GlassScene() {
           studio = createStudioEnvironment(THREE, renderer);
           material.uniforms.uStudio.value = studio.texture;
           resize();
+          render(performance.now());
           resume();
           setReady(true);
+          setFailed(false);
         };
         renderer.domElement.addEventListener("webglcontextlost", lost);
         renderer.domElement.addEventListener("webglcontextrestored", restored);
         resize();
         render(0);
         setReady(true);
+        setFailed(false);
+        document.fonts.ready.then(() => {
+          if (!disposed) {
+            placeFooter();
+            resume();
+          }
+        });
         cleanup = () => {
+          footerHeading?.removeAttribute("data-glass-ready");
           cancelAnimationFrame(frame);
           observer.disconnect();
           resizer.disconnect();
@@ -442,9 +520,11 @@ export default function GlassScene() {
           const usedGeometry = new Set<
             InstanceType<typeof THREE.BufferGeometry>
           >();
-          group.traverse((object) => {
-            if (object instanceof THREE.Mesh) usedGeometry.add(object.geometry);
-          });
+          for (const lettering of [group, footerGroup])
+            lettering.traverse((object) => {
+              if (object instanceof THREE.Mesh)
+                usedGeometry.add(object.geometry);
+            });
           usedGeometry.forEach((geometry) => geometry.dispose());
           material.dispose();
           studio.dispose();
@@ -459,7 +539,7 @@ export default function GlassScene() {
         };
       })
       .catch(() => {
-        /* Typography remains visible when WebGL is unavailable. */
+        if (!disposed) setFailed(true);
       });
     return () => {
       disposed = true;
@@ -472,14 +552,11 @@ export default function GlassScene() {
       ref={host}
       data-glass-scene
       data-ready={ready}
+      data-failed={failed}
       data-lighting="studio-environment"
       aria-hidden="true"
     >
-      <span
-        className={`${styles.glassFallback} ${ready ? styles.glassReady : ""}`}
-      >
-        hello
-      </span>
+      {failed && <span className={styles.glassFallback}>hello</span>}
     </div>
   );
 }

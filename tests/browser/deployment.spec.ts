@@ -81,11 +81,13 @@ test("deployment revision, illuminated glass and centered thank-you footer", asy
     .toBeLessThan(1.5);
   await expect(page.locator("[data-glass-scene]")).toHaveAttribute(
     "data-scene",
-    "footer-background",
+    "thank-you",
   );
   const heading = page.locator("[data-footer-thanks]");
   await expect(heading).toHaveText("THANK YOU");
   await expect(heading).toHaveCSS("font-family", /NewYork/);
+  await expect(heading).toHaveAttribute("data-glass-ready", "true");
+  await expect(heading).toHaveCSS("color", "rgba(0, 0, 0, 0)");
   const rectangles = await page.locator("#contact").evaluate((element) => {
     const rect = (e: Element) => {
       const r = e.getBoundingClientRect();
