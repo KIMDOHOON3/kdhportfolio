@@ -10,9 +10,14 @@ async function capture(page: Page, info: TestInfo, name: string) {
 // Compare rendered pixels in the light band above the lettering. Normal idle
 // drift provides a control; the pointer must change the backdrop, not just tilt
 // the 3D object. No pixel equality between different sites/content is assumed.
-async function lightDifference(page: Page, a: string, b: string) {
+async function lightDifference(
+  page: Page,
+  a: string,
+  b: string,
+  lettering = false,
+) {
   return page.evaluate(
-    async ({ a, b }) => {
+    async ({ a, b, lettering }) => {
       const decode = async (data: string) => {
         const blob = await (
           await fetch(`data:image/png;base64,${data}`)
@@ -28,8 +33,8 @@ async function lightDifference(page: Page, a: string, b: string) {
       let sum = 0,
         count = 0;
       for (
-        let y = Math.floor(left.height * 0.19);
-        y < left.height * 0.25;
+        let y = Math.floor(left.height * (lettering ? 0.34 : 0.19));
+        y < left.height * (lettering ? 0.68 : 0.25);
         y++
       ) {
         for (let x = Math.floor(left.width * 0.2); x < left.width * 0.8; x++) {
@@ -42,7 +47,7 @@ async function lightDifference(page: Page, a: string, b: string) {
       }
       return sum / count;
     },
-    { a, b },
+    { a, b, lettering },
   );
 }
 
@@ -70,6 +75,10 @@ test("hero: pointer bends light, settles and preserves touch/reduced motion", as
         "data-ready",
         "true",
       );
+      await expect(p.locator("[data-glass-scene]")).toHaveAttribute(
+        "data-hello-geometry",
+        "fused-capsules",
+      );
       await expect(p.locator("[data-story-backdrop]")).toHaveAttribute(
         "data-ready",
         "true",
@@ -82,6 +91,40 @@ test("hero: pointer bends light, settles and preserves touch/reduced motion", as
     await p.mouse.move(width * 0.18, height * 0.22);
     await p.waitForTimeout(800);
     const before = await capture(p, info, `${target.name}-material-idle`);
+    if (target.name === "portfolio") {
+      // A loaded GLB can still be clipped by the camera on portrait screens.
+      // Inspect rendered pixels as well as the loader's ready attribute.
+      const highlights = await p.evaluate(async (data) => {
+        const image = await createImageBitmap(
+          await (await fetch(`data:image/png;base64,${data}`)).blob(),
+        );
+        const canvas = new OffscreenCanvas(image.width, image.height);
+        const ctx = canvas.getContext("2d")!;
+        ctx.drawImage(image, 0, 0);
+        image.close();
+        const pixels = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+        let bright = 0,
+          total = 0;
+        for (
+          let y = Math.floor(canvas.height * 0.3);
+          y < canvas.height * 0.7;
+          y++
+        )
+          for (
+            let x = Math.floor(canvas.width * 0.2);
+            x < canvas.width * 0.8;
+            x++
+          ) {
+            const i = (y * canvas.width + x) * 4;
+            if (pixels[i] > 224 && pixels[i + 1] > 224 && pixels[i + 2] > 224)
+              bright++;
+            total++;
+          }
+        return bright / total;
+      }, before);
+      expect(highlights).toBeGreaterThan(0.005);
+      metrics.push({ site: target.name, region: "rendered scene", highlights });
+    }
     await p.waitForTimeout(120);
     const control = await capture(p, info, `${target.name}-material-control`);
     for (let i = 0; i < 14; i++) {
@@ -109,6 +152,32 @@ test("hero: pointer bends light, settles and preserves touch/reduced motion", as
     if (target.name === "portfolio" && info.project.name === "desktop") {
       expect(pointerDifference).toBeGreaterThan(0.1);
       expect(pointerDifference).toBeGreaterThan(idleDifference * 1.5);
+    }
+    if (target.name === "portfolio" && !info.project.use.hasTouch) {
+      // The recording visibly deforms the letters, not only the empty sky band.
+      // Sample the word itself with timed pointer input and an idle control.
+      await p.waitForTimeout(1000);
+      const glassBefore = await capture(p, info, "hello-geometry-idle");
+      await p.waitForTimeout(120);
+      const glassControl = await capture(p, info, "hello-geometry-control");
+      for (let i = 0; i < 20; i++) {
+        await p.mouse.move(
+          width * (0.32 + i * 0.02),
+          height * (0.51 + Math.sin(i * 0.5) * 0.05),
+        );
+        await p.waitForTimeout(16);
+      }
+      const glassActive = await capture(p, info, "hello-geometry-cursor-wake");
+      const idle = await lightDifference(p, glassBefore, glassControl, true);
+      const active = await lightDifference(p, glassControl, glassActive, true);
+      expect(active).toBeGreaterThan(2);
+      expect(active).toBeGreaterThan(idle * 2);
+      metrics.push({
+        site: target.name,
+        region: "hello lettering",
+        idle,
+        active,
+      });
     }
     metrics.push({
       site: target.name,

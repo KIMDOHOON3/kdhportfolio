@@ -4,8 +4,10 @@ import { useEffect, useRef, useState } from "react";
 import styles from "./Portfolio.module.scss";
 import { glassVertexShader, glassFragmentShader } from "./glassShaders";
 import { pointerRefractionShader } from "./pointerRefractionShader";
+import { flowFragmentShader } from "./flowShader";
 import { createStudioEnvironment } from "./studioEnvironment";
-import thankYouFont from "./thankYouFont.json";
+import { createFluidProjection } from "./FluidProjection";
+import { glassFlareShader } from "./glassFlareShader";
 import {
   readScroll,
   subscribeScroll,
@@ -90,12 +92,8 @@ export default function GlassScene() {
     if (!element) return;
     let disposed = false;
     let cleanup = () => {};
-    Promise.all([
-      import("three"),
-      import("three/addons/loaders/FontLoader.js"),
-      import("three/addons/geometries/TextGeometry.js"),
-    ])
-      .then(([THREE, { FontLoader }, { TextGeometry }]) => {
+    import("three")
+      .then((THREE) => {
         if (disposed) return;
         let renderer: InstanceType<typeof THREE.WebGLRenderer>;
         try {
@@ -121,7 +119,7 @@ export default function GlassScene() {
         const group = new THREE.Group();
         group.scale.setScalar(1.7);
         group.position.set(2, -0.4, 0);
-        group.rotation.set(-0.12, -0.14, -0.08);
+        group.rotation.set(0, -0.07, 0);
         scene.add(group);
         const refractionTarget = new THREE.WebGLRenderTarget(1, 1, {
           depthBuffer: false,
@@ -134,17 +132,58 @@ export default function GlassScene() {
           minFilter: THREE.LinearFilter,
           magFilter: THREE.LinearFilter,
         });
-        const trail = Array.from({ length: 12 }, () => new THREE.Vector4());
-        const strength = Array<number>(12).fill(0);
-        const displayMaterial = new THREE.ShaderMaterial({
+        let flowRead = new THREE.WebGLRenderTarget(256, 256, {
+          depthBuffer: false,
+          type: THREE.HalfFloatType,
+          minFilter: THREE.LinearFilter,
+          magFilter: THREE.LinearFilter,
+        });
+        let flowWrite = flowRead.clone();
+        const flowProjection = createFluidProjection(THREE, renderer);
+        const flareTarget = new THREE.WebGLRenderTarget(1, 1, {
+          type: THREE.HalfFloatType,
+          depthBuffer: false,
+          minFilter: THREE.LinearFilter,
+          magFilter: THREE.LinearFilter,
+        });
+        const flareMaterial = new THREE.ShaderMaterial({
           toneMapped: false,
           depthTest: false,
           depthWrite: false,
           uniforms: {
             uScene: { value: sceneTarget.texture },
             uResolution: { value: new THREE.Vector2() },
-            uTrail: { value: trail },
-            uStrength: { value: strength },
+          },
+          vertexShader: `varying vec2 vUv;void main(){vUv=uv;gl_Position=vec4(position.xy,0.0,1.0);}`,
+          fragmentShader: glassFlareShader,
+        });
+        const flowMaterial = new THREE.ShaderMaterial({
+          toneMapped: false,
+          depthTest: false,
+          depthWrite: false,
+          uniforms: {
+            uPrevious: { value: flowRead.texture },
+            uTexel: { value: new THREE.Vector2(1 / 256, 1 / 256) },
+            uPointer: { value: new THREE.Vector2(-10, -10) },
+            uVelocity: { value: new THREE.Vector2() },
+            uAspect: { value: 1 },
+            uImpulse: { value: 0 },
+            uDt: { value: 1 / 60 },
+          },
+          vertexShader: `varying vec2 vUv; void main() { vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }`,
+          fragmentShader: flowFragmentShader,
+        });
+        const displayMaterial = new THREE.ShaderMaterial({
+          toneMapped: false,
+          depthTest: false,
+          depthWrite: false,
+          uniforms: {
+            uScene: { value: sceneTarget.texture },
+            uFlare: { value: flareTarget.texture },
+            uResolution: { value: new THREE.Vector2() },
+            uFlow: { value: flowRead.texture },
+            uFlowTexel: { value: flowMaterial.uniforms.uTexel.value },
+            uMotion: { value: 1 },
           },
           vertexShader: `varying vec2 vUv; void main() { vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }`,
           fragmentShader: pointerRefractionShader,
@@ -153,6 +192,10 @@ export default function GlassScene() {
         const displayCamera = new THREE.Camera();
         const displayGeometry = new THREE.PlaneGeometry(2, 2);
         displayScene.add(new THREE.Mesh(displayGeometry, displayMaterial));
+        const flareScene = new THREE.Scene();
+        flareScene.add(new THREE.Mesh(displayGeometry, flareMaterial));
+        const flowScene = new THREE.Scene();
+        flowScene.add(new THREE.Mesh(displayGeometry, flowMaterial));
 
         // A real surface behind the glass makes the light bands refract through it.
         const backdropMaterial = new THREE.ShaderMaterial({
@@ -181,18 +224,20 @@ export default function GlassScene() {
             uniform vec3 uCool;
             void main() {
               vec2 uv = vUv;
-              float drift = sin(uTime * 0.12) * 0.025;
+              float drift = sin(uTime * 0.22) * 0.045;
               float lane = uv.x + uv.y * 0.48 + drift
                 + sin(uv.y * 8.0 + uv.x * 5.0) * .025;
-              float beamA = exp(-pow((lane - 0.48) / 0.09, 2.0));
-              float beamB = exp(-pow((lane - 0.98) / 0.12, 2.0));
-              float beamC = exp(-pow((lane - 1.42) / 0.08, 2.0));
+              float beams=0.0;
+              for(int i=0;i<9;i++){
+                float center=-0.10+float(i)*0.20;
+                beams+=exp(-pow((lane-center)/0.032,2.0));
+              }
               float edge = smoothstep(0.0, 0.15, uv.x) * smoothstep(0.0, 0.15, 1.0 - uv.x)
                          * smoothstep(0.0, 0.16, uv.y) * smoothstep(0.0, 0.16, 1.0 - uv.y);
               float glow = exp(-dot((uv - vec2(0.55, 0.42)) * vec2(uAspect, 1.0),
                                    (uv - vec2(0.55, 0.42)) * vec2(uAspect, 1.0)) * 6.0);
-              vec3 color = mix(uSky, uCool, 0.12 * edge);
-              color = mix(color, uWarm, clamp((beamA * 0.88 + beamB * 0.95 + beamC * 0.65 + glow * 0.08) * edge, 0.0, 0.95));
+              vec3 color = mix(uSky, uCool, 0.18 * edge);
+              color = mix(color, uWarm, clamp((beams*0.96 + glow*0.04)*edge,0.0,0.98));
               // The reference uses a separate fixed SVG grid above the scene.
               gl_FragColor = vec4(color, 1.0);
               #include <colorspace_fragment>
@@ -216,66 +261,124 @@ export default function GlassScene() {
             uResolution: { value: new THREE.Vector2() },
             uLight: { value: new THREE.Vector3(4, 9, 5) },
             uTintTop: { value: new THREE.Color("#247fe8") },
-            uTintBottom: { value: new THREE.Color("#f5f9ff") },
+            uTintBottom: { value: new THREE.Color("#c0def9") },
+            uTintRange: { value: new THREE.Vector2(-1.3, 2.7) },
+            uPointer: { value: new THREE.Vector2() },
+            uFlow: { value: flowRead.texture },
+            uMotion: { value: 1 },
           },
         });
+        const footerMaterial = new THREE.ShaderMaterial({
+          toneMapped: false,
+          vertexShader: glassVertexShader,
+          fragmentShader: glassFragmentShader,
+          uniforms: {
+            ...material.uniforms,
+            uTintRange: { value: new THREE.Vector2(-0.4, 0.4) },
+          },
+        });
+        // Existing portfolio icons supply colored details that can actually be
+        // magnified through the glass, as opposed to a reflection painted on it.
+        const accents = new THREE.Group();
+        const accentGeometry = new THREE.PlaneGeometry(0.82, 0.82);
+        const accentResources: { dispose(): void }[] = [accentGeometry];
+        const accentSpecs = [
+          {
+            icon: "javascript",
+            color: "#f5c94e",
+            x: -4.75,
+            y: 1.55,
+            angle: -0.2,
+          },
+          {
+            icon: "typescript",
+            color: "#5790e8",
+            x: 1.6,
+            y: 1.8,
+            angle: 0.22,
+          },
+          { icon: "react", color: "#dcf2f6", x: 4.05, y: -0.64, angle: -0.15 },
+        ];
+        for (const spec of accentSpecs) {
+          const canvas = document.createElement("canvas");
+          canvas.width = 256;
+          canvas.height = 256;
+          const ctx = canvas.getContext("2d");
+          if (!ctx) continue;
+          ctx.fillStyle = spec.color;
+          ctx.beginPath();
+          ctx.roundRect(8, 8, 240, 240, 52);
+          ctx.fill();
+          ctx.strokeStyle = "rgba(255,255,255,0.8)";
+          ctx.lineWidth = 5;
+          ctx.stroke();
+          const texture = new THREE.CanvasTexture(canvas);
+          texture.colorSpace = THREE.SRGBColorSpace;
+          const icon = new window.Image();
+          icon.onload = () => {
+            if (disposed) return;
+            ctx.drawImage(icon, 52, 52, 152, 152);
+            texture.needsUpdate = true;
+          };
+          icon.src = `/icons/${spec.icon}.svg`;
+          const surface = new THREE.MeshBasicMaterial({
+            map: texture,
+            transparent: true,
+            depthWrite: false,
+            toneMapped: false,
+          });
+          const mesh = new THREE.Mesh(accentGeometry, surface);
+          mesh.position.set(spec.x, spec.y, -0.72);
+          mesh.rotation.z = spec.angle;
+          accents.add(mesh);
+          accentResources.push(texture, surface);
+        }
+        scene.add(accents);
         strokes.forEach((stroke, index) => {
           const curve = new THREE.CatmullRomCurve3(
             stroke.map(
               ([x, y], i) =>
-                new THREE.Vector3(x, y, Math.sin(i * 0.75 + index) * 0.075),
+                new THREE.Vector3(
+                  x + index * 0.72,
+                  y,
+                  Math.sin(i * 0.75 + index) * 0.075,
+                ),
             ),
             false,
             "centripetal",
           );
           group.add(
             new THREE.Mesh(
-              new THREE.TubeGeometry(curve, 150, 0.215, 24, false),
+              new THREE.TubeGeometry(curve, 180, 0.425, 32, false),
               material,
             ),
           );
-          const capGeometry = new THREE.SphereGeometry(0.215, 16, 12);
+          const capGeometry = new THREE.SphereGeometry(0.425, 24, 16);
           for (const end of [curve.getPoint(0), curve.getPoint(1)]) {
             const cap = new THREE.Mesh(capGeometry, material);
             cap.position.copy(end);
             group.add(cap);
           }
         });
-        // The very same local NewYork outlines used by the HTML heading become
-        // beveled, extruded meshes. Keep HTML for layout, semantics and fallback.
+        // Offline tessellated, convex caps keep the existing NewYork outline.
+        // The hero can render before the footer geometry has finished loading.
         const footerHeading = document.querySelector<HTMLElement>(
           "[data-footer-thanks]",
         );
-        const font = new FontLoader().parse(thankYouFont);
         const footerGroup = new THREE.Group();
-        const footerWords = ["THANK", "YOU"].map((word) => {
-          const geometry = new TextGeometry(word, {
-            font,
-            size: 1,
-            depth: 0.11,
-            curveSegments: 16,
-            bevelEnabled: true,
-            bevelThickness: 0.025,
-            bevelSize: 0.006,
-            bevelSegments: 5,
-          });
-          geometry.computeBoundingBox();
-          const box = geometry.boundingBox!;
-          const extent = box.getSize(new THREE.Vector3());
-          geometry.center();
-          const mesh = new THREE.Mesh(geometry, material);
-          // A shallow viewing angle exposes the clear extrusion and beveled
-          // edges without changing the heading's responsive composition.
-          mesh.rotation.set(0.07, -0.09, 0);
-          footerGroup.add(mesh);
-          return { mesh, extent };
-        });
+        const footerWords: {
+          mesh: InstanceType<typeof THREE.Mesh>;
+          extent: InstanceType<typeof THREE.Vector3>;
+        }[] = [];
         footerGroup.visible = false;
         scene.add(footerGroup);
         const motion = window.matchMedia("(prefers-reduced-motion: reduce)");
         const pointer = { x: 0, y: 0 };
+        const pointerTarget = new THREE.Vector2();
         const lightTarget = new THREE.Vector3();
-        let previousPointer: { x: number; y: number } | null = null;
+        let previousPointer: { x: number; y: number; time: number } | null =
+          null;
+        let inputStrength = 0;
         let previousTime = 0;
         let frame = 0;
         let visible = true;
@@ -285,6 +388,7 @@ export default function GlassScene() {
         let viewportHeight = readScroll().height;
         let contactVisible = false;
         let worldHeight = 1;
+        let heroOffsetY = 0;
         const bounds = new THREE.Box3().setFromObject(group);
         const size = bounds.getSize(new THREE.Vector3());
         const center = bounds.getCenter(new THREE.Vector3());
@@ -322,19 +426,68 @@ export default function GlassScene() {
             Math.max(1, Math.round(material.uniforms.uResolution.value.y)),
           );
           sceneTarget.setSize(refractionTarget.width, refractionTarget.height);
+          flareTarget.setSize(
+            Math.max(1, Math.round(refractionTarget.width * 0.5)),
+            Math.max(1, Math.round(refractionTarget.height * 0.5)),
+          );
+          flareMaterial.uniforms.uResolution.value.copy(
+            material.uniforms.uResolution.value,
+          );
+          const flowWidth = Math.max(
+            64,
+            Math.round((256 * width) / Math.max(width, height)),
+          );
+          const flowHeight = Math.max(
+            64,
+            Math.round((256 * height) / Math.max(width, height)),
+          );
+          flowRead.setSize(flowWidth, flowHeight);
+          flowWrite.setSize(flowWidth, flowHeight);
+          flowProjection.resize(flowWidth, flowHeight);
+          flowMaterial.uniforms.uTexel.value.set(1 / flowWidth, 1 / flowHeight);
+          flowMaterial.uniforms.uAspect.value = width / Math.max(height, 1);
+          renderer.setClearColor(0x000000, 0);
+          for (const target of [flowRead, flowWrite]) {
+            renderer.setRenderTarget(target);
+            renderer.clear();
+          }
+          renderer.setRenderTarget(null);
+          renderer.setClearColor("#beddeb", 1);
           displayMaterial.uniforms.uResolution.value.copy(
             material.uniforms.uResolution.value,
           );
           camera.aspect = width / Math.max(height, 1);
           const halfFov = (camera.fov * Math.PI) / 360;
+          const hero = document.querySelector<HTMLElement>("[data-hero]");
+          const heroTop = hero?.getBoundingClientRect().top ?? 0;
+          const introBottom = hero
+            ?.querySelector(`.${styles.heroMeta}`)
+            ?.getBoundingClientRect().bottom;
+          const linkTop = hero
+            ?.querySelector('a[href="#work"]')
+            ?.getBoundingClientRect().top;
+          // Short viewports reserve space for the intro and project link.
+          const framed =
+            height <= 600 && introBottom != null && linkTop != null;
+          const frameTop = framed ? introBottom - heroTop + 16 : 0;
+          const frameBottom = framed ? linkTop - heroTop - 16 : height;
+          const frameHeight = Math.max(64, frameBottom - frameTop);
+          const fitHeight = framed
+            ? ((size.y * height) / frameHeight) * 1.12
+            : size.y * 1.5;
           const distance =
-            (Math.max(size.y, size.x / camera.aspect) /
-              (2 * Math.tan(halfFov))) *
-              1.5 +
+            Math.max(fitHeight, (size.x / camera.aspect) * 1.5) /
+              (2 * Math.tan(halfFov)) +
             size.z / 2;
           camera.position.set(center.x, center.y, distance);
+          // Portrait framing places the wider word beyond the original 100-unit
+          // far plane. Keep both lettering and its backdrop inside the frustum.
+          camera.far = Math.max(100, distance * 3);
           camera.updateProjectionMatrix();
           worldHeight = 2 * Math.tan(halfFov) * distance;
+          heroOffsetY = framed
+            ? (0.5 - (frameTop + frameBottom) / (2 * height)) * worldHeight
+            : 0;
           backdrop.position.x = center.x;
           backdrop.position.y = center.y;
           const viewHeight =
@@ -349,21 +502,22 @@ export default function GlassScene() {
           const rect = element.getBoundingClientRect();
           const x = (event.clientX - rect.left) / rect.width;
           const y = 1 - (event.clientY - rect.top) / rect.height;
+          const now = performance.now();
           pointer.x = x - 0.5;
           pointer.y = 0.5 - y;
           if (previousPointer) {
             const dx = Math.max(-0.18, Math.min(0.18, x - previousPointer.x));
             const dy = Math.max(-0.18, Math.min(0.18, y - previousPointer.y));
             if (Math.hypot(dx, dy) > 0.0005) {
-              for (let i = trail.length - 1; i > 0; i--) {
-                trail[i].copy(trail[i - 1]);
-                strength[i] = strength[i - 1];
-              }
-              trail[0].set(x, y, dx, dy);
-              strength[0] = 1;
+              const dt = Math.max(1 / 120, (now - previousPointer.time) / 1000);
+              flowMaterial.uniforms.uVelocity.value
+                .set(dx / dt, dy / dt)
+                .clampLength(0, 0.85);
+              flowMaterial.uniforms.uPointer.value.set(x, y);
+              inputStrength = 1;
             }
           }
-          previousPointer = { x, y };
+          previousPointer = { x, y, time: now };
         };
         const leave = () => {
           pointer.x = 0;
@@ -382,36 +536,70 @@ export default function GlassScene() {
             return;
           const dt = Math.min(0.1, Math.max(0, (time - previousTime) / 1000));
           previousTime = time;
-          for (let i = 0; i < strength.length; i++)
-            strength[i] = motion.matches
-              ? 0
-              : strength[i] * Math.exp(-dt * 3.5);
-          element.dataset.pointerEnergy = Math.max(...strength).toFixed(3);
+          inputStrength = motion.matches
+            ? 0
+            : inputStrength * Math.exp(-dt * 9.0);
+          element.dataset.pointerEnergy = inputStrength.toFixed(3);
+          const motionEnabled = motion.matches ? 0 : 1;
+          flowMaterial.uniforms.uPrevious.value = flowRead.texture;
+          flowMaterial.uniforms.uImpulse.value = inputStrength;
+          flowMaterial.uniforms.uDt.value = dt;
+          renderer.setRenderTarget(flowWrite);
+          renderer.render(flowScene, displayCamera);
+          if (motionEnabled && navigator.maxTouchPoints === 0) {
+            flowProjection.project(flowWrite.texture, flowRead, dt);
+          } else {
+            [flowRead, flowWrite] = [flowWrite, flowRead];
+          }
+          displayMaterial.uniforms.uFlow.value = flowRead.texture;
+          displayMaterial.uniforms.uMotion.value = motionEnabled;
+          material.uniforms.uFlow.value = flowRead.texture;
+          material.uniforms.uMotion.value = motionEnabled;
+          material.uniforms.uPointer.value.lerp(
+            pointerTarget.set(pointer.x, pointer.y),
+            1 - Math.exp(-8 * dt),
+          );
           if (!motion.matches) {
             material.uniforms.uLight.value.lerp(
-              lightTarget.set(4 + pointer.x * 14, 9 - pointer.y * 14, 5),
+              lightTarget.set(
+                center.x + pointer.x * worldHeight * 0.75,
+                center.y - pointer.y * worldHeight * 0.75 + 1,
+                7,
+              ),
               1 - Math.exp(-8 * dt),
             );
             backdropMaterial.uniforms.uTime.value = time * 0.001;
             group.rotation.y +=
-              (-0.14 +
+              (-0.07 +
                 Math.min(1, scrollTop / viewportHeight) * 1.64 +
                 pointer.x * 0.16 -
                 group.rotation.y) *
               0.08;
-            group.rotation.x +=
-              (-0.12 + pointer.y * 0.18 - group.rotation.x) * 0.035;
+            group.rotation.x += (pointer.y * 0.12 - group.rotation.x) * 0.035;
             group.position.y =
               -0.4 +
+              heroOffsetY +
               (scrollTop / viewportHeight) * worldHeight * 0.72 +
               Math.sin(time * 0.00065) * 0.07;
+            footerWords.forEach(({ mesh }) => {
+              mesh.rotation.x +=
+                (0.15 + pointer.y * 0.12 - mesh.rotation.x) * 0.08;
+              mesh.rotation.y +=
+                (-0.16 + pointer.x * 0.2 - mesh.rotation.y) * 0.08;
+            });
           } else {
             leave();
             material.uniforms.uLight.value.set(4, 9, 5);
             group.position.y =
-              -0.4 + (scrollTop / viewportHeight) * worldHeight * 0.72;
+              -0.4 +
+              heroOffsetY +
+              (scrollTop / viewportHeight) * worldHeight * 0.72;
           }
           // Render the backdrop first, excluding the glass from its own texture.
+          accents.visible = !contactVisible;
+          accents.position.copy(group.position);
+          accents.rotation.copy(group.rotation);
+          accents.scale.copy(group.scale);
           group.visible = false;
           footerGroup.visible = false;
           renderer.setRenderTarget(refractionTarget);
@@ -421,9 +609,15 @@ export default function GlassScene() {
           element.dataset.scene = contactVisible ? "thank-you" : "hello";
           renderer.setRenderTarget(sceneTarget);
           renderer.render(scene, camera);
+          renderer.setRenderTarget(flareTarget);
+          renderer.render(flareScene, displayCamera);
           renderer.setRenderTarget(null);
           renderer.render(displayScene, displayCamera);
-          footerHeading?.setAttribute("data-glass-ready", "true");
+          if (
+            footerWords.length === 2 &&
+            !footerHeading?.hasAttribute("data-glass-ready")
+          )
+            footerHeading?.setAttribute("data-glass-ready", "true");
           if (!motion.matches) frame = requestAnimationFrame(render);
         };
         const resume = () => {
@@ -494,11 +688,93 @@ export default function GlassScene() {
         renderer.domElement.addEventListener("webglcontextrestored", restored);
         resize();
         render(0);
-        setReady(true);
         setFailed(false);
+        import("three/addons/loaders/GLTFLoader.js")
+          .then(({ GLTFLoader }) => {
+            const loader = new GLTFLoader();
+            void loader
+              .loadAsync("/models/hello-rounded.glb")
+              .then((gltf) => {
+                let geometry: InstanceType<typeof THREE.BufferGeometry> | null =
+                  null;
+                gltf.scene.traverse((object) => {
+                  if (!(object instanceof THREE.Mesh)) return;
+                  const sourceMaterials = Array.isArray(object.material)
+                    ? object.material
+                    : [object.material];
+                  sourceMaterials.forEach((entry) => entry.dispose());
+                  if (disposed) object.geometry.dispose();
+                  else geometry = object.geometry;
+                });
+                if (disposed || !geometry) return;
+                const previous = new Set<
+                  InstanceType<typeof THREE.BufferGeometry>
+                >();
+                group.traverse((object) => {
+                  if (object instanceof THREE.Mesh)
+                    previous.add(object.geometry);
+                });
+                group.clear();
+                previous.forEach((entry) => entry.dispose());
+                group.add(new THREE.Mesh(geometry, material));
+                const savedY = group.position.y;
+                group.position.y = -0.4;
+                group.updateMatrixWorld(true);
+                bounds.setFromObject(group);
+                bounds.getSize(size);
+                bounds.getCenter(center);
+                group.position.y = savedY;
+                group.updateMatrixWorld(true);
+                element.dataset.helloGeometry = "fused-capsules";
+              })
+              .catch(() => {
+                // Keep the procedural tube fallback if the baked mesh is unavailable.
+                element.dataset.helloGeometry = "tube-fallback";
+              })
+              .finally(() => {
+                if (disposed) return;
+                cancelAnimationFrame(frame);
+                frame = 0;
+                resize();
+                render(performance.now());
+                setReady(true);
+              });
+            return loader.loadAsync("/models/thank-you-rounded.glb");
+          })
+          .then((gltf) => {
+            gltf.scene.traverse((object) => {
+              if (!(object instanceof THREE.Mesh)) return;
+              const materials = Array.isArray(object.material)
+                ? object.material
+                : [object.material];
+              materials.forEach((entry) => entry.dispose());
+              if (disposed) object.geometry.dispose();
+            });
+            if (disposed) return;
+            for (const word of ["THANK", "YOU"]) {
+              const mesh = gltf.scene.getObjectByName(word);
+              if (!(mesh instanceof THREE.Mesh))
+                throw new Error("Missing footer lettering mesh");
+              mesh.material = footerMaterial;
+              mesh.geometry.computeBoundingBox();
+              const extent = mesh.geometry.boundingBox!.getSize(
+                new THREE.Vector3(),
+              );
+              mesh.rotation.set(0.15, -0.16, 0);
+              footerGroup.add(mesh);
+              footerWords.push({ mesh, extent });
+            }
+            element.dataset.footerGeometry = "convex-caps";
+            placeFooter();
+            resume();
+          })
+          .catch(() => {
+            // The semantic heading stays readable if the model cannot load.
+            footerHeading?.removeAttribute("data-glass-ready");
+          });
         document.fonts.ready.then(() => {
           if (!disposed) {
-            placeFooter();
+            resize();
             resume();
           }
         });
@@ -527,11 +803,19 @@ export default function GlassScene() {
             });
           usedGeometry.forEach((geometry) => geometry.dispose());
           material.dispose();
+          footerMaterial.dispose();
+          flareMaterial.dispose();
+          flareTarget.dispose();
+          flowProjection.dispose();
+          accentResources.forEach((resource) => resource.dispose());
           studio.dispose();
           backdropGeometry.dispose();
           backdropMaterial.dispose();
           refractionTarget.dispose();
           sceneTarget.dispose();
+          flowRead.dispose();
+          flowWrite.dispose();
+          flowMaterial.dispose();
           displayMaterial.dispose();
           displayGeometry.dispose();
           renderer.dispose();

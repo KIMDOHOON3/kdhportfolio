@@ -72,7 +72,8 @@ export default function ScrollViewport({ children }: { children: ReactNode }) {
             lerp: 0.1,
             smoothWheel: true,
             syncTouch: true,
-            anchors: true,
+            // The wrapper's handler owns same-page anchors and URL updates.
+            anchors: false,
             autoRaf: false,
           });
       notify();
@@ -108,10 +109,18 @@ export default function ScrollViewport({ children }: { children: ReactNode }) {
       if (!target) return;
       event.preventDefault();
       history.replaceState(null, "", url.hash);
-      if (engine) engine.scrollTo(target, { offset: 0 });
-      else
+      const actualTop = target.getBoundingClientRect().top + wrapper.scrollTop;
+      const margin = parseFloat(getComputedStyle(target).scrollMarginTop) || 0;
+      if (engine) {
+        // Focusing an offscreen link can change the native scroll position
+        // before Lenis receives that scroll event. Use actual coordinates.
+        engine.scrollTo(wrapper.scrollTop, { immediate: true, force: true });
+        // Integral destinations also let Lenis finish its rounding-based lerp
+        // when responsive layout produces an exact half-pixel anchor.
+        engine.scrollTo(Math.round(actualTop - margin));
+      } else
         wrapper.scrollTo({
-          top: target.getBoundingClientRect().top + wrapper.scrollTop,
+          top: actualTop - (location.pathname === "/" ? 0 : margin),
           behavior: "instant",
         });
     };
@@ -143,8 +152,14 @@ export default function ScrollViewport({ children }: { children: ReactNode }) {
     const align = () => {
       if (!following || (id && location.hash.slice(1) !== id)) return;
       engine?.resize();
+      // Detail anchors keep their heading below the fixed header on first
+      // entry too. Home's full-screen section alignment remains unchanged.
+      const margin =
+        target && pathname !== "/"
+          ? parseFloat(getComputedStyle(target).scrollMarginTop) || 0
+          : 0;
       const top = target
-        ? target.getBoundingClientRect().top + element.scrollTop
+        ? target.getBoundingClientRect().top + element.scrollTop - margin
         : 0;
       if (engine) engine.scrollTo(top, { immediate: true, force: true });
       else element.scrollTop = top;

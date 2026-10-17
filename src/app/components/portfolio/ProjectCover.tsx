@@ -41,7 +41,15 @@ export default function ProjectCover({
         </defs>
       </svg>
       <div className={styles.coverSurface} data-cover-surface>
-        {project.image ? (
+        {project.visual === "couple" ? (
+          <Image
+            src={project.image!}
+            alt="Aeppy — 추억과 일상을 함께 기록하는 우리만의 공간"
+            fill
+            sizes="(max-width: 760px) 100vw, 60vw"
+            className={styles.aeppyCover}
+          />
+        ) : project.image ? (
           <>
             <Image
               src={project.image}
@@ -57,7 +65,7 @@ export default function ProjectCover({
             </span>
             <span className={styles.coverCaption}>
               {project.visual === "lexus"
-                ? "렉서스 웹사이트 리뉴얼"
+                ? "렉서스 웹사이트 리뉴얼 · 운영"
                 : project.visual === "kia"
                   ? "기아 글로벌 브랜드 웹사이트"
                   : "렉서스 웹사이트 운영 · 개선"}
@@ -89,28 +97,7 @@ export default function ProjectCover({
               나와 잘 맞는 강아지를 알아가는 시간
             </span>
           </>
-        ) : (
-          <>
-            <span className={styles.coupleLabel}>
-              둘만의 일상을 담는 작은 공간
-            </span>
-            <Image
-              className={styles.hearts}
-              src="/projects/hearts.webp"
-              width={200}
-              height={200}
-              alt=""
-            />
-            <span className={styles.coupleTitle}>
-              둘이 쌓는
-              <br />
-              <i>기록.</i>
-            </span>
-            <span className={styles.coupleFoot}>
-              우리의 평범한 날들을, 특별하게.
-            </span>
-          </>
-        )}
+        ) : null}
       </div>
       <span className={styles.coverArrow} aria-hidden="true">
         <ArrowIcon />

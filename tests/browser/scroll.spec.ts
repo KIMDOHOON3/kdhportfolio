@@ -73,11 +73,11 @@ test("wheel: entry, four stages, reverse, release and collision checks", async (
   const start = await startOfStory(page);
   await capture(page, info, "hero");
   for (const offset of [
-    -0.25, -0.1, 0, 0.5, 1.98, 2.02, 3.98, 4.02, 5.98, 6.02, 7, 7.5,
+    -0.25, -0.1, 0, 0.5, 0.78, 0.82, 1.58, 1.62, 2.38, 2.42, 3, 3.5,
   ]) {
     const target = Math.round(start + offset * height);
     await wheelTo(page, target);
-    const stage = Math.min(3, Math.floor(Math.max(0, offset) / 2));
+    const stage = Math.min(3, Math.floor(Math.max(0, offset) / 0.8));
     await expect(page.locator("[data-scroll-story]")).toHaveAttribute(
       "data-stage",
       String(stage),
@@ -93,12 +93,12 @@ test("wheel: entry, four stages, reverse, release and collision checks", async (
       await expect(
         page.locator(`[data-story-panel='${stage}'] h2 span span`).last(),
       ).toHaveCSS("opacity", "1");
-    if (offset === 0.5 || offset === 4.02)
+    if (offset === 0.5 || offset === 1.62)
       await expect(page.locator("[data-scroll-viewport]")).toHaveAttribute(
         "data-story-dark",
         "true",
       );
-    if (offset === 7)
+    if (offset === 3)
       await expect(page.locator("[data-scroll-viewport]")).toHaveAttribute(
         "data-story-dark",
         "false",
@@ -134,25 +134,25 @@ test("wheel: entry, four stages, reverse, release and collision checks", async (
     expect(metric.overflow).toBe(0);
     expect(metric.collisions).toBe(0);
     expect(metric.height).toBe(height);
-    if (offset >= 0.5 && offset <= 7)
+    if (offset >= 0.5 && offset <= 3)
       expect(
         Math.abs(metric.pin - Math.min(0, metric.storyBottom - height)),
       ).toBeLessThan(1.5);
-    if (offset === 7.5)
+    if (offset === 3.5)
       expect(Math.abs(metric.pin - (metric.storyBottom - height))).toBeLessThan(
         1.5,
       );
-    if ([0, 0.5, 2.02, 4.02, 6.02, 7.5].includes(offset))
+    if ([0, 0.5, 0.82, 1.62, 2.42, 3.5].includes(offset))
       await capture(page, info, `story-${offset}`);
   }
-  for (const offset of [5, 3, 0.5]) {
+  for (const offset of [2.1, 1.1, 0.5]) {
     await wheelTo(page, Math.round(start + offset * height));
     await expect(page.locator("[data-scroll-story]")).toHaveAttribute(
       "data-stage",
-      String(Math.floor(offset / 2)),
+      String(Math.floor(offset / 0.8)),
     );
   }
-  await wheelTo(page, Math.round(start + height * 4.5));
+  await wheelTo(page, Math.round(start + height * 1.9));
   const blocks = await page
     .locator("[data-principle], [data-story-panel='2'] a")
     .evaluateAll((elements) =>
@@ -182,9 +182,9 @@ test("wheel: entry, four stages, reverse, release and collision checks", async (
 test("filters, anchors, mobile menu and detail return", async ({ page }) => {
   await ready(page);
   for (const [name, count] of [
-    ["실무", 3],
+    ["실무", 2],
     ["개인", 2],
-    ["전체", 5],
+    ["전체", 4],
   ] as const) {
     await page.getByRole("button", { name: new RegExp(name) }).click();
     await expect(page.locator("#work a[href^='/work/']")).toHaveCount(count);
@@ -209,7 +209,7 @@ test("filters, anchors, mobile menu and detail return", async ({ page }) => {
     )
     .toBeLessThan(100);
   await page
-    .getByRole("link", { name: "LEXUS 리뉴얼 프로젝트 보기", exact: true })
+    .getByRole("link", { name: "LEXUS 프로젝트 보기", exact: true })
     .click();
   await page.waitForURL("**/work/1");
   await expect(

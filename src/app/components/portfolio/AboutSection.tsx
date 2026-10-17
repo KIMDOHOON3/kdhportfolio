@@ -1,4 +1,4 @@
-import Image from "next/image";
+import InterfaceSketch from "./InterfaceSketch";
 import styles from "./Portfolio.module.scss";
 
 export default function AboutSection() {
@@ -8,15 +8,7 @@ export default function AboutSection() {
         소개
       </h2>
       <div className={styles.aboutPortrait}>
-        <Image
-          src="/about/profile.png"
-          width={520}
-          height={520}
-          alt="프론트엔드 개발자 김도훈"
-        />
-        <span className={styles.aboutCoordinates}>
-          코드 × 인터랙션 × 사용자 경험
-        </span>
+        <InterfaceSketch />
       </div>
       <div className={styles.aboutText}>
         <p>

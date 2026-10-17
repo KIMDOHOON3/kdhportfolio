@@ -3,12 +3,12 @@
 export const glassVertexShader = `
   varying vec3 vWorldPosition;
   varying vec3 vNormal;
-  varying float vHeight;
+  varying float vLocalHeight;
   void main() {
     vec4 world = modelMatrix * vec4(position, 1.0);
     vWorldPosition = world.xyz;
     vNormal = normalize(mat3(modelMatrix) * normal);
-    vHeight = world.y;
+    vLocalHeight = position.y;
     gl_Position = projectionMatrix * viewMatrix * world;
   }
 `;
@@ -20,48 +20,65 @@ export const glassFragmentShader = `
   uniform vec3 uLight;
   uniform vec3 uTintTop;
   uniform vec3 uTintBottom;
+  uniform vec2 uTintRange;
+  uniform vec2 uPointer;
+  uniform sampler2D uFlow;
+  uniform float uMotion;
   varying vec3 vWorldPosition;
   varying vec3 vNormal;
-  varying float vHeight;
+  varying float vLocalHeight;
 
   void main() {
-    vec3 normal = normalize(vNormal);
+    vec2 screenUv = gl_FragCoord.xy / uResolution;
+    vec2 flow = texture2D(uFlow, screenUv).xy * uMotion;
+    vec3 normal = normalize(vNormal + vec3(flow * 0.18, 0.0));
     vec3 view = normalize(cameraPosition - vWorldPosition);
     float facing = clamp(dot(normal, view), 0.0, 1.0);
     vec2 uv = gl_FragCoord.xy / uResolution;
     // One sharp sample per channel: averaging different depths made the glass hazy.
     vec2 incident = -view.xy;
-    vec2 red = refract(-view, normal, 1.0 / 1.45).xy - incident;
-    vec2 green = refract(-view, normal, 1.0 / 1.47).xy - incident;
-    vec2 blue = refract(-view, normal, 1.0 / 1.49).xy - incident;
-    float depth = 0.32;
+    vec2 red = refract(-view, normal, 1.0 / 1.15).xy - incident;
+    vec2 green = refract(-view, normal, 1.0 / 1.16).xy - incident;
+    vec2 blue = refract(-view, normal, 1.0 / 1.18).xy - incident;
+    float depth = 0.28;
     vec3 transmitted = vec3(
       texture2D(uScene, clamp(uv + red * depth, 0.001, 0.999)).r,
       texture2D(uScene, clamp(uv + green * depth, 0.001, 0.999)).g,
       texture2D(uScene, clamp(uv + blue * depth, 0.001, 0.999)).b
     );
-    float gradient = smoothstep(-1.6, 3.1, vHeight);
+    float height = (vLocalHeight-uTintRange.x)/max(0.001,uTintRange.y-uTintRange.x);
+    float gradient = smoothstep(0.22,0.94,height);
     vec3 tint = mix(uTintBottom, uTintTop, gradient);
     // A clear face still needs blue absorption and an environment reflection
     // to describe the inflated volume instead of disappearing into the backdrop.
     float edge = pow(1.0 - facing, 2.0);
-    vec3 color = transmitted * mix(vec3(1.0), tint, 0.08 + gradient * 0.24 + edge * 0.12);
+    vec3 color = transmitted * mix(vec3(1.0), tint, 0.18 + gradient * 0.55 + edge * 0.04);
 
     vec3 light = normalize(uLight - vWorldPosition);
     vec3 halfway = normalize(light + view);
-    float specular = pow(max(dot(normal, halfway), 0.0), 180.0);
-    float fresnel = 0.055 + 0.945 * pow(1.0 - facing, 4.0);
+    float highlight = max(dot(normal, halfway), 0.0);
+    float specular = pow(highlight, 220.0) * 0.25 + pow(highlight, 650.0) * 2.7;
+    specular *= 1.0 - gradient * 0.88;
+    float fresnel = 0.04 + 0.96 * pow(1.0 - facing, 5.0);
     color *= 1.0 - edge * 0.035;
     float side = smoothstep(-0.5, 0.7, dot(normal, normalize(vec3(-1.0, 1.0, 1.0))));
     // Narrow studio reflections leave the transmitted background readable.
     vec3 reflected = reflect(-view, normal);
+    // Move the broad studio reflection with the pointer as well as the small
+    // specular light. The cubemap itself still needs only one capture.
+    vec2 angle = uPointer * vec2(0.9, -0.7) * uMotion;
+    reflected.xz = mat2(cos(angle.x), -sin(angle.x), sin(angle.x), cos(angle.x)) * reflected.xz;
+    reflected.yz = mat2(cos(angle.y), -sin(angle.y), sin(angle.y), cos(angle.y)) * reflected.yz;
     vec3 studio = textureCube(uStudio, reflected).rgb;
-    color = mix(color, studio, fresnel * 0.78);
-    float strip = pow(max(dot(reflected, normalize(vec3(-0.35, 0.8, 0.5))), 0.0), 240.0);
-    float rim = pow(max(dot(reflected, normalize(vec3(0.75, 0.25, 0.6))), 0.0), 300.0);
+    // Preserve the shape of bright softboxes instead of clipping their entire
+    // reflection to white. A separate sharp glint retains HDR glare.
+    studio = studio / (vec3(1.0) + studio * 0.55);
+    color = mix(color, studio, 0.015 + fresnel * 0.22);
+    float strip = pow(max(dot(reflected, normalize(vec3(-0.35, 0.8, 0.5))), 0.0), 110.0);
+    float rim = pow(max(dot(reflected, normalize(vec3(0.75, 0.25, 0.6))), 0.0), 160.0);
     float ceiling = pow(max(dot(reflected, normalize(vec3(0.1, 0.97, -0.2))), 0.0), 150.0);
-    color += vec3(1.0, 0.99, 0.96) * (specular * 1.8 + strip * 0.75 + ceiling * 0.5);
-    color += vec3(0.75, 0.88, 1.0) * (rim * 0.85 + fresnel * side * 0.25);
+    color += vec3(1.0, 0.98, 0.93) * (specular + strip * 0.2 + ceiling * 0.2);
+    color += vec3(0.68, 0.84, 1.0) * (rim * 0.25 + fresnel * side * 0.08);
     gl_FragColor = vec4(color, 1.0);
     #include <colorspace_fragment>
   }

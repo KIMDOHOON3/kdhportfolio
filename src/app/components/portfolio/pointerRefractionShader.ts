@@ -1,31 +1,31 @@
-// A compact, decaying velocity trail approximates the reference's fluid display
-// pass. The entire rendered scene is sampled, so glass edges and light bend
-// together. This is independently authored, not a copy of its fluid solver.
+// Refract the complete scene through the persistent cursor flow map. HDR-only
+// glare adds bright streaks to glass highlights without whitening the sky.
 export const pointerRefractionShader = `
   uniform sampler2D uScene;
+  uniform sampler2D uFlare;
   uniform vec2 uResolution;
-  uniform vec4 uTrail[12];
-  uniform float uStrength[12];
+  uniform sampler2D uFlow;
+  uniform vec2 uFlowTexel;
+  uniform float uMotion;
   varying vec2 vUv;
   void main() {
-    vec2 aspect = vec2(uResolution.x / uResolution.y, 1.0);
-    vec2 displacement = vec2(0.0);
-    for (int i = 0; i < 12; i++) {
-      vec2 delta = (vUv - uTrail[i].xy) * aspect;
-      float influence = exp(-dot(delta, delta) / 0.018) * uStrength[i];
-      vec2 velocity = uTrail[i].zw;
-      displacement += (velocity + vec2(-delta.y, delta.x) * length(velocity) * 2.0) * influence * 0.32;
-    }
-    displacement = clamp(displacement, vec2(-0.055), vec2(0.055));
-    float energy = smoothstep(0.002, 0.035, length(displacement));
+    vec3 flow = texture2D(uFlow, vUv).xyz;
+    vec2 gradient = vec2(
+      texture2D(uFlow, vUv + vec2(uFlowTexel.x, 0.0)).z - texture2D(uFlow, vUv - vec2(uFlowTexel.x, 0.0)).z,
+      texture2D(uFlow, vUv + vec2(0.0, uFlowTexel.y)).z - texture2D(uFlow, vUv - vec2(0.0, uFlowTexel.y)).z
+    );
+    vec2 displacement = clamp((flow.xy * 0.105 + gradient * 0.025) * uMotion, vec2(-0.06), vec2(0.06));
     vec2 uv = clamp(vUv - displacement, 0.001, 0.999);
-    vec2 dispersion = displacement * 0.075;
+    vec2 dispersion = displacement * 0.06;
     vec3 color = vec3(
       texture2D(uScene, clamp(uv + dispersion, 0.001, 0.999)).r,
       texture2D(uScene, uv).g,
       texture2D(uScene, clamp(uv - dispersion, 0.001, 0.999)).b
     );
-    color += vec3(0.025, 0.012, 0.045) * energy;
+    float wake = smoothstep(0.018,0.08,length(displacement));
+    vec3 spectral = 0.5+0.5*cos(vec3(0.0,2.1,4.2)+length(flow.xy)*9.0);
+    color += spectral*wake*0.06*uMotion;
+    color += texture2D(uFlare,uv).rgb;
     gl_FragColor = vec4(color, 1.0);
     #include <colorspace_fragment>
   }

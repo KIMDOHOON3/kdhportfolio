@@ -35,6 +35,7 @@ export default defineConfig({
   },
   projects: [
     { name: "desktop", use: { viewport: { width: 1280, height: 720 } } },
+    { name: "compact-desktop", use: { viewport: { width: 687, height: 871 } } },
     {
       name: "mobile",
       use: {

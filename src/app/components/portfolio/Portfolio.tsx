@@ -16,6 +16,8 @@ import StoryBackdrop from "./StoryBackdrop";
 import { MailIcon, GithubIcon, DownloadIcon } from "../Icons";
 import styles from "./Portfolio.module.scss";
 
+const projectCount = (count: number) => String(count).padStart(2, "0");
+
 export function PortfolioHeader() {
   const [open, setOpen] = useState(false);
   useEffect(() => {
@@ -57,7 +59,7 @@ export function PortfolioHeader() {
         aria-label="메인 메뉴"
       >
         <Link href="/#work" scroll={false} onClick={() => setOpen(false)}>
-          프로젝트 <sup>05</sup>
+          프로젝트 <sup>{projectCount(portfolioProjects.length)}</sup>
         </Link>
         <Link href="/#about" scroll={false} onClick={() => setOpen(false)}>
           소개
@@ -119,7 +121,6 @@ export function PortfolioFooter() {
       </div>
       <div className={styles.footerBottom}>
         <span>© {new Date().getFullYear()} 김도훈</span>
-        <span>기획 · 디자인 · 개발 김도훈</span>
         <a href="#top">맨 위로 ↑</a>
       </div>
     </footer>
@@ -128,20 +129,9 @@ export function PortfolioFooter() {
 
 export default function Portfolio() {
   const [filter, setFilter] = useState("전체");
-  const [clock, setClock] = useState("--:--");
   const root = useRef<HTMLElement>(null);
   usePaperMotion(root, filter);
   useEffect(() => {
-    const update = () =>
-      setClock(
-        new Intl.DateTimeFormat("en-GB", {
-          hour: "2-digit",
-          minute: "2-digit",
-          timeZone: "Asia/Seoul",
-        }).format(new Date()),
-      );
-    update();
-    const interval = setInterval(update, 60000);
     const observer = new IntersectionObserver(
       (entries) =>
         entries.forEach((entry) => {
@@ -157,7 +147,6 @@ export default function Portfolio() {
       .forEach((element) => observer.observe(element));
     root.current?.classList.add(styles.motionReady);
     return () => {
-      clearInterval(interval);
       observer.disconnect();
     };
   }, [filter]);
@@ -185,10 +174,6 @@ export default function Portfolio() {
             <br />
             개발자 김도훈
           </p>
-          <p className={styles.heroCoordinates}>
-            코드 × 인터랙션
-            <br />× 사용자 경험
-          </p>
           <p className={styles.heroIntro}>
             안녕하세요, 프론트엔드 개발자 <strong>김도훈</strong>입니다.
             <br />
@@ -196,13 +181,10 @@ export default function Portfolio() {
           </p>
         </div>
         <div className={styles.heroBottom}>
-          <h2>
-            브랜드 웹사이트와
-            <br />
-            일상 속 서비스를
-            <br />
-            <i>직접 구현하고 다듬습니다.</i>
-          </h2>
+          <p className={styles.heroCoordinates}>
+            코드 × 인터랙션
+            <br />× 사용자 경험
+          </p>
           <a href="#work" className={styles.explore}>
             프로젝트 살펴보기{" "}
             <span>
@@ -223,7 +205,7 @@ export default function Portfolio() {
             고민을 담아
             <br />
             <i>만든 작업들.</i>
-            <sup>(05)</sup>
+            <sup>({projectCount(portfolioProjects.length)})</sup>
           </h2>
           <div className={styles.workAside}>
             <p>
@@ -248,11 +230,12 @@ export default function Portfolio() {
                       ? "실무"
                       : "개인"}
                   <span>
-                    {value === "전체"
-                      ? "05"
-                      : value === "실무 프로젝트"
-                        ? "03"
-                        : "02"}
+                    {projectCount(
+                      portfolioProjects.filter(
+                        (project) =>
+                          value === "전체" || project.category === value,
+                      ).length,
+                    )}
                   </span>
                 </button>
               ))}
@@ -271,21 +254,18 @@ export default function Portfolio() {
                 scroll={false}
                 className={styles.projectLink}
                 data-paper-surface
-                aria-label={`${project.title} ${project.id === 1 ? "리뉴얼" : project.id === 2 ? "운영 및 개선" : ""} 프로젝트 보기`}
+                aria-label={`${project.title} 프로젝트 보기`}
               >
                 <ProjectCover project={project} />
                 <div className={styles.projectMeta}>
                   <span>
-                    {String(project.id).padStart(2, "0")} / {project.category}
+                    {projectCount(portfolioProjects.indexOf(project) + 1)} /{" "}
+                    {project.category}
                   </span>
                   <span>{project.year}</span>
                 </div>
                 <div className={styles.projectTitle}>
-                  <h3>
-                    {project.title}
-                    {project.id === 1 && <span>리뉴얼</span>}
-                    {project.id === 2 && <span>운영 · 개선</span>}
-                  </h3>
+                  <h3>{project.title}</h3>
                   <span aria-hidden="true">
                     <ArrowIcon />
                   </span>
@@ -312,14 +292,6 @@ export default function Portfolio() {
 
       <StoryBackdrop />
       <ScrollStory />
-      <div className={styles.heroStatus}>
-        <span>
-          <i /> 함께할 팀을 찾고 있습니다
-        </span>
-        <span>
-          한국 시간 <b>{clock}</b>
-        </span>
-      </div>
     </main>
   );
 }

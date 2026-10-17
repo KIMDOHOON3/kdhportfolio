@@ -1,5 +1,10 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  async redirects() {
+    return [
+      { source: "/work/2", destination: "/work/1#operations", permanent: true },
+    ];
+  },
   // SASS 설정 - @import 경고만 필터링
   sassOptions: {
     logger: {

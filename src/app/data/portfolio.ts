@@ -1,3 +1,12 @@
+export type ProjectPhase = {
+  id: string;
+  title: string;
+  year: string;
+  role: string;
+  stack: string[];
+  highlights: { title: string; description: string }[];
+};
+
 export type PortfolioProject = {
   id: number;
   title: string;
@@ -12,68 +21,81 @@ export type PortfolioProject = {
   site?: string;
   github?: string;
   highlights: { title: string; description: string }[];
+  phases?: ProjectPhase[];
 };
 
 export const portfolioProjects: PortfolioProject[] = [
   {
     id: 1,
     title: "LEXUS",
-    subtitle: "상담·예약·마이페이지를 연결한 웹사이트 리뉴얼",
+    subtitle: "웹사이트 리뉴얼부터 운영·개선까지",
     category: "실무 프로젝트",
-    year: "2026",
+    year: "2025—26",
     visual: "lexus",
     image: "/projects/lexus-renewal.webp",
     description:
-      "브랜드의 감도와 서비스의 편리함을 함께 담은 렉서스 웹사이트 리뉴얼. 상담부터 예약, 마이페이지까지 사용자의 흐름을 연결했습니다.",
-    stack: ["React", "TypeScript", "Zustand", "Tailwind CSS"],
-    role: "프론트엔드 개발 · 상담 및 예약, 마이페이지 UI",
-    site: "https://www.lexus.co.kr/",
-    highlights: [
-      {
-        title: "상담과 인증의 흐름 연결",
-        description:
-          "상담 신청 API와 인증 상태를 연결하고, 입력값 검증과 제출 상태를 관리하는 폼을 구현했습니다.",
-      },
-      {
-        title: "예약 상태의 일관성",
-        description:
-          "예약 캘린더의 선택 상태를 관리하고, 상위 조건이 바뀌면 연관 선택을 초기화해 잘못된 예약 조합을 방지했습니다.",
-      },
-      {
-        title: "일관된 서비스 UI",
-        description:
-          "마이페이지 공통 UI와 애니메이션·외부 SDK 연동을 작업하며 화면 간 경험이 이어지도록 구성했습니다.",
-      },
+      "렉서스 웹사이트의 리뉴얼과 운영·개선에 참여했습니다. 리뉴얼에서는 상담·예약·마이페이지를 연결하고, 운영에서는 차량 360° 뷰어와 신청 폼, 공통 UI의 사용성을 다듬었습니다.",
+    stack: [
+      "React",
+      "TypeScript",
+      "Zustand",
+      "Tailwind CSS",
+      "Vue 2",
+      "JavaScript",
+      "SCSS",
+      "Swiper",
     ],
-  },
-  {
-    id: 2,
-    title: "LEXUS",
-    subtitle: "360° 차량 뷰어와 서비스 사용성 개선",
-    category: "실무 프로젝트",
-    year: "2025—26",
-    visual: "legacy",
-    image: "/projects/lexus-experience.webp",
-    description:
-      "운영 중인 렉서스 사이트의 인터랙션과 서비스 개선. 차량 360° 뷰어부터 조건부 폼, 공통 모달까지 작은 사용 경험을 다듬었습니다.",
-    stack: ["Vue 2", "JavaScript", "SCSS", "Swiper"],
-    role: "프론트엔드 개발 · 사이트 운영 및 기능 개선",
+    role: "프론트엔드 개발 · 웹사이트 리뉴얼 및 운영·개선",
     site: "https://www.lexus.co.kr/",
-    highlights: [
+    highlights: [],
+    phases: [
       {
-        title: "360° 차량 뷰어",
-        description:
-          "비동기로 로드되는 이미지 시퀀스의 순서를 보장하고 프리로드를 적용해 차량 회전 인터랙션을 구현했습니다.",
+        id: "renewal",
+        title: "웹사이트 리뉴얼",
+        year: "2026",
+        role: "상담 및 예약, 마이페이지 UI 개발",
+        stack: ["React", "TypeScript", "Zustand", "Tailwind CSS"],
+        highlights: [
+          {
+            title: "상담과 인증의 흐름 연결",
+            description:
+              "상담 신청 API와 인증 상태를 연결하고, 입력값 검증과 제출 상태를 관리하는 폼을 구현했습니다.",
+          },
+          {
+            title: "예약 상태의 일관성",
+            description:
+              "예약 캘린더의 선택 상태를 관리하고, 상위 조건이 바뀌면 연관 선택을 초기화해 잘못된 예약 조합을 방지했습니다.",
+          },
+          {
+            title: "일관된 서비스 UI",
+            description:
+              "마이페이지 공통 UI와 애니메이션·외부 SDK 연동을 작업하며 화면 간 경험이 이어지도록 구성했습니다.",
+          },
+        ],
       },
       {
-        title: "안정적인 신청 경험",
-        description:
-          "조건부 입력 폼과 인증 흐름을 정리하고, 요청 중 중복 제출을 제어해 사용자가 현재 상태를 이해할 수 있게 했습니다.",
-      },
-      {
-        title: "공통 요소의 완성도",
-        description:
-          "공통 모달의 접근성과 GTM 초기화 흐름을 다듬고, 여러 화면에서 같은 동작을 유지하도록 개선했습니다.",
+        id: "operations",
+        title: "운영 · 기능 개선",
+        year: "2025—26",
+        role: "차량 360° 뷰어 · 신청 폼 · 공통 UI 개선",
+        stack: ["Vue 2", "JavaScript", "SCSS", "Swiper"],
+        highlights: [
+          {
+            title: "360° 차량 뷰어",
+            description:
+              "비동기로 로드되는 이미지 시퀀스의 순서를 보장하고 프리로드를 적용해 차량 회전 인터랙션을 구현했습니다.",
+          },
+          {
+            title: "안정적인 신청 경험",
+            description:
+              "조건부 입력 폼과 인증 흐름을 정리하고, 요청 중 중복 제출을 제어해 사용자가 현재 상태를 이해할 수 있게 했습니다.",
+          },
+          {
+            title: "공통 요소의 완성도",
+            description:
+              "공통 모달의 접근성과 GTM 초기화 흐름을 다듬고, 여러 화면에서 같은 동작을 유지하도록 개선했습니다.",
+          },
+        ],
       },
     ],
   },
@@ -141,11 +163,12 @@ export const portfolioProjects: PortfolioProject[] = [
   },
   {
     id: 5,
-    title: "커플 웹",
+    title: "Aeppy",
     subtitle: "사진·일정·편지를 함께 기록하는 커플 웹앱",
     category: "개인 프로젝트",
     year: "2026",
     visual: "couple",
+    image: "/projects/aeppy-cover.webp",
     description:
       "둘의 일상과 기억을 함께 쌓는 커플 웹앱. 사진과 일정, 기념일, 편지를 하나의 공간에 담았습니다.",
     stack: ["Next.js", "TypeScript", "Supabase", "Zustand", "PWA"],

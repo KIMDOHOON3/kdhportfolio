@@ -45,7 +45,7 @@ export default async function ProjectDetail({ params }: Props) {
       </Link>
       <div className={styles.sectionLabel}>
         <span>
-          {String(project.id).padStart(2, "0")} / {project.category}
+          {String(index + 1).padStart(2, "0")} / {project.category}
         </span>
         <span>{project.year}</span>
       </div>
@@ -110,18 +110,58 @@ export default async function ProjectDetail({ params }: Props) {
           </div>
         </div>
       </div>
-      <section className={styles.detailHighlights}>
-        <h2>주요 구현 내용</h2>
-        {project.highlights.map((item, i) => (
-          <article key={item.title}>
-            <span>0{i + 1}</span>
-            <div>
-              <h3>{item.title}</h3>
-              <p>{item.description}</p>
+      {project.phases && (
+        <nav className={styles.detailPhaseNav} aria-label="렉서스 작업 구분">
+          {project.phases.map((phase) => (
+            <a href={`#${phase.id}`} key={phase.id}>
+              {phase.title} <ArrowIcon down />
+            </a>
+          ))}
+        </nav>
+      )}
+      {(
+        project.phases ?? [
+          {
+            id: "implementation",
+            title: "주요 구현 내용",
+            highlights: project.highlights,
+          },
+        ]
+      ).map((phase) => (
+        <section
+          id={phase.id}
+          className={styles.detailHighlights}
+          aria-labelledby={`${phase.id}-title`}
+          key={phase.id}
+        >
+          {"stack" in phase ? (
+            <div className={styles.detailPhaseHeading}>
+              <span>{phase.year}</span>
+              <h2 id={`${phase.id}-title`}>{phase.title}</h2>
+              <p>{phase.role}</p>
+              <div className={styles.stack}>
+                {phase.stack.map((tech) => (
+                  <span key={tech}>
+                    <TechnologyIcon name={tech} />
+                    {tech}
+                  </span>
+                ))}
+              </div>
             </div>
-          </article>
-        ))}
-      </section>
+          ) : (
+            <h2 id={`${phase.id}-title`}>{phase.title}</h2>
+          )}
+          {phase.highlights.map((item, i) => (
+            <article key={item.title}>
+              <span>0{i + 1}</span>
+              <div>
+                <h3>{item.title}</h3>
+                <p>{item.description}</p>
+              </div>
+            </article>
+          ))}
+        </section>
+      ))}
       <Link
         className={styles.nextProject}
         href={`/work/${next.id}`}

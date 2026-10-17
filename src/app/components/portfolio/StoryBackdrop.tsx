@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { getScrollViewport, subscribeScroll } from "./ScrollViewport";
-import { storyTransition } from "./storyMotion";
+import { storyTransition, STORY_SCREENS } from "./storyMotion";
 import { storyVertexShader, storyFragmentShader } from "./storyShaders";
 import styles from "./Portfolio.module.scss";
 
@@ -95,7 +95,7 @@ export default function StoryBackdrop() {
           surface?.setAttribute("data-story-fallback", "true");
           surface?.setAttribute(
             "data-story-dark",
-            String(top <= 80 && top + height * 8 > 80),
+            String(top <= 80 && top + height * STORY_SCREENS > 80),
           );
         };
         const draw = (time: number) => {
@@ -134,7 +134,7 @@ export default function StoryBackdrop() {
             material.uniforms.uReveal.value = progress;
             material.uniforms.uTravel.value = Math.min(
               1,
-              Math.max(0, (height - top) / (height * 9)),
+              Math.max(0, (height - top) / (height * (STORY_SCREENS + 1))),
             );
           }
           renderer.render(scene, camera);
