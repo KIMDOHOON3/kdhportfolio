@@ -7,7 +7,7 @@ export function createStudioEnvironment(
   renderer: WebGLRenderer,
 ) {
   const scene = new THREE.Scene();
-  scene.background = new THREE.Color("#244065");
+  scene.background = new THREE.Color("#accbde");
   const resources: { dispose(): void }[] = [];
   const panel = (
     width: number,
@@ -32,9 +32,6 @@ export function createStudioEnvironment(
   panel(0.65, 7, [5, 1, 4], "#b8e7ff", 4);
   panel(5, 0.35, [-1, -4, 5], "#fff9e9", 3.5);
   panel(3, 4, [-6, 0, -2], "#438df5", 0.9);
-  for (let i = 0; i < 3; i++) {
-    panel(0.3, 1.5, [-2.4 + i * 1.1, 2.5, 7], "#ffffff", 6);
-  }
   const target = new THREE.WebGLCubeRenderTarget(
     (renderer.domElement.parentElement?.clientWidth ??
       renderer.domElement.clientWidth) > 760

@@ -2,7 +2,12 @@
 
 import { useEffect, useRef, useState } from "react";
 import styles from "./Portfolio.module.scss";
-import { glassVertexShader, glassFragmentShader } from "./glassShaders";
+import {
+  glassVertexShader,
+  glassFragmentShader,
+  glassBackVertexShader,
+  glassBackFragmentShader,
+} from "./glassShaders";
 import { pointerRefractionShader } from "./pointerRefractionShader";
 import { flowFragmentShader } from "./flowShader";
 import { createStudioEnvironment } from "./studioEnvironment";
@@ -127,10 +132,24 @@ export default function GlassScene() {
           minFilter: THREE.LinearFilter,
           magFilter: THREE.LinearFilter,
         });
+        const backSurfaceTarget = new THREE.WebGLRenderTarget(1, 1, {
+          type: THREE.HalfFloatType,
+          minFilter: THREE.NearestFilter,
+          magFilter: THREE.NearestFilter,
+          depthBuffer: true,
+        });
+        const backSurfaceMaterial = new THREE.ShaderMaterial({
+          toneMapped: false,
+          side: THREE.BackSide,
+          uniforms: { uDepthOrigin: { value: camera.position.z } },
+          vertexShader: glassBackVertexShader,
+          fragmentShader: glassBackFragmentShader,
+        });
         const sceneTarget = new THREE.WebGLRenderTarget(1, 1, {
           type: THREE.HalfFloatType,
           minFilter: THREE.LinearFilter,
           magFilter: THREE.LinearFilter,
+          samples: Math.min(4, renderer.capabilities.maxSamples),
         });
         let flowRead = new THREE.WebGLRenderTarget(256, 256, {
           depthBuffer: false,
@@ -257,6 +276,9 @@ export default function GlassScene() {
           fragmentShader: glassFragmentShader,
           uniforms: {
             uScene: { value: refractionTarget.texture },
+            uBackSurface: { value: backSurfaceTarget.texture },
+            uProjection: { value: camera.projectionMatrix },
+            uDepthOrigin: backSurfaceMaterial.uniforms.uDepthOrigin,
             uStudio: { value: studio.texture },
             uResolution: { value: new THREE.Vector2() },
             uLight: { value: new THREE.Vector3(4, 9, 5) },
@@ -371,6 +393,10 @@ export default function GlassScene() {
             Math.max(1, Math.round(material.uniforms.uResolution.value.y)),
           );
           sceneTarget.setSize(refractionTarget.width, refractionTarget.height);
+          backSurfaceTarget.setSize(
+            refractionTarget.width,
+            refractionTarget.height,
+          );
           flareTarget.setSize(
             Math.max(1, Math.round(refractionTarget.width * 0.5)),
             Math.max(1, Math.round(refractionTarget.height * 0.5)),
@@ -425,6 +451,7 @@ export default function GlassScene() {
               (2 * Math.tan(halfFov)) +
             size.z / 2;
           camera.position.set(center.x, center.y, distance);
+          backSurfaceMaterial.uniforms.uDepthOrigin.value = distance;
           // Portrait framing places the wider word beyond the original 100-unit
           // far plane. Keep both lettering and its backdrop inside the frustum.
           camera.far = Math.max(100, distance * 3);
@@ -540,6 +567,18 @@ export default function GlassScene() {
               heroOffsetY +
               (scrollTop / viewportHeight) * worldHeight * 0.72;
           }
+          // Measure the rear interface before sampling transmission. This data
+          // pass contains only the currently visible lettering, never the sky.
+          group.visible = !contactVisible;
+          footerGroup.visible = contactVisible;
+          backdrop.visible = false;
+          scene.overrideMaterial = backSurfaceMaterial;
+          renderer.setClearColor(0x000000, 0);
+          renderer.setRenderTarget(backSurfaceTarget);
+          renderer.render(scene, camera);
+          scene.overrideMaterial = null;
+          backdrop.visible = true;
+          renderer.setClearColor("#beddeb", 1);
           // Render the backdrop first, excluding the glass from its own texture.
           group.visible = false;
           footerGroup.visible = false;
@@ -752,6 +791,8 @@ export default function GlassScene() {
           backdropGeometry.dispose();
           backdropMaterial.dispose();
           refractionTarget.dispose();
+          backSurfaceTarget.dispose();
+          backSurfaceMaterial.dispose();
           sceneTarget.dispose();
           flowRead.dispose();
           flowWrite.dispose();
