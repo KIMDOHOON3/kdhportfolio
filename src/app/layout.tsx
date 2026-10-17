@@ -6,6 +6,7 @@ import {
 } from "./components/portfolio/Portfolio";
 import JsonLd from "@/app/components/JsonLd";
 import Script from "next/script";
+import ScrollViewport from "./components/portfolio/ScrollViewport";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://kdhportfolio.vercel.app"),
@@ -62,14 +63,14 @@ export default function RootLayout({
         {/* JsonLd 구조화 데이터 */}
         <JsonLd />
 
-        <div>
+        <ScrollViewport>
           <a className="skip-link" href="#main-content">
             본문으로 바로가기
           </a>
           <PortfolioHeader />
           <div id="main-content">{children}</div>
           <PortfolioFooter />
-        </div>
+        </ScrollViewport>
       </body>
     </html>
   );

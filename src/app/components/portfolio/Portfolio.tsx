@@ -8,19 +8,13 @@ import ProjectCover from "./ProjectCover";
 import usePaperMotion from "./usePaperMotion";
 import ArrowIcon from "./ArrowIcon";
 import TechnologyIcon from "./TechnologyIcon";
-import { MailIcon, GithubIcon, DownloadIcon, SkillIconMap } from "../Icons";
+import ViewportGrid from "./ViewportGrid";
+import AboutSection from "./AboutSection";
+import ScrollStory from "./ScrollStory";
+import BackgroundScreen from "./BackgroundScreen";
+import StoryBackdrop from "./StoryBackdrop";
+import { MailIcon, GithubIcon, DownloadIcon } from "../Icons";
 import styles from "./Portfolio.module.scss";
-
-function GridGuides() {
-  return (
-    <div className={styles.pageGrid} aria-hidden="true">
-      <span />
-      <span />
-      <span />
-      <span />
-    </div>
-  );
-}
 
 export function PortfolioHeader() {
   const [open, setOpen] = useState(false);
@@ -78,7 +72,6 @@ export function PortfolioHeader() {
 export function PortfolioFooter() {
   return (
     <footer className={styles.footer} id="contact">
-      <GridGuides />
       <div className={styles.sectionLabel}>
         <span>03 / 연락하기</span>
         <span>함께할 다음 이야기를 기다립니다.</span>
@@ -181,41 +174,53 @@ export default function Portfolio() {
 
   return (
     <main ref={root} id="top" className={styles.portfolio}>
-      <div className={styles.heroStage}>
-        <section className={styles.hero} aria-labelledby="hero-title">
-          <GridGuides />
-          <h1 id="hero-title" className={styles.visuallyHidden}>
-            김도훈 — 프론트엔드 개발자 포트폴리오
-          </h1>
-          <GlassScene />
-          <div className={styles.heroBottom}>
-            <p className={styles.heroIntro}>
-              안녕하세요, 프론트엔드 개발자 <strong>김도훈</strong>입니다.
-              <br />
-              브랜드 웹사이트와 일상 속 서비스를
-              <br />
-              직접 구현하고 다듬습니다.
-            </p>
-            <a href="#work" className={styles.explore}>
-              프로젝트 살펴보기{" "}
-              <span>
-                <ArrowIcon down />
-              </span>
-            </a>
-          </div>
-          <div className={styles.heroStatus}>
+      <ViewportGrid />
+      <GlassScene />
+      <BackgroundScreen />
+      <section
+        id="home"
+        className={styles.hero}
+        aria-labelledby="hero-title"
+        data-hero
+      >
+        <h1 id="hero-title" className={styles.visuallyHidden}>
+          김도훈 — 프론트엔드 개발자 포트폴리오
+        </h1>
+        <div className={styles.heroMeta}>
+          <p className={styles.heroRole}>
+            프론트엔드
+            <br />
+            개발자 김도훈
+          </p>
+          <p className={styles.heroCoordinates}>
+            코드 × 인터랙션
+            <br />× 사용자 경험
+          </p>
+          <p className={styles.heroIntro}>
+            안녕하세요, 프론트엔드 개발자 <strong>김도훈</strong>입니다.
+            <br />
+            브랜드 웹사이트와 일상 속 서비스를 직접 구현하고 다듬습니다.
+          </p>
+        </div>
+        <div className={styles.heroBottom}>
+          <h2>
+            브랜드 웹사이트와
+            <br />
+            일상 속 서비스를
+            <br />
+            <i>직접 구현하고 다듬습니다.</i>
+          </h2>
+          <a href="#work" className={styles.explore}>
+            프로젝트 살펴보기{" "}
             <span>
-              <i /> 함께할 팀을 찾고 있습니다
+              <ArrowIcon down />
             </span>
-            <span>
-              한국 시간 <b>{clock}</b>
-            </span>
-          </div>
-        </section>
-      </div>
+          </a>
+        </div>
+      </section>
+      <AboutSection />
 
       <section id="work" className={styles.work} aria-labelledby="work-title">
-        <GridGuides />
         <div className={styles.sectionLabel}>
           <span>01 / 프로젝트</span>
           <span>실무에서 쌓은 경험과 직접 만든 서비스</span>
@@ -311,70 +316,16 @@ export default function Portfolio() {
         )}
       </section>
 
-      <section
-        id="about"
-        className={styles.about}
-        aria-labelledby="about-title"
-      >
-        <GridGuides />
-        <div className={styles.sectionLabel}>
-          <span>02 / 소개</span>
-          <span>궁금한 것은 깊게, 작은 부분은 세심하게.</span>
-        </div>
-        <div className={styles.aboutContent}>
-          <div className={styles.aboutLeft}>
-            <span className={styles.aboutStar} aria-hidden="true">
-              ✳
-            </span>
-            <h2 id="about-title">
-              작은 차이까지
-              <br />
-              <i>꼼꼼하게.</i>
-            </h2>
-            <span className={styles.aboutCoordinates}>
-              코드 × 인터랙션 × 사용자 경험
-            </span>
-          </div>
-          <div className={styles.aboutText} data-reveal>
-            <p className={styles.aboutLead}>
-              좋은 화면을 넘어,
-              <br />
-              <strong>잘 작동하는 경험을 만듭니다.</strong>
-            </p>
-            <p>
-              퍼블리싱으로 시작해 프론트엔드 개발로 영역을 넓혀왔습니다. 화면의
-              작은 움직임부터 데이터와 상태의 흐름까지, 보이는 부분과 보이지
-              않는 부분을 함께 고민합니다.
-            </p>
-            <p>
-              렉서스와 기아의 브랜드 경험을 구현했고, 개인 프로젝트에서는
-              기획부터 디자인, 개발까지 직접 맡아 서비스를 만들어가고 있습니다.
-            </p>
-            <div className={styles.skillList}>
-              {Object.keys(SkillIconMap).map((skill) => (
-                <span key={skill}>
-                  <TechnologyIcon name={skill} />
-                  {skill}
-                </span>
-              ))}
-            </div>
-            <a
-              href="/resume/김도훈-이력서.pdf"
-              download
-              className={styles.resumeLink}
-            >
-              조금 더 자세한 이야기는 이력서에{" "}
-              <span>
-                <DownloadIcon
-                  className={styles.actionIcon}
-                  fill="currentColor"
-                  aria-hidden="true"
-                />
-              </span>
-            </a>
-          </div>
-        </div>
-      </section>
+      <StoryBackdrop />
+      <ScrollStory />
+      <div className={styles.heroStatus}>
+        <span>
+          <i /> 함께할 팀을 찾고 있습니다
+        </span>
+        <span>
+          한국 시간 <b>{clock}</b>
+        </span>
+      </div>
     </main>
   );
 }

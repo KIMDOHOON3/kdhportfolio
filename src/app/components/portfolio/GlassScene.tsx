@@ -2,6 +2,13 @@
 
 import { useEffect, useRef, useState } from "react";
 import styles from "./Portfolio.module.scss";
+import { glassVertexShader, glassFragmentShader } from "./glassShaders";
+import { pointerRefractionShader } from "./pointerRefractionShader";
+import {
+  readScroll,
+  subscribeScroll,
+  getScrollViewport,
+} from "./ScrollViewport";
 
 // Continuous hand-drawn curves form original inflated glass lettering.
 const strokes: number[][][] = [
@@ -80,11 +87,8 @@ export default function GlassScene() {
     if (!element) return;
     let disposed = false;
     let cleanup = () => {};
-    Promise.all([
-      import("three"),
-      import("three/addons/environments/RoomEnvironment.js"),
-    ])
-      .then(([THREE, { RoomEnvironment }]) => {
+    import("three")
+      .then((THREE) => {
         if (disposed) return;
         let renderer: InstanceType<typeof THREE.WebGLRenderer>;
         try {
@@ -96,7 +100,7 @@ export default function GlassScene() {
         } catch {
           return;
         }
-        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.75));
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
         renderer.outputColorSpace = THREE.SRGBColorSpace;
         renderer.toneMapping = THREE.ACESFilmicToneMapping;
         renderer.toneMappingExposure = 1.1;
@@ -110,29 +114,36 @@ export default function GlassScene() {
         group.position.set(2, -0.4, 0);
         group.rotation.set(-0.12, -0.14, -0.08);
         scene.add(group);
-        const pmrem = new THREE.PMREMGenerator(renderer);
-        const studio = new RoomEnvironment();
-        const panels = [
-          { size: [14, 0.8], position: [0, 7, 7], color: "#fff8e7" },
-          { size: [0.7, 12], position: [-7, 2, 5], color: "#e0edff" },
-          { size: [10, 0.5], position: [2, -4, 5], color: "#ffffff" },
-        ];
-        panels.forEach(({ size, position, color }) => {
-          const panel = new THREE.Mesh(
-            new THREE.PlaneGeometry(size[0], size[1]),
-            new THREE.MeshBasicMaterial({
-              color: new THREE.Color(color).multiplyScalar(5),
-              side: THREE.DoubleSide,
-            }),
-          );
-          panel.position.set(position[0], position[1], position[2]);
-          panel.lookAt(0, 0, 0);
-          studio.add(panel);
+        const refractionTarget = new THREE.WebGLRenderTarget(1, 1, {
+          depthBuffer: false,
+          type: THREE.HalfFloatType,
+          minFilter: THREE.LinearFilter,
+          magFilter: THREE.LinearFilter,
         });
-        const environment = pmrem.fromScene(studio, 0.025);
-        studio.dispose();
-        scene.environment = environment.texture;
-        scene.environmentRotation.set(0.12, 0.45, -0.2);
+        const sceneTarget = new THREE.WebGLRenderTarget(1, 1, {
+          type: THREE.HalfFloatType,
+          minFilter: THREE.LinearFilter,
+          magFilter: THREE.LinearFilter,
+        });
+        const trail = Array.from({ length: 12 }, () => new THREE.Vector4());
+        const strength = Array<number>(12).fill(0);
+        const displayMaterial = new THREE.ShaderMaterial({
+          toneMapped: false,
+          depthTest: false,
+          depthWrite: false,
+          uniforms: {
+            uScene: { value: sceneTarget.texture },
+            uResolution: { value: new THREE.Vector2() },
+            uTrail: { value: trail },
+            uStrength: { value: strength },
+          },
+          vertexShader: `varying vec2 vUv; void main() { vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }`,
+          fragmentShader: pointerRefractionShader,
+        });
+        const displayScene = new THREE.Scene();
+        const displayCamera = new THREE.Camera();
+        const displayGeometry = new THREE.PlaneGeometry(2, 2);
+        displayScene.add(new THREE.Mesh(displayGeometry, displayMaterial));
 
         // A real surface behind the glass makes the light bands refract through it.
         const backdropMaterial = new THREE.ShaderMaterial({
@@ -141,12 +152,8 @@ export default function GlassScene() {
           uniforms: {
             uTime: { value: 0 },
             uAspect: { value: 1 },
-            uWidth: { value: 1 },
-            uGridGap: { value: 0 },
-            uGridColumns: { value: 4 },
-            uGridColor: { value: new THREE.Color("#233845") },
             uSky: { value: new THREE.Color("#beddeb") },
-            uWarm: { value: new THREE.Color("#fff9df") },
+            uWarm: { value: new THREE.Color("#fffaf1") },
             uCool: { value: new THREE.Color("#8fbde9") },
           },
           vertexShader: `
@@ -160,36 +167,24 @@ export default function GlassScene() {
             varying vec2 vUv;
             uniform float uTime;
             uniform float uAspect;
-            uniform float uWidth;
-            uniform float uGridGap;
-            uniform float uGridColumns;
-            uniform vec3 uGridColor;
             uniform vec3 uSky;
             uniform vec3 uWarm;
             uniform vec3 uCool;
             void main() {
               vec2 uv = vUv;
               float drift = sin(uTime * 0.12) * 0.025;
-              float lane = uv.x + uv.y * 0.48 + drift;
-              float beamA = exp(-pow((lane - 0.48) / 0.095, 2.0));
-              float beamB = exp(-pow((lane - 0.98) / 0.14, 2.0));
-              float beamC = exp(-pow((lane - 1.42) / 0.065, 2.0));
+              float lane = uv.x + uv.y * 0.48 + drift
+                + sin(uv.y * 8.0 + uv.x * 5.0) * .025;
+              float beamA = exp(-pow((lane - 0.48) / 0.09, 2.0));
+              float beamB = exp(-pow((lane - 0.98) / 0.12, 2.0));
+              float beamC = exp(-pow((lane - 1.42) / 0.08, 2.0));
               float edge = smoothstep(0.0, 0.15, uv.x) * smoothstep(0.0, 0.15, 1.0 - uv.x)
                          * smoothstep(0.0, 0.16, uv.y) * smoothstep(0.0, 0.16, 1.0 - uv.y);
               float glow = exp(-dot((uv - vec2(0.55, 0.42)) * vec2(uAspect, 1.0),
                                    (uv - vec2(0.55, 0.42)) * vec2(uAspect, 1.0)) * 6.0);
               vec3 color = mix(uSky, uCool, 0.12 * edge);
-              color = mix(color, uWarm, clamp((beamA * 0.88 + beamB * 0.95 + beamC * 0.65 + glow * 0.24) * edge, 0.0, 0.95));
-              float track = (1.0 - (uGridColumns - 1.0) * uGridGap) / uGridColumns;
-              float lineDistance = 1.0;
-              for (int i = 0; i < 4; i++) {
-                if (float(i) < uGridColumns) {
-                  float left = float(i) * (track + uGridGap);
-                  lineDistance = min(lineDistance, min(abs(uv.x - left), abs(uv.x - left - track)));
-                }
-              }
-              float line = 1.0 - smoothstep(0.25 / uWidth, 1.25 / uWidth, lineDistance);
-              color = mix(color, uGridColor, line * 0.075);
+              color = mix(color, uWarm, clamp((beamA * 0.88 + beamB * 0.95 + beamC * 0.65 + glow * 0.08) * edge, 0.0, 0.95));
+              // The reference uses a separate fixed SVG grid above the scene.
               gl_FragColor = vec4(color, 1.0);
               #include <colorspace_fragment>
             }
@@ -200,21 +195,34 @@ export default function GlassScene() {
         backdrop.position.z = -5;
         scene.add(backdrop);
 
-        const material = new THREE.MeshPhysicalMaterial({
-          color: "#c7e1ff",
-          metalness: 0,
-          roughness: 0.018,
-          transmission: 1,
-          thickness: 1.3,
-          ior: 1.5,
-          dispersion: 0.06,
-          clearcoat: 0.15,
-          clearcoatRoughness: 0.025,
-          envMapIntensity: 1.1,
-          iridescence: 0.08,
-          attenuationColor: new THREE.Color("#8ab5ef"),
-          attenuationDistance: 5,
+        const material = new THREE.ShaderMaterial({
+          // The sampled backdrop is already scene-linear. Match its output curve
+          // instead of applying ACES only to the glass and lifting it to milky gray.
+          toneMapped: false,
+          vertexShader: glassVertexShader,
+          fragmentShader: glassFragmentShader,
+          uniforms: {
+            uScene: { value: refractionTarget.texture },
+            uResolution: { value: new THREE.Vector2() },
+            uLight: { value: new THREE.Vector3(4, 9, 5) },
+            uTintTop: { value: new THREE.Color("#247fe8") },
+            uTintBottom: { value: new THREE.Color("#f5f9ff") },
+          },
         });
+        const contactGroup = new THREE.Group();
+        const contactGeometry = new THREE.TorusKnotGeometry(
+          1.5,
+          0.24,
+          140,
+          24,
+          2,
+          3,
+        );
+        contactGroup.add(new THREE.Mesh(contactGeometry, material));
+        contactGroup.position.set(2.5, 0.4, 0);
+        contactGroup.scale.setScalar(1.5);
+        contactGroup.visible = false;
+        scene.add(contactGroup);
         strokes.forEach((stroke, index) => {
           const curve = new THREE.CatmullRomCurve3(
             stroke.map(
@@ -237,72 +245,154 @@ export default function GlassScene() {
             group.add(cap);
           }
         });
-        scene.add(new THREE.HemisphereLight("#e9f5ff", "#487cce", 0.7));
-        const key = new THREE.DirectionalLight("#fff9ec", 3);
-        key.position.set(-3, 5, 5);
-        scene.add(key);
-        const rim = new THREE.PointLight("#c9e6ff", 55, 30);
-        rim.position.set(5, 4, -2);
-        scene.add(rim);
         const motion = window.matchMedia("(prefers-reduced-motion: reduce)");
         const pointer = { x: 0, y: 0 };
+        const lightTarget = new THREE.Vector3();
+        let previousPointer: { x: number; y: number } | null = null;
+        let previousTime = 0;
         let frame = 0;
         let visible = true;
+        let exposed = true;
+        let contextLost = false;
+        let scrollTop = readScroll().top;
+        let viewportHeight = readScroll().height;
+        let contactVisible = false;
+        let worldHeight = 1;
         const bounds = new THREE.Box3().setFromObject(group);
         const size = bounds.getSize(new THREE.Vector3());
         const center = bounds.getCenter(new THREE.Vector3());
         const resize = () => {
           const { width, height } = element.getBoundingClientRect();
           renderer.setSize(width, height);
+          renderer.getDrawingBufferSize(material.uniforms.uResolution.value);
+          refractionTarget.setSize(
+            Math.max(1, Math.round(material.uniforms.uResolution.value.x)),
+            Math.max(1, Math.round(material.uniforms.uResolution.value.y)),
+          );
+          sceneTarget.setSize(refractionTarget.width, refractionTarget.height);
+          displayMaterial.uniforms.uResolution.value.copy(
+            material.uniforms.uResolution.value,
+          );
           camera.aspect = width / Math.max(height, 1);
           const halfFov = (camera.fov * Math.PI) / 360;
           const distance =
             (Math.max(size.y, size.x / camera.aspect) /
               (2 * Math.tan(halfFov))) *
-              1.1 +
+              1.5 +
             size.z / 2;
           camera.position.set(center.x, center.y, distance);
           camera.updateProjectionMatrix();
+          worldHeight = 2 * Math.tan(halfFov) * distance;
           backdrop.position.x = center.x;
           backdrop.position.y = center.y;
           const viewHeight =
             2 * Math.tan(halfFov) * (distance - backdrop.position.z);
           backdrop.scale.set(viewHeight * camera.aspect, viewHeight, 1);
           backdropMaterial.uniforms.uAspect.value = camera.aspect;
-          const layout = getComputedStyle(element);
-          backdropMaterial.uniforms.uWidth.value = width;
-          backdropMaterial.uniforms.uGridGap.value =
-            parseFloat(layout.getPropertyValue("--grid-gap")) / width;
-          backdropMaterial.uniforms.uGridColumns.value = parseFloat(
-            layout.getPropertyValue("--grid-count"),
-          );
         };
         const move = (event: PointerEvent) => {
+          if (event.pointerType === "touch" || motion.matches || !exposed)
+            return;
           const rect = element.getBoundingClientRect();
-          pointer.x = (event.clientX - rect.left) / rect.width - 0.5;
-          pointer.y = (event.clientY - rect.top) / rect.height - 0.5;
+          const x = (event.clientX - rect.left) / rect.width;
+          const y = 1 - (event.clientY - rect.top) / rect.height;
+          pointer.x = x - 0.5;
+          pointer.y = 0.5 - y;
+          if (previousPointer) {
+            const dx = Math.max(-0.18, Math.min(0.18, x - previousPointer.x));
+            const dy = Math.max(-0.18, Math.min(0.18, y - previousPointer.y));
+            if (Math.hypot(dx, dy) > 0.0005) {
+              for (let i = trail.length - 1; i > 0; i--) {
+                trail[i].copy(trail[i - 1]);
+                strength[i] = strength[i - 1];
+              }
+              trail[0].set(x, y, dx, dy);
+              strength[0] = 1;
+            }
+          }
+          previousPointer = { x, y };
         };
         const leave = () => {
           pointer.x = 0;
           pointer.y = 0;
+          previousPointer = null;
         };
         const render = (time: number) => {
           frame = 0;
-          if (disposed || !visible || document.hidden) return;
+          if (
+            disposed ||
+            !visible ||
+            !exposed ||
+            document.hidden ||
+            contextLost
+          )
+            return;
+          const dt = Math.min(0.1, Math.max(0, (time - previousTime) / 1000));
+          previousTime = time;
+          for (let i = 0; i < strength.length; i++)
+            strength[i] = motion.matches
+              ? 0
+              : strength[i] * Math.exp(-dt * 3.5);
+          element.dataset.pointerEnergy = Math.max(...strength).toFixed(3);
           if (!motion.matches) {
+            material.uniforms.uLight.value.lerp(
+              lightTarget.set(4 + pointer.x * 14, 9 - pointer.y * 14, 5),
+              1 - Math.exp(-8 * dt),
+            );
             backdropMaterial.uniforms.uTime.value = time * 0.001;
             group.rotation.y +=
-              (-0.14 + pointer.x * 0.32 - group.rotation.y) * 0.035;
+              (-0.14 +
+                Math.min(1, scrollTop / viewportHeight) * 1.64 +
+                pointer.x * 0.16 -
+                group.rotation.y) *
+              0.08;
             group.rotation.x +=
               (-0.12 + pointer.y * 0.18 - group.rotation.x) * 0.035;
-            group.position.y = -0.4 + Math.sin(time * 0.00065) * 0.07;
+            group.position.y =
+              -0.4 +
+              (scrollTop / viewportHeight) * worldHeight * 0.72 +
+              Math.sin(time * 0.00065) * 0.07;
+            contactGroup.rotation.set(time * 0.00008, time * 0.00015, -0.2);
+          } else {
+            leave();
+            material.uniforms.uLight.value.set(4, 9, 5);
+            group.position.y =
+              -0.4 + (scrollTop / viewportHeight) * worldHeight * 0.72;
           }
+          // Render the backdrop first, excluding the glass from its own texture.
+          group.visible = false;
+          contactGroup.visible = false;
+          renderer.setRenderTarget(refractionTarget);
           renderer.render(scene, camera);
+          group.visible = !contactVisible;
+          contactGroup.visible = contactVisible;
+          renderer.setRenderTarget(sceneTarget);
+          renderer.render(scene, camera);
+          renderer.setRenderTarget(null);
+          renderer.render(displayScene, displayCamera);
           if (!motion.matches) frame = requestAnimationFrame(render);
         };
         const resume = () => {
-          if (!frame && visible && !document.hidden)
+          if (!frame && visible && exposed && !document.hidden && !contextLost)
             frame = requestAnimationFrame(render);
+        };
+        const scroll = () => {
+          const state = readScroll();
+          scrollTop = state.top;
+          viewportHeight = state.height;
+          const heroBottom =
+            document.querySelector("[data-hero]")?.getBoundingClientRect()
+              .bottom ?? viewportHeight;
+          const footerTop =
+            document.getElementById("contact")?.getBoundingClientRect().top ??
+            viewportHeight;
+          contactVisible = footerTop < viewportHeight;
+          exposed = heroBottom > 0 || contactVisible;
+          if (!exposed) {
+            cancelAnimationFrame(frame);
+            frame = 0;
+          }
+          resume();
         };
         const observer = new IntersectionObserver(([entry]) => {
           visible = entry.isIntersecting;
@@ -318,16 +408,27 @@ export default function GlassScene() {
           resume();
         });
         resizer.observe(element);
-        element.addEventListener("pointermove", move);
-        element.addEventListener("pointerleave", leave);
+        const pointerSurface = getScrollViewport();
+        pointerSurface?.addEventListener("pointermove", move);
+        pointerSurface?.addEventListener("pointerleave", leave);
         document.addEventListener("visibilitychange", resume);
+        const unsubscribe = subscribeScroll(scroll);
         motion.addEventListener("change", resume);
         const lost = (event: Event) => {
           event.preventDefault();
+          contextLost = true;
           setReady(false);
           cancelAnimationFrame(frame);
+          frame = 0;
+        };
+        const restored = () => {
+          contextLost = false;
+          resize();
+          resume();
+          setReady(true);
         };
         renderer.domElement.addEventListener("webglcontextlost", lost);
+        renderer.domElement.addEventListener("webglcontextrestored", restored);
         resize();
         render(0);
         setReady(true);
@@ -335,11 +436,16 @@ export default function GlassScene() {
           cancelAnimationFrame(frame);
           observer.disconnect();
           resizer.disconnect();
-          element.removeEventListener("pointermove", move);
-          element.removeEventListener("pointerleave", leave);
+          pointerSurface?.removeEventListener("pointermove", move);
+          pointerSurface?.removeEventListener("pointerleave", leave);
           document.removeEventListener("visibilitychange", resume);
+          unsubscribe();
           motion.removeEventListener("change", resume);
           renderer.domElement.removeEventListener("webglcontextlost", lost);
+          renderer.domElement.removeEventListener(
+            "webglcontextrestored",
+            restored,
+          );
           const usedGeometry = new Set<
             InstanceType<typeof THREE.BufferGeometry>
           >();
@@ -348,10 +454,13 @@ export default function GlassScene() {
           });
           usedGeometry.forEach((geometry) => geometry.dispose());
           material.dispose();
+          contactGeometry.dispose();
           backdropGeometry.dispose();
           backdropMaterial.dispose();
-          environment.dispose();
-          pmrem.dispose();
+          refractionTarget.dispose();
+          sceneTarget.dispose();
+          displayMaterial.dispose();
+          displayGeometry.dispose();
           renderer.dispose();
           renderer.domElement.remove();
         };
@@ -365,7 +474,13 @@ export default function GlassScene() {
     };
   }, []);
   return (
-    <div className={styles.glassScene} ref={host} aria-hidden="true">
+    <div
+      className={styles.glassScene}
+      ref={host}
+      data-glass-scene
+      data-ready={ready}
+      aria-hidden="true"
+    >
       <span
         className={`${styles.glassFallback} ${ready ? styles.glassReady : ""}`}
       >
