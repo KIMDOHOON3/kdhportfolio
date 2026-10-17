@@ -104,12 +104,19 @@ test("hero, background transition, about and gallery remain in document flow", a
               corrections++;
             }
           }
-          return Math.abs(
-            (await page.locator(selector).evaluate((e) => e.scrollTop)) - y,
-          );
+          // Passing through the target is not the same as stopping there.
+          // Recheck after the settle window before accepting the position.
+          const beforeSettle = await page
+            .locator(selector)
+            .evaluate((e) => e.scrollTop);
+          await page.waitForTimeout(250);
+          const settled = await page
+            .locator(selector)
+            .evaluate((e) => e.scrollTop);
+          if (Math.abs(settled - beforeSettle) > 0.5) return Infinity;
+          return Math.abs(settled - y);
         })
         .toBeLessThanOrEqual(4);
-      await page.waitForTimeout(250);
       const frame = await page.evaluate((isLocal) => {
         const v = document.querySelector(
           isLocal ? "[data-scroll-viewport]" : ".lenis",

@@ -260,9 +260,9 @@ export default function GlassScene() {
             uStudio: { value: studio.texture },
             uResolution: { value: new THREE.Vector2() },
             uLight: { value: new THREE.Vector3(4, 9, 5) },
-            uTintTop: { value: new THREE.Color("#247fe8") },
-            uTintBottom: { value: new THREE.Color("#c0def9") },
-            uTintRange: { value: new THREE.Vector2(-1.3, 2.7) },
+            uTintTop: { value: new THREE.Color("#0962ec") },
+            uTintBottom: { value: new THREE.Color("#a9d4ff") },
+            uTintRange: { value: new THREE.Vector2(-1.3, 2.4) },
             uPointer: { value: new THREE.Vector2() },
             uFlow: { value: flowRead.texture },
             uMotion: { value: 1 },
@@ -274,66 +274,11 @@ export default function GlassScene() {
           fragmentShader: glassFragmentShader,
           uniforms: {
             ...material.uniforms,
+            uTintTop: { value: new THREE.Color("#247fe8") },
+            uTintBottom: { value: new THREE.Color("#c0def9") },
             uTintRange: { value: new THREE.Vector2(-0.4, 0.4) },
           },
         });
-        // Existing portfolio icons supply colored details that can actually be
-        // magnified through the glass, as opposed to a reflection painted on it.
-        const accents = new THREE.Group();
-        const accentGeometry = new THREE.PlaneGeometry(0.82, 0.82);
-        const accentResources: { dispose(): void }[] = [accentGeometry];
-        const accentSpecs = [
-          {
-            icon: "javascript",
-            color: "#f5c94e",
-            x: -4.75,
-            y: 1.55,
-            angle: -0.2,
-          },
-          {
-            icon: "typescript",
-            color: "#5790e8",
-            x: 1.6,
-            y: 1.8,
-            angle: 0.22,
-          },
-          { icon: "react", color: "#dcf2f6", x: 4.05, y: -0.64, angle: -0.15 },
-        ];
-        for (const spec of accentSpecs) {
-          const canvas = document.createElement("canvas");
-          canvas.width = 256;
-          canvas.height = 256;
-          const ctx = canvas.getContext("2d");
-          if (!ctx) continue;
-          ctx.fillStyle = spec.color;
-          ctx.beginPath();
-          ctx.roundRect(8, 8, 240, 240, 52);
-          ctx.fill();
-          ctx.strokeStyle = "rgba(255,255,255,0.8)";
-          ctx.lineWidth = 5;
-          ctx.stroke();
-          const texture = new THREE.CanvasTexture(canvas);
-          texture.colorSpace = THREE.SRGBColorSpace;
-          const icon = new window.Image();
-          icon.onload = () => {
-            if (disposed) return;
-            ctx.drawImage(icon, 52, 52, 152, 152);
-            texture.needsUpdate = true;
-          };
-          icon.src = `/icons/${spec.icon}.svg`;
-          const surface = new THREE.MeshBasicMaterial({
-            map: texture,
-            transparent: true,
-            depthWrite: false,
-            toneMapped: false,
-          });
-          const mesh = new THREE.Mesh(accentGeometry, surface);
-          mesh.position.set(spec.x, spec.y, -0.72);
-          mesh.rotation.z = spec.angle;
-          accents.add(mesh);
-          accentResources.push(texture, surface);
-        }
-        scene.add(accents);
         strokes.forEach((stroke, index) => {
           const curve = new THREE.CatmullRomCurve3(
             stroke.map(
@@ -474,9 +419,9 @@ export default function GlassScene() {
           const frameHeight = Math.max(64, frameBottom - frameTop);
           const fitHeight = framed
             ? ((size.y * height) / frameHeight) * 1.12
-            : size.y * 1.5;
+            : size.y * 1.4;
           const distance =
-            Math.max(fitHeight, (size.x / camera.aspect) * 1.5) /
+            Math.max(fitHeight, (size.x / camera.aspect) * 1.32) /
               (2 * Math.tan(halfFov)) +
             size.z / 2;
           camera.position.set(center.x, center.y, distance);
@@ -596,10 +541,6 @@ export default function GlassScene() {
               (scrollTop / viewportHeight) * worldHeight * 0.72;
           }
           // Render the backdrop first, excluding the glass from its own texture.
-          accents.visible = !contactVisible;
-          accents.position.copy(group.position);
-          accents.rotation.copy(group.rotation);
-          accents.scale.copy(group.scale);
           group.visible = false;
           footerGroup.visible = false;
           renderer.setRenderTarget(refractionTarget);
@@ -807,7 +748,6 @@ export default function GlassScene() {
           flareMaterial.dispose();
           flareTarget.dispose();
           flowProjection.dispose();
-          accentResources.forEach((resource) => resource.dispose());
           studio.dispose();
           backdropGeometry.dispose();
           backdropMaterial.dispose();
