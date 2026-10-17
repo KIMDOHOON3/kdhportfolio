@@ -418,10 +418,10 @@ export default function GlassScene() {
           const frameBottom = framed ? linkTop - heroTop - 16 : height;
           const frameHeight = Math.max(64, frameBottom - frameTop);
           const fitHeight = framed
-            ? ((size.y * height) / frameHeight) * 1.12
-            : size.y * 1.4;
+            ? ((size.y * height) / frameHeight) * 1.35
+            : size.y * 1.75;
           const distance =
-            Math.max(fitHeight, (size.x / camera.aspect) * 1.32) /
+            Math.max(fitHeight, (size.x / camera.aspect) * 1.7) /
               (2 * Math.tan(halfFov)) +
             size.z / 2;
           camera.position.set(center.x, center.y, distance);

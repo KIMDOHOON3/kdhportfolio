@@ -91,12 +91,12 @@ export const glassFragmentShader = `
     // reflection to white. A separate sharp glint retains HDR glare.
     studio = studio / (vec3(1.0) + studio * 0.55);
     color = mix(color, studio, 0.015 + fresnel * 0.22);
-    float strip = reflectedStrip(reflected, vec3(-0.32, 0.50, 0.82), vec3(-0.14, 1.0, 0.0), 0.045, 1.6);
-    float stripShoulder = reflectedStrip(reflected, vec3(-0.32, 0.50, 0.82), vec3(-0.14, 1.0, 0.0), 0.11, 1.6);
-    float fillStrip = reflectedStrip(reflected, vec3(0.72, -0.22, 0.65), vec3(0.22, 1.0, 0.0), 0.025, 1.5);
+    float strip = reflectedStrip(reflected, vec3(-0.32, 0.50, 0.82), vec3(-0.14, 1.0, 0.0), 0.055, 0.95);
+    float stripShoulder = reflectedStrip(reflected, vec3(-0.32, 0.50, 0.82), vec3(-0.14, 1.0, 0.0), 0.15, 1.15);
+    float fillStrip = reflectedStrip(reflected, vec3(0.72, -0.22, 0.65), vec3(0.22, 1.0, 0.0), 0.03, 0.9);
     float rim = pow(max(dot(reflected, normalize(vec3(0.75, 0.25, 0.6))), 0.0), 160.0);
-    color += vec3(1.0, 0.98, 0.93) * (specular + strip * 1.10 + stripShoulder * 0.10);
-    color += vec3(0.68, 0.84, 1.0) * (fillStrip * 0.25 + rim * 0.18 + fresnel * side * 0.08);
+    color += vec3(1.0, 0.98, 0.93) * (specular + strip * 0.60 + stripShoulder * 0.16);
+    color += vec3(0.68, 0.84, 1.0) * (fillStrip * 0.12 + rim * 0.18 + fresnel * side * 0.08);
     gl_FragColor = vec4(color, 1.0);
     #include <colorspace_fragment>
   }

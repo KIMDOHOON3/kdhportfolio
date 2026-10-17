@@ -58,7 +58,9 @@ if (!Number.isFinite(radius) || radius <= 0)
   throw new Error("Radius must be positive.");
 const letterSpacing = 0.72;
 const blend = 0.1;
-const resolution = 192;
+const resolution = 256;
+const smoothingPasses = 3;
+const maxPolygons = 200000;
 const samples = 180;
 // Preserve the original baseline/endpoints, but open the tight handwritten
 // counters before inflating the curves. Thicker tubing alone fills these eyes.
@@ -106,7 +108,7 @@ const marcher = new MarchingCubes(
   new THREE.MeshStandardMaterial(),
   false,
   false,
-  100000,
+  maxPolygons,
 );
 marcher.isolation = 0;
 marcher.field.fill(-1);
@@ -209,9 +211,28 @@ for (const maximum of [true, false]) {
     filtered = next;
   }
 }
+// Closing seals tiny gaps but its axis-aligned extrema can leave ridges in
+// reflections. Filter the scalar surface before extraction, so both geometry
+// and its gradient normals describe the same rounded, continuous surface.
+for (let pass = 0; pass < smoothingPasses; pass++) {
+  for (const stride of [1, resolution, size2]) {
+    const next = filtered.slice();
+    for (let z = 1; z < resolution - 1; z++) {
+      for (let y = 1; y < resolution - 1; y++) {
+        let i = z * size2 + y * resolution + 1;
+        for (let x = 1; x < resolution - 1; x++, i++) {
+          next[i] =
+            (filtered[i - stride] + 2 * filtered[i] + filtered[i + stride]) *
+            0.25;
+        }
+      }
+    }
+    filtered = next;
+  }
+}
 marcher.field.set(filtered);
 marcher.update();
-if (marcher.count / 3 >= 100000)
+if (marcher.count / 3 >= maxPolygons)
   throw new Error("Marching cubes buffer limit reached.");
 
 const raw = new THREE.BufferGeometry();
@@ -366,6 +387,7 @@ console.log(
     {
       output: output.pathname,
       resolution,
+      smoothingPasses,
       samples,
       radius,
       letterSpacing,
