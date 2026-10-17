@@ -1810,7 +1810,12 @@ $label: "Paperlogy-Medium", "Pretendard-Regular", sans-serif;
 .sketchFill,
 .sketchCursor {
   opacity: 0;
-  transition: opacity 0.6s 0.8s ease;
+  transition: opacity 0.6s 1.9s ease;
+}
+.sketchClick,
+.sketchChartFocus,
+.sketchStatus {
+  opacity: 0;
 }
 .interfaceSketch[data-drawn="true"] {
   .sketchStroke > * {
@@ -1821,20 +1826,144 @@ $label: "Paperlogy-Medium", "Pretendard-Regular", sans-serif;
     opacity: 1;
   }
   .sketchCursor {
-    animation: sketchCursorMove 2s 0.8s ease both;
+    animation: sketchCursorTour 8s 2.2s ease-in-out infinite both;
+  }
+  .sketchButton {
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: sketchButtonPress 8s 2.2s ease-in-out infinite both;
+  }
+  .sketchClick {
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: sketchClickRipple 8s 2.2s ease-out infinite both;
+  }
+  .sketchChartFocus {
+    animation: sketchChartFocus 8s 2.2s ease-in-out infinite both;
+  }
+  .sketchChart {
+    animation: sketchChartResponse 8s 2.2s ease-in-out infinite both;
+  }
+  .sketchStatus {
+    animation: sketchStatusResponse 8s 2.2s ease-in-out infinite both;
   }
 }
-@keyframes sketchCursorMove {
-  from {
-    transform: translate(35px, 30px);
+.interfaceSketch[data-active="false"] .sketchLoop {
+  animation-play-state: paused;
+}
+@keyframes sketchCursorTour {
+  0%,
+  100% {
+    transform: translate(352px, 153px);
   }
-  to {
-    transform: translate(-34px, 0);
+  14%,
+  22% {
+    transform: translate(205px, 183px);
+  }
+  18% {
+    transform: translate(205px, 185px) scale(0.88);
+  }
+  35%,
+  44% {
+    transform: translate(243px, 268px);
+  }
+  40% {
+    transform: translate(243px, 270px) scale(0.88);
+  }
+  58%,
+  66% {
+    transform: translate(348px, 296px);
+  }
+  62% {
+    transform: translate(348px, 298px) scale(0.88);
+  }
+  80%,
+  88% {
+    transform: translate(79px, 145px);
+  }
+  84% {
+    transform: translate(79px, 147px) scale(0.88);
+  }
+}
+@keyframes sketchButtonPress {
+  0%,
+  14%,
+  24%,
+  100% {
+    transform: scale(1);
+    fill: #4b74b1;
+  }
+  18% {
+    transform: scale(0.92);
+    fill: #294f89;
+  }
+}
+@keyframes sketchClickRipple {
+  0%,
+  14% {
+    opacity: 0;
+    transform: scale(0.45);
+  }
+  18% {
+    opacity: 0.65;
+    transform: scale(0.6);
+  }
+  28%,
+  100% {
+    opacity: 0;
+    transform: scale(2.1);
+  }
+}
+@keyframes sketchChartFocus {
+  0%,
+  32%,
+  55%,
+  100% {
+    opacity: 0;
+  }
+  40%,
+  47% {
+    opacity: 0.85;
+  }
+}
+@keyframes sketchChartResponse {
+  0%,
+  32%,
+  55%,
+  100% {
+    stroke-width: 3;
+  }
+  40%,
+  47% {
+    stroke-width: 4.5;
+  }
+}
+@keyframes sketchStatusResponse {
+  0%,
+  57%,
+  90%,
+  100% {
+    opacity: 0;
+  }
+  64%,
+  80% {
+    opacity: 0.9;
   }
 }
 .aboutPortrait {
-  align-self: center;
+  align-self: start;
   grid-column: 1 / 5;
+}
+.aboutText > p:last-child {
+  margin-bottom: 0;
+}
+@media (prefers-reduced-motion: reduce) {
+  .interfaceSketch .sketchLoop {
+    animation: none !important;
+  }
+  .interfaceSketch .sketchCursor {
+    transform: translate(205px, 183px);
+  }
 }
 .aboutCoordinates {
   display: block;

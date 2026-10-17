@@ -8,26 +8,36 @@ export default function InterfaceSketch() {
   useEffect(() => {
     const svg = ref.current;
     if (!svg) return;
+    let inView = false;
+    const updatePlayback = () => {
+      svg.dataset.active = String(inView && !document.hidden);
+    };
     const observer = new IntersectionObserver(
       ([entry]) => {
+        inView = entry.isIntersecting;
         if (entry.isIntersecting) {
           svg.dataset.drawn = "true";
-          observer.disconnect();
         }
+        updatePlayback();
       },
       { threshold: 0.3 },
     );
     observer.observe(svg);
-    return () => observer.disconnect();
+    document.addEventListener("visibilitychange", updatePlayback);
+    return () => {
+      observer.disconnect();
+      document.removeEventListener("visibilitychange", updatePlayback);
+    };
   }, []);
   return (
     <svg
       ref={ref}
-      viewBox="0 0 480 400"
+      viewBox="20 32 440 326"
       className={styles.interfaceSketch}
       role="img"
-      aria-label="선과 면이 차례로 그려지는 웹 인터페이스"
+      aria-label="선이 그려진 뒤 커서가 버튼과 카드를 선택하는 웹 인터페이스"
       data-interface-sketch
+      data-active="false"
     >
       <g
         className={styles.sketchStroke}
@@ -73,6 +83,15 @@ export default function InterfaceSketch() {
         />
       </g>
       <g className={styles.sketchFill}>
+        <rect
+          className={`${styles.sketchChartFocus} ${styles.sketchLoop}`}
+          x="154"
+          y="232"
+          width="126"
+          height="88"
+          rx="5"
+          fill="#d9e6f3"
+        />
         <circle cx="45" cy="61" r="3" fill="currentColor" />
         <circle cx="57" cy="61" r="3" fill="currentColor" opacity=".45" />
         <circle cx="69" cy="61" r="3" fill="currentColor" opacity=".2" />
@@ -105,8 +124,17 @@ export default function InterfaceSketch() {
           fill="#6686a5"
           opacity=".3"
         />
-        <rect x="173" y="179" width="58" height="13" rx="6.5" fill="#4b74b1" />
+        <rect
+          className={`${styles.sketchButton} ${styles.sketchLoop}`}
+          x="173"
+          y="179"
+          width="58"
+          height="13"
+          rx="6.5"
+          fill="#4b74b1"
+        />
         <path
+          className={`${styles.sketchChart} ${styles.sketchLoop}`}
           d="M171 286L191 268L210 279L236 251L262 262"
           fill="none"
           stroke="#4b74b1"
@@ -142,10 +170,28 @@ export default function InterfaceSketch() {
           opacity=".15"
         />
         <rect x="321" y="294" width="49" height="10" rx="5" fill="#d9e6f3" />
+        <rect
+          className={`${styles.sketchStatus} ${styles.sketchLoop}`}
+          x="321"
+          y="294"
+          width="49"
+          height="10"
+          rx="5"
+          fill="#4b74b1"
+        />
       </g>
+      <circle
+        className={`${styles.sketchClick} ${styles.sketchLoop}`}
+        cx="205"
+        cy="185"
+        r="12"
+        fill="none"
+        stroke="#4b74b1"
+        strokeWidth="1.5"
+      />
       <path
-        className={styles.sketchCursor}
-        d="M265 173L271 206L279 195L293 193Z"
+        className={`${styles.sketchCursor} ${styles.sketchLoop}`}
+        d="M0 0L6 33L14 22L28 20Z"
         fill="#4b74b1"
         stroke="#fbfaf4"
         strokeWidth="2"
