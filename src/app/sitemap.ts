@@ -3,7 +3,7 @@ import { portfolioProjects as projects } from "./data/portfolio";
 
 export default function sitemap(): MetadataRoute.Sitemap {
   // 기본 URL
-  const baseUrl = "https://kdhportfolio.vercel.app";
+  const baseUrl = "https://kdhportfolio-omega.vercel.app";
 
   // 정적 경로
   const staticRoutes = [

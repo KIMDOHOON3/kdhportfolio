@@ -2005,3 +2005,60 @@ $label: "Paperlogy-Medium", "Pretendard-Regular", sans-serif;
     }
   }
 }
+
+// A readable closing message replaces the unrelated glass knot.
+.footer .contactMain {
+  flex-direction: column;
+  justify-content: center;
+  text-align: center;
+  gap: 0;
+}
+.footer .contactMain .thankYou,
+:global([data-home="true"]) .footer .contactMain .thankYou {
+  display: flex;
+  justify-content: center;
+  gap: 0.22em;
+  font: 400 clamp(64px, 12.5vw, 168px) / 1.05 $display;
+  letter-spacing: -0.045em;
+  color: $ink;
+}
+.contactThanks {
+  margin-top: 20px;
+  font: 16px/1.8 $sans;
+  letter-spacing: -0.015em;
+}
+.footer .contactLinks {
+  justify-content: center;
+}
+:global([data-home="true"]) .footer .contactMain {
+  padding-block: 24px;
+}
+@media (max-width: 760px) and (min-height: 601px) {
+  .footer .contactMain .thankYou,
+  :global([data-home="true"]) .footer .contactMain .thankYou {
+    flex-direction: column;
+    gap: 0;
+    font-size: clamp(64px, 19vw, 112px);
+    line-height: 0.98;
+  }
+  .contactThanks {
+    font-size: 15px;
+  }
+  .footer .contactLinks {
+    gap: 12px 22px;
+  }
+}
+@media (max-height: 600px) {
+  :global([data-home="true"]) .footer .contactMain {
+    padding-block: 12px;
+  }
+  .footer .contactMain .thankYou,
+  :global([data-home="true"]) .footer .contactMain .thankYou {
+    font-size: clamp(36px, 11vh, 60px);
+  }
+  .contactThanks {
+    margin-top: 10px;
+    font-size: 12px;
+    line-height: 1.6;
+  }
+}

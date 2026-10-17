@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import styles from "./Portfolio.module.scss";
 import { glassVertexShader, glassFragmentShader } from "./glassShaders";
 import { pointerRefractionShader } from "./pointerRefractionShader";
+import { createStudioEnvironment } from "./studioEnvironment";
 import {
   readScroll,
   subscribeScroll,
@@ -106,6 +107,7 @@ export default function GlassScene() {
         renderer.toneMappingExposure = 1.1;
         renderer.setClearColor("#beddeb", 1);
         element.appendChild(renderer.domElement);
+        let studio = createStudioEnvironment(THREE, renderer);
         const scene = new THREE.Scene();
         const camera = new THREE.PerspectiveCamera(32, 1, 0.1, 100);
         camera.position.set(0, 0, 17);
@@ -203,26 +205,13 @@ export default function GlassScene() {
           fragmentShader: glassFragmentShader,
           uniforms: {
             uScene: { value: refractionTarget.texture },
+            uStudio: { value: studio.texture },
             uResolution: { value: new THREE.Vector2() },
             uLight: { value: new THREE.Vector3(4, 9, 5) },
             uTintTop: { value: new THREE.Color("#247fe8") },
             uTintBottom: { value: new THREE.Color("#f5f9ff") },
           },
         });
-        const contactGroup = new THREE.Group();
-        const contactGeometry = new THREE.TorusKnotGeometry(
-          1.5,
-          0.24,
-          140,
-          24,
-          2,
-          3,
-        );
-        contactGroup.add(new THREE.Mesh(contactGeometry, material));
-        contactGroup.position.set(2.5, 0.4, 0);
-        contactGroup.scale.setScalar(1.5);
-        contactGroup.visible = false;
-        scene.add(contactGroup);
         strokes.forEach((stroke, index) => {
           const curve = new THREE.CatmullRomCurve3(
             stroke.map(
@@ -352,7 +341,6 @@ export default function GlassScene() {
               -0.4 +
               (scrollTop / viewportHeight) * worldHeight * 0.72 +
               Math.sin(time * 0.00065) * 0.07;
-            contactGroup.rotation.set(time * 0.00008, time * 0.00015, -0.2);
           } else {
             leave();
             material.uniforms.uLight.value.set(4, 9, 5);
@@ -361,11 +349,12 @@ export default function GlassScene() {
           }
           // Render the backdrop first, excluding the glass from its own texture.
           group.visible = false;
-          contactGroup.visible = false;
           renderer.setRenderTarget(refractionTarget);
           renderer.render(scene, camera);
           group.visible = !contactVisible;
-          contactGroup.visible = contactVisible;
+          element.dataset.scene = contactVisible
+            ? "footer-background"
+            : "hello";
           renderer.setRenderTarget(sceneTarget);
           renderer.render(scene, camera);
           renderer.setRenderTarget(null);
@@ -423,6 +412,10 @@ export default function GlassScene() {
         };
         const restored = () => {
           contextLost = false;
+          // Render-target contents do not survive WebGL context loss.
+          studio.dispose();
+          studio = createStudioEnvironment(THREE, renderer);
+          material.uniforms.uStudio.value = studio.texture;
           resize();
           resume();
           setReady(true);
@@ -454,7 +447,7 @@ export default function GlassScene() {
           });
           usedGeometry.forEach((geometry) => geometry.dispose());
           material.dispose();
-          contactGeometry.dispose();
+          studio.dispose();
           backdropGeometry.dispose();
           backdropMaterial.dispose();
           refractionTarget.dispose();
@@ -479,6 +472,7 @@ export default function GlassScene() {
       ref={host}
       data-glass-scene
       data-ready={ready}
+      data-lighting="studio-environment"
       aria-hidden="true"
     >
       <span

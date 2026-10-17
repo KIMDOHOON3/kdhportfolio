@@ -77,22 +77,14 @@ export function PortfolioFooter() {
         <span>함께할 다음 이야기를 기다립니다.</span>
       </div>
       <div className={styles.contactMain}>
-        <h2>
-          함께 만들
-          <br />
-          다음 <i>경험.</i>
+        <h2 className={styles.thankYou} lang="en" data-footer-thanks>
+          <span>THANK</span> <span>YOU</span>
         </h2>
-        <a
-          className={styles.contactArrow}
-          href="mailto:kingyska@nate.com"
-          aria-label="김도훈에게 이메일 보내기"
-        >
-          <MailIcon
-            className={styles.actionIcon}
-            fill="currentColor"
-            aria-hidden="true"
-          />
-        </a>
+        <p className={styles.contactThanks}>
+          포트폴리오를 봐주셔서 감사합니다.
+          <br />
+          함께 만들 다음 경험을 기다립니다.
+        </p>
       </div>
       <div className={styles.contactLinks}>
         <a href="mailto:kingyska@nate.com">

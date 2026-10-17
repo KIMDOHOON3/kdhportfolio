@@ -6,7 +6,7 @@ export default function JsonLd() {
     "@type": "Person",
     name: "김도훈",
     jobTitle: "프론트엔드 개발자",
-    url: "https://kdhportfolio.vercel.app/",
+    url: "https://kdhportfolio-omega.vercel.app/",
     sameAs: ["https://github.com/KIMDOHOON3"],
     description:
       "섬세한 인터랙션과 견고한 코드로 기억에 남는 웹 경험을 만듭니다.",
@@ -23,7 +23,7 @@ export default function JsonLd() {
       "@type": "CreativeWork",
       name: `${project.title} — ${project.subtitle}`,
       description: project.description,
-      url: `https://kdhportfolio.vercel.app/work/${project.id}`,
+      url: `https://kdhportfolio-omega.vercel.app/work/${project.id}`,
     })),
   };
   return (

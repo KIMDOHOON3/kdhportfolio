@@ -9,7 +9,10 @@ import Script from "next/script";
 import ScrollViewport from "./components/portfolio/ScrollViewport";
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://kdhportfolio.vercel.app"),
+  metadataBase: new URL("https://kdhportfolio-omega.vercel.app"),
+  other: {
+    "portfolio-revision": process.env.VERCEL_GIT_COMMIT_SHA ?? "local",
+  },
   title: "김도훈 — 프론트엔드 개발자",
   description:
     "섬세한 인터랙션과 견고한 코드로 기억에 남는 웹 경험을 만드는 프론트엔드 개발자 김도훈의 포트폴리오.",
@@ -23,11 +26,11 @@ export const metadata: Metadata = {
       "항상 도전하고 성장해나가는 삶을 추구하는 프론트엔드 개발자 입니다.",
     images: [
       {
-        url: "https://kdhportfolio.vercel.app/meta/sum-logo.jpg",
+        url: "https://kdhportfolio-omega.vercel.app/meta/sum-logo.jpg",
         alt: "프론트엔드 개발자 김도훈 포트폴리오",
       },
     ],
-    url: "https://kdhportfolio.vercel.app/",
+    url: "https://kdhportfolio-omega.vercel.app/",
   },
   icons: {
     icon: "/favicon.ico",

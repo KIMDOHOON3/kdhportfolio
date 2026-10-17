@@ -1,7 +1,7 @@
 # 프론트엔드 개발자 김도훈 포트폴리오
 
-[![Website](https://img.shields.io/badge/웹사이트-kdhportfolio.vercel.app-blue)](https://kdhportfolio.vercel.app/)
-[![GitHub](https://img.shields.io/badge/GitHub-kimdohoon2-green)](https://github.com/kimdohoon2)
+[![Website](https://img.shields.io/badge/웹사이트-kdhportfolio--omega.vercel.app-blue)](https://kdhportfolio-omega.vercel.app/)
+[![GitHub](https://img.shields.io/badge/GitHub-KIMDOHOON3-green)](https://github.com/KIMDOHOON3)
 
 ## 프로젝트 소개
 

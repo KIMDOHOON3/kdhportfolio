@@ -33,14 +33,27 @@ async function wheelTo(
     navigator.maxTouchPoints > 0 ? devicePixelRatio : 1,
   );
   await page.mouse.wheel(0, (target - top) * inputScale);
+  let corrections = 0;
   await expect
-    .poll(async () =>
-      Math.abs(
-        (await page
+    .poll(async () => {
+      let actual = await page
+        .locator(selector)
+        .evaluate((element) => element.scrollTop);
+      if (Math.abs(actual - target) > 4 && corrections < 3) {
+        // A prior wheel can still have a fractional Lenis target. Wait for it
+        // to settle before applying a small real wheel correction, as in the
+        // document-flow comparison; do not loosen transition assertions.
+        await page.waitForTimeout(750);
+        actual = await page
           .locator(selector)
-          .evaluate((element) => element.scrollTop)) - target,
-      ),
-    )
+          .evaluate((element) => element.scrollTop);
+        if (Math.abs(actual - target) > 4) {
+          await page.mouse.wheel(0, (target - actual) * inputScale);
+          corrections++;
+        }
+      }
+      return Math.abs(actual - target);
+    })
     .toBeLessThanOrEqual(4);
 }
 

@@ -15,6 +15,7 @@ export const glassVertexShader = `
 
 export const glassFragmentShader = `
   uniform sampler2D uScene;
+  uniform samplerCube uStudio;
   uniform vec2 uResolution;
   uniform vec3 uLight;
   uniform vec3 uTintTop;
@@ -41,22 +42,25 @@ export const glassFragmentShader = `
     );
     float gradient = smoothstep(-1.6, 3.1, vHeight);
     vec3 tint = mix(uTintBottom, uTintTop, gradient);
-    // Keep the face nearly clear; concentrate the blue absorption at the rim.
+    // A clear face still needs blue absorption and an environment reflection
+    // to describe the inflated volume instead of disappearing into the backdrop.
     float edge = pow(1.0 - facing, 2.0);
-    vec3 color = transmitted * mix(vec3(1.0), tint, 0.035 + edge * 0.18);
+    vec3 color = transmitted * mix(vec3(1.0), tint, 0.08 + gradient * 0.24 + edge * 0.12);
 
     vec3 light = normalize(uLight - vWorldPosition);
     vec3 halfway = normalize(light + view);
-    float specular = pow(max(dot(normal, halfway), 0.0), 360.0);
-    float fresnel = 0.04 + 0.96 * pow(1.0 - facing, 5.0);
+    float specular = pow(max(dot(normal, halfway), 0.0), 180.0);
+    float fresnel = 0.055 + 0.945 * pow(1.0 - facing, 4.0);
     color *= 1.0 - edge * 0.035;
     float side = smoothstep(-0.5, 0.7, dot(normal, normalize(vec3(-1.0, 1.0, 1.0))));
     // Narrow studio reflections leave the transmitted background readable.
     vec3 reflected = reflect(-view, normal);
+    vec3 studio = textureCube(uStudio, reflected).rgb;
+    color = mix(color, studio, fresnel * 0.78);
     float strip = pow(max(dot(reflected, normalize(vec3(-0.35, 0.8, 0.5))), 0.0), 240.0);
     float rim = pow(max(dot(reflected, normalize(vec3(0.75, 0.25, 0.6))), 0.0), 300.0);
     float ceiling = pow(max(dot(reflected, normalize(vec3(0.1, 0.97, -0.2))), 0.0), 150.0);
-    color += vec3(1.0, 0.99, 0.96) * (specular * 3.0 + strip * 1.25 + ceiling * 0.7);
+    color += vec3(1.0, 0.99, 0.96) * (specular * 1.8 + strip * 0.75 + ceiling * 0.5);
     color += vec3(0.75, 0.88, 1.0) * (rim * 0.85 + fresnel * side * 0.25);
     gl_FragColor = vec4(color, 1.0);
     #include <colorspace_fragment>
