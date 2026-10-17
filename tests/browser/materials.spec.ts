@@ -67,7 +67,6 @@ async function lightDifference(
 
 test("hero: pointer bends light, settles and preserves touch/reduced motion", async ({
   page,
-  context,
 }, info) => {
   const errors: string[] = [];
   page.on("pageerror", (error) => errors.push(error.message));
@@ -91,7 +90,7 @@ test("hero: pointer bends light, settles and preserves touch/reduced motion", as
       );
       await expect(p.locator("[data-glass-scene]")).toHaveAttribute(
         "data-hello-geometry",
-        "glass-mesh",
+        "ofl-lettering",
       );
       await expect(p.locator("[data-story-backdrop]")).toHaveAttribute(
         "data-ready",

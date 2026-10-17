@@ -35,7 +35,7 @@ export const subscribeScroll = (listener: (state: ScrollSnapshot) => void) => {
   };
 };
 
-/** The reference's single native overflow container, driven by Lenis at lerp .1. */
+/** Shared native overflow container with Lenis smoothing. */
 export default function ScrollViewport({ children }: { children: ReactNode }) {
   const viewport = useRef<HTMLDivElement>(null);
   const content = useRef<HTMLDivElement>(null);

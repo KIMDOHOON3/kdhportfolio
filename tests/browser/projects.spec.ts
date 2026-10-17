@@ -10,9 +10,8 @@ test("one Lexus project retains renewal and operations details", async ({
   const gallery = page.locator("#work");
   await expect(gallery.locator("article")).toHaveCount(4);
   await expect(gallery.locator("[data-work-cover-mockup]")).toHaveCount(2);
-  await expect.poll(() => gallery.locator('[data-work-cover-mockup] img').evaluateAll(
-    images => images.length === 4 && images.every(image => (image as HTMLImageElement).complete && (image as HTMLImageElement).naturalWidth > 0),
-  )).toBe(true);
+  await expect(gallery.locator('[data-work-cover-mockup] [data-project-screen]')).toHaveCount(4);
+  await expect(gallery.locator('[data-work-cover-mockup] img')).toHaveCount(0);
   await expect(gallery.locator('img[src*="lexus-renewal"], img[src*="kia-worldwide"]')).toHaveCount(0);
   if (page.viewportSize()!.width > 760) {
     const cards = await gallery.locator("article").evaluateAll((elements) =>

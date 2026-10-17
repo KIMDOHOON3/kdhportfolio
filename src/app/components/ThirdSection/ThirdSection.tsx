@@ -2,7 +2,7 @@
 
 import styles from "@/app/components/ThirdSection/ThirdSection.module.scss";
 import Image from "next/image";
-import profile from "/public/about/profile.png";
+const profile = "/about/profile.svg";
 import Meteor from "@/app/components/Meteor";
 import SkillContainer from "@/app/components/SkillContainer";
 import { useEffect, useRef } from "react";

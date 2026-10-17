@@ -63,71 +63,48 @@ button {
   font-style: normal;
   font-weight: 400;
   font-display: swap;
-  src: url("/font/Pacifico-Footer.woff2") format("woff2");
+  src: url("/font/Pacifico-Regular.ttf") format("truetype");
 }
 
 @font-face {
   font-family: "Pretendard-Regular";
   font-style: normal;
   font-display: swap;
-  src:
-    local(※),
-    url("/font/Pretendard-Regular.eot") format("embedded-opentype"),
-    url("/font/Pretendard-Regular.woff") format("woff"),
-    url("/font/Pretendard-Regular.woff2") format("woff2");
+  src: url("/font/Pretendard-Regular.woff2") format("woff2");
 }
 
 @font-face {
   font-family: "Pretendard-Bold";
   font-style: normal;
   font-display: swap;
-  src:
-    local(※),
-    url("/font/Pretendard-Bold.eot") format("embedded-opentype"),
-    url("/font/Pretendard-Bold.woff") format("woff"),
-    url("/font/Pretendard-Bold.woff2") format("woff2");
+  src: url("/font/Pretendard-Bold.woff2") format("woff2");
 }
 
 @font-face {
-  font-family: "NewYork";
+  font-family: "BodoniModa";
   font-style: normal;
+  font-weight: 400;
   font-display: swap;
-  src:
-    local(※),
-    url("/font/NewYork.eot") format("embedded-opentype"),
-    url("/font/NewYork.woff") format("woff"),
-    url("/font/NewYork.woff2") format("woff2");
+  src: url("/font/BodoniModa-Regular.ttf") format("truetype");
 }
 
 @font-face {
   font-family: "Paperlogy-Regular";
   font-style: normal;
   font-display: swap;
-  src:
-    local(※),
-    url("/font/Paperlogy-4Regular.eot") format("embedded-opentype"),
-    url("/font/Paperlogy-4Regular.woff") format("woff"),
-    url("/font/Paperlogy-4Regular.woff2") format("woff2");
+  src: url("/font/Paperlogy-4Regular.woff2") format("woff2");
 }
 
 @font-face {
   font-family: "Paperlogy-Medium";
   font-style: normal;
   font-display: swap;
-  src:
-    local(※),
-    url("/font/Paperlogy-5Medium.eot") format("embedded-opentype"),
-    url("/font/Paperlogy-5Medium.woff") format("woff"),
-    url("/font/Paperlogy-5Medium.woff2") format("woff2");
+  src: url("/font/Paperlogy-5Medium.woff2") format("woff2");
 }
 
 @font-face {
   font-family: "Paperlogy-Bold";
   font-style: normal;
   font-display: swap;
-  src:
-    local(※),
-    url("/font/Paperlogy-7Bold.eot") format("embedded-opentype"),
-    url("/font/Paperlogy-7Bold.woff") format("woff"),
-    url("/font/Paperlogy-7Bold.woff2") format("woff2");
+  src: url("/font/Paperlogy-7Bold.woff2") format("woff2");
 }

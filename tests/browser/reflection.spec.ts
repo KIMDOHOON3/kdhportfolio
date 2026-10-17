@@ -7,7 +7,7 @@ test("rounded thank-you glass has visible cursor response and a clean mobile lay
   await page.evaluate(() => document.fonts.ready);
   const scene = page.locator("[data-glass-scene]");
   const heading = page.locator("[data-footer-thanks]");
-  await expect(scene).toHaveAttribute("data-footer-geometry", "glass-path");
+  await expect(scene).toHaveAttribute("data-footer-geometry", "ofl-lettering");
   await expect(heading).toHaveAttribute("data-glass-ready", "true");
   await expect(scene).toHaveAttribute("data-scene", "thank-you");
   const { width, height } = page.viewportSize()!;

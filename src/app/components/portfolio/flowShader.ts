@@ -1,5 +1,4 @@
-// Persistent, advected cursor velocity. This is a small flow map, not a claim
-// to reproduce the reference's private fluid simulation.
+// Project-authored persistent, advected cursor velocity in a small flow map.
 export const flowFragmentShader = `
   uniform sampler2D uPrevious;
   uniform vec2 uTexel;

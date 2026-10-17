@@ -9,8 +9,8 @@ export const projects: Project[] = [
     tech: "기술 스택 : Next.js, TypeScript, Tailwind CSS, React Query, Zustand",
     siteLink: "https://koreantrip.vercel.app/",
     gitLink: "https://github.com/kimdohoon2/trip",
-    imgSrc: "/work/bg/1_1.jpg",
-    bgSrc: "/work/bg/1.jpg",
+    imgSrc: "/projects/archive-cover.svg",
+    bgSrc: "/projects/archive-cover.svg",
     detailInfo: {
       projectType: "개인 프로젝트",
       time: "2024.12 ~ 2025.04",
@@ -85,8 +85,8 @@ export const projects: Project[] = [
     tech: "기술 스택 : Next.js, TypeScript, Tailwind css, React-Query, Redux",
     siteLink: "https://team8-coworkers.vercel.app/",
     gitLink: "https://github.com/codeit-sprint-FE11-part4-8team/coworkers",
-    imgSrc: "/work/bg/2_1.jpg",
-    bgSrc: "/work/bg/2.jpg",
+    imgSrc: "/projects/archive-cover.svg",
+    bgSrc: "/projects/archive-cover.svg",
     detailInfo: {
       projectType: "팀 프로젝트",
       time: "2024.12 ~ 2025.02",
@@ -157,14 +157,14 @@ export const projects: Project[] = [
       "감성적인 디자인과 직관적인 UI로 숙박업 예약과 정보를 편리하게 제공하는 웹사이트입니다.",
     tech: "기술 스택 : HTML5, CSS3, JAVASCRIPT, JQUERY, GSAP, PHP",
     siteLink: "http://www.5th-season.co.kr/html/index.html",
-    imgSrc: "/work/bg/3_1.jpg",
-    bgSrc: "/work/bg/3.jpg",
+    imgSrc: "/projects/archive-cover.svg",
+    bgSrc: "/projects/archive-cover.svg",
   },
   {
     id: 4,
     description:
       "대표적으로 기재한 3개의 프로젝트 외에도 10개 이상의 웹사이트 구축을 하였습니다.",
-    imgSrc: "/work/bg/4_1.jpg",
-    bgSrc: "/work/bg/4.jpg",
+    imgSrc: "/projects/archive-cover.svg",
+    bgSrc: "/projects/archive-cover.svg",
   },
 ];

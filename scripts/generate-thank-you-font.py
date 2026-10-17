@@ -1,4 +1,4 @@
-"""Extract only the footer glyphs from the portfolio's existing NewYork font.
+"""Extract the lettering glyphs from the OFL-licensed Pacifico font.
 
 Run with Python + fonttools==4.67.0. The generated JSON is consumed by Three.js
 FontLoader; no font conversion or Python dependency runs in the browser.
@@ -13,9 +13,9 @@ from fontTools.ttLib import TTFont
 
 root = Path(__file__).resolve().parents[1]
 parser = argparse.ArgumentParser()
-parser.add_argument("--font", default="public/font/NewYork.woff")
-parser.add_argument("--text", default="THANK YOU")
-parser.add_argument("--output", default="src/app/components/portfolio/thankYouFont.json")
+parser.add_argument("--font", default="public/font/Pacifico-Regular.ttf")
+parser.add_argument("--text", default="hello thank you")
+parser.add_argument("--output", default="scripts/open-lettering-font.json")
 parser.add_argument("--woff2")
 args = parser.parse_args()
 font = TTFont(root / args.font)
@@ -76,6 +76,9 @@ data = {
     "boundingBox": {key: getattr(head, key) for key in ("xMin", "xMax", "yMin", "yMax")},
     "resolution": head.unitsPerEm,
     "original_font_information": {"source": args.font},
+    "license": "SIL Open Font License 1.1",
+    "copyright": font["name"].getDebugName(0),
+    "license_notice": "public/font/Pacifico-OFL.txt",
 }
 target = root / args.output
 target.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")

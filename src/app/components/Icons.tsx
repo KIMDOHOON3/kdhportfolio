@@ -1,105 +1,31 @@
-import { SVGProps } from "react";
-import Image, { StaticImageData } from "next/image";
+import type { SVGProps } from "react";
 
-import HtmlIcon from "/public/icons/html5.svg";
-import CssIcon from "/public/icons/css.svg";
-import JavaScriptIcon from "/public/icons/javascript.svg";
-import ReactIcon from "/public/icons/react.svg";
-import NextjsIcon from "/public/icons/nextdotjs.svg";
-import TypeScriptIcon from "/public/icons/typescript.svg";
-import StyledComponentsIcon from "/public/icons/styledcomponents.svg";
-import TailwindIcon from "/public/icons/tailwindcss.svg";
-import ReactQueryIcon from "/public/icons/reactquery.svg";
-import ReduxIcon from "/public/icons/redux.svg";
-import GithubIcon from "/public/icons/github.svg";
-import JqueryIcon from "/public/icons/jquery.svg";
-import ZustandIcon from "/public/icons/zustand.png";
-import PersonIcon from "/public/icons/person.png";
-import VercelIcon from "/public/icons/vercel.svg";
-import BlogIcon from "/public/icons/blogger.svg";
-import ArrowRightIcon from "/public/icons/arrow-right.svg";
-import LinkIcon from "/public/icons/link.svg";
-import SCSSIcon from "/public/icons/sass.svg";
-import DownloadIcon from "/public/icons/download.svg";
-import MailIcon from "/public/icons/mail.svg";
-import PhoneIcon from "/public/icons/phone.svg";
-
-// 아이콘 인터페이스
-interface IconProps extends SVGProps<SVGSVGElement> {
-  color?: string;
-  size?: number;
+type IconProps = SVGProps<SVGSVGElement> & { size?: number; color?: string };
+// Project-authored geometric symbols; technology names use letter monograms.
+export const SkillIconMap: Record<string, string> = {
+  HTML: "H", CSS: "C", JavaScript: "JS", jQuery: "JQ", React: "R", "Next.js": "N",
+  TypeScript: "TS", "Styled-components": "SC", Tailwind: "TW", "React-query": "RQ",
+  Redux: "RX", Zustand: "Z", SCSS: "S", Vercel: "V",
+};
+export function Icon({ name, size = 24, color = "currentColor", ...props }: IconProps & { name: string }) {
+  if (!SkillIconMap[name]) return null;
+  const glyphs: Record<string, string> = {
+    H: "M8 7v10 M16 7v10 M8 12h8", C: "M16 8H9v8h7", J: "M8 7h8v9h-6v-3",
+    R: "M8 17V7h8v5H8 M12 12l4 5", N: "M8 17V7l8 10V7", T: "M7 7h10 M12 7v10",
+    S: "M16 7H8v5h8v5H8", W: "m7 7 2 10 3-6 3 6 2-10", Q: "M8 7h8v10H8z M13 14l4 4",
+    Z: "M8 7h8L8 17h8", V: "m7 7 5 10 5-10",
+  };
+  return <svg width={size} height={size} viewBox="0 0 24 24" {...props} fill="none" stroke={color} strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" /><path d={glyphs[SkillIconMap[name][0]] ?? glyphs.R} /></svg>;
 }
-
-// PNG 이미지인지 SVG인지 구분
-type IconType = {
-  component: React.ComponentType<IconProps> | null;
-  isPng: boolean;
-  src?: StaticImageData;
-};
-
-// 스킬 타입 매핑
-export const SkillIconMap: Record<string, IconType> = {
-  HTML: { component: HtmlIcon, isPng: false },
-  CSS: { component: CssIcon, isPng: false },
-  JavaScript: { component: JavaScriptIcon, isPng: false },
-  jQuery: { component: JqueryIcon, isPng: false },
-  React: { component: ReactIcon, isPng: false },
-  "Next.js": { component: NextjsIcon, isPng: false },
-  TypeScript: { component: TypeScriptIcon, isPng: false },
-  "Styled-components": { component: StyledComponentsIcon, isPng: false },
-  Tailwind: { component: TailwindIcon, isPng: false },
-  "React-query": { component: ReactQueryIcon, isPng: false },
-  Redux: { component: ReduxIcon, isPng: false },
-  Zustand: { component: null, isPng: true, src: ZustandIcon },
-  SCSS: { component: SCSSIcon, isPng: false },
-  Vercel: { component: VercelIcon, isPng: false },
-};
-
-// 아이콘 컴포넌트
-export function Icon({
-  name,
-  color = "white",
-  size = 24,
-  ...props
-}: IconProps & { name: string }) {
-  const iconData = SkillIconMap[name];
-
-  if (!iconData) {
-    return null;
-  }
-
-  if (iconData.isPng && iconData.src) {
-    return <Image src={iconData.src} alt={name} width={size} height={size} />;
-  }
-
-  const IconComponent = iconData.component;
-  if (!IconComponent) {
-    return null;
-  }
-
-  return <IconComponent width={size} height={size} fill={color} {...props} />;
+function symbol(path: string) {
+  return function SymbolIcon({ size = 24, fill, color, ...props }: IconProps) {
+    return <svg width={size} height={size} viewBox="0 0 24 24" {...props} fill="none" stroke={color ?? fill ?? "currentColor"} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d={path} /></svg>;
+  };
 }
-
-export {
-  HtmlIcon,
-  CssIcon,
-  JavaScriptIcon,
-  ReactIcon,
-  NextjsIcon,
-  TypeScriptIcon,
-  StyledComponentsIcon,
-  TailwindIcon,
-  ReactQueryIcon,
-  ReduxIcon,
-  GithubIcon,
-  ZustandIcon,
-  PersonIcon,
-  VercelIcon,
-  BlogIcon,
-  ArrowRightIcon,
-  LinkIcon,
-  SCSSIcon,
-  DownloadIcon,
-  MailIcon,
-  PhoneIcon,
-};
+export const MailIcon = symbol("M3 5h18v14H3z M3 6l9 7 9-7");
+export const DownloadIcon = symbol("M12 3v12 m-5-5 5 5 5-5 M3 15v6h18v-6");
+export const ArrowRightIcon = symbol("M3 12h18 M14 5l7 7-7 7");
+export const LinkIcon = symbol("M8 4H4v16h16v-4 M12 4h8v8 M10 14 20 4");
+export const GithubIcon = symbol("m8 6-6 6 6 6 M16 6l6 6-6 6 M14 4l-4 16");
+export const BlogIcon = symbol("M4 3h16v18H4z M8 7h8 M8 11h8 M8 15h5");
+export const PhoneIcon = symbol("M7 2h10v20H7z M10 5h4 M11 19h2");

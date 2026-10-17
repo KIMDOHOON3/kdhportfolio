@@ -26,6 +26,7 @@
 
 # local documents
 /docs/
+/.codex-remote-attachments/
 
 # misc
 .DS_Store

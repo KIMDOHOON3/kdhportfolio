@@ -22,75 +22,6 @@ import {
   getScrollViewport,
 } from "./ScrollViewport";
 
-// Continuous hand-drawn curves form original inflated glass lettering.
-const strokes: number[][][] = [
-  [
-    [-5, -0.75],
-    [-4.65, -0.15],
-    [-4.3, 1.25],
-    [-4.1, 2.05],
-    [-4.4, 2.2],
-    [-4.7, 1.65],
-    [-4.85, 0.55],
-    [-4.8, -0.75],
-    [-4.48, 0.05],
-    [-4.06, 0.55],
-    [-3.65, 0.4],
-    [-3.8, -0.48],
-    [-3.6, -0.78],
-    [-3.1, -0.45],
-  ],
-  [
-    [-3.25, -0.35],
-    [-2.78, -0.12],
-    [-2.45, 0.45],
-    [-2.75, 0.73],
-    [-3.2, 0.42],
-    [-3.4, -0.22],
-    [-3.13, -0.73],
-    [-2.52, -0.81],
-    [-1.88, -0.24],
-  ],
-  [
-    [-1.95, -0.35],
-    [-1.52, 0.7],
-    [-1.02, 1.9],
-    [-1.12, 2.24],
-    [-1.5, 1.98],
-    [-1.9, 0.95],
-    [-2.1, -0.12],
-    [-1.97, -0.7],
-    [-1.55, -0.8],
-    [-0.9, -0.2],
-  ],
-  [
-    [-0.98, -0.35],
-    [-0.5, 0.7],
-    [0, 1.9],
-    [-0.1, 2.24],
-    [-0.48, 1.98],
-    [-0.88, 0.95],
-    [-1.08, -0.12],
-    [-0.95, -0.7],
-    [-0.53, -0.8],
-    [0.2, -0.23],
-  ],
-  [
-    [1.52, 0.48],
-    [0.91, 0.65],
-    [0.36, 0.2],
-    [0.1, -0.42],
-    [0.43, -0.85],
-    [1.07, -0.76],
-    [1.52, -0.1],
-    [1.45, 0.51],
-    [1.05, 0.67],
-    [1.55, 0.48],
-    [2.18, 0.56],
-    [2.65, 0.88],
-  ],
-];
-
 export default function GlassScene() {
   const host = useRef<HTMLDivElement>(null);
   const [ready, setReady] = useState(false);
@@ -259,7 +190,7 @@ export default function GlassScene() {
               vec3 color = mix(uSky, uWarm, warmBase * 0.92);
               color = mix(color, uCool, 0.05 * edge * (1.0 - warmBase));
               color = mix(color, uWarm, clamp((beams*0.48 + glow*0.04)*edge,0.0,0.52));
-              // The reference uses a separate fixed SVG grid above the scene.
+              // The backdrop contains only procedural color and light bands.
               gl_FragColor = vec4(color, 1.0);
               #include <colorspace_fragment>
             }
@@ -376,32 +307,6 @@ export default function GlassScene() {
           return { ...layout, mesh, origin: new THREE.Vector3() };
         });
         scene.add(accentGroup);
-        strokes.forEach((stroke, index) => {
-          const curve = new THREE.CatmullRomCurve3(
-            stroke.map(
-              ([x, y], i) =>
-                new THREE.Vector3(
-                  x + index * 0.72,
-                  y,
-                  Math.sin(i * 0.75 + index) * 0.075,
-                ),
-            ),
-            false,
-            "centripetal",
-          );
-          group.add(
-            new THREE.Mesh(
-              new THREE.TubeGeometry(curve, 180, 0.425, 32, false),
-              material,
-            ),
-          );
-          const capGeometry = new THREE.SphereGeometry(0.425, 24, 16);
-          for (const end of [curve.getPoint(0), curve.getPoint(1)]) {
-            const cap = new THREE.Mesh(capGeometry, material);
-            cap.position.copy(end);
-            group.add(cap);
-          }
-        });
         // Circular 3D writing paths use the hero's glass and tint palette.
         // The hero can render before the footer geometry has finished loading.
         const footerHeading = document.querySelector<HTMLElement>(
@@ -433,7 +338,7 @@ export default function GlassScene() {
         let worldHeight = 1;
         let accentPixel = 1;
         let heroOffsetY = 0;
-        const bounds = new THREE.Box3().setFromObject(group);
+        const bounds = new THREE.Box3(new THREE.Vector3(-5, -1.1, -.2), new THREE.Vector3(5, 2.1, .2));
         const size = bounds.getSize(new THREE.Vector3());
         const center = bounds.getCenter(new THREE.Vector3());
         const placeFooter = () => {
@@ -786,7 +691,7 @@ export default function GlassScene() {
           .then(({ GLTFLoader }) => {
             const loader = new GLTFLoader();
             void loader
-              .loadAsync("/models/hello.glb")
+              .loadAsync("/models/hello-open.glb")
               .then((gltf) => {
                 let geometry: InstanceType<typeof THREE.BufferGeometry> | null =
                   null;
@@ -818,11 +723,12 @@ export default function GlassScene() {
                 bounds.getCenter(center);
                 group.position.y = savedY;
                 group.updateMatrixWorld(true);
-                element.dataset.helloGeometry = "glass-mesh";
+                element.dataset.helloGeometry = "ofl-lettering";
               })
               .catch(() => {
-                // Keep the procedural tube fallback if the baked mesh is unavailable.
-                element.dataset.helloGeometry = "tube-fallback";
+                // Keep a licensed HTML text fallback if geometry cannot load.
+                element.dataset.helloGeometry = "unavailable";
+                setFailed(true);
               })
               .finally(() => {
                 if (disposed) return;
@@ -832,7 +738,7 @@ export default function GlassScene() {
                 render(performance.now());
                 setReady(true);
               });
-            return loader.loadAsync("/models/thank-you.glb");
+            return loader.loadAsync("/models/thank-you-open.glb");
           })
           .then((gltf) => {
             gltf.scene.traverse((object) => {
@@ -857,7 +763,7 @@ export default function GlassScene() {
               footerGroup.add(mesh);
               footerWords.push({ mesh, extent, baseline: mesh.userData.baseline });
             }
-            element.dataset.footerGeometry = "glass-path";
+            element.dataset.footerGeometry = "ofl-lettering";
             placeFooter();
             resume();
           })

@@ -8,7 +8,6 @@ import NavTrigger from "../Header/NavTrigger";
 import { portfolioProjects } from "../../data/portfolio";
 import GlassScene from "./GlassScene";
 import ProjectCover from "./ProjectCover";
-import usePaperMotion from "./usePaperMotion";
 import ArrowIcon from "./ArrowIcon";
 import TechnologyIcon from "./TechnologyIcon";
 import AboutSection from "./AboutSection";
@@ -126,7 +125,6 @@ export function PortfolioFooter() {
 export default function Portfolio() {
   const [filter, setFilter] = useState("전체");
   const root = useRef<HTMLElement>(null);
-  usePaperMotion(root, filter);
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) =>

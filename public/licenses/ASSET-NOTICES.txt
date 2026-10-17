@@ -1,0 +1,38 @@
+Asset provenance and third-party notices
+
+Glass lettering: generated locally from Pacifico font outlines with
+scripts/generate-open-lettering.mjs. Pacifico is licensed under SIL OFL 1.1.
+Copyright 2018 The Pacifico Project Authors.
+Source: https://github.com/google/fonts/tree/main/ofl/pacifico
+Full notice: /font/Pacifico-OFL.txt
+
+Bodoni Moda: Copyright 2020 The Bodoni Moda Project Authors.
+Source: https://github.com/google/fonts/tree/main/ofl/bodonimoda
+Full notice: /font/BodoniModa-OFL.txt
+
+Pretendard: https://github.com/orioncactus/pretendard
+Full notice: /font/Pretendard-OFL.txt
+
+Paperlogy: https://freesentation.blog/paperlogyfont
+Full notice: /font/Paperlogy-OFL.txt
+
+Claude, Codex and Figma vector marks: LobeHub Icons, MIT license.
+Copyright (c) 2023 LobeHub.
+Source: https://github.com/lobehub/lobe-icons
+Full notice: /images/tools/LICENSE-lobe-icons.txt
+Brand names and marks belong to their respective owners; no affiliation is
+claimed. This license does not grant trademark rights.
+
+Technology monograms, action symbols, project overview SVGs, device frames
+and interface sketch: authored for this portfolio. The project overview
+screens are illustrative work notes, not screenshots of delivered sites.
+
+The glass renderer and motion logic use Three.js, Lenis and GSAP.
+Three.js and Lenis notices are provided in this directory.
+GSAP is used under its standard license, not represented as MIT software:
+https://gsap.com/standard-license/
+Bundled package copyright/license headers remain intact.
+
+Personal project artwork, personal photographs and resume were supplied by
+the portfolio owner or sourced from the owner's own project repositories.
+Their provenance is separate from third-party website reference assets.

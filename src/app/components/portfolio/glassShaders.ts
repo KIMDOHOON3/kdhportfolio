@@ -1,5 +1,5 @@
-// Original compact shader, informed by the public reference's screen-space
-// refraction approach. This is not the reference site's shader or model.
+// Project-authored screen-space glass using measured back-surface depth,
+// Snell refraction, Beer-Lambert absorption and Fresnel reflection.
 export const glassVertexShader = `
   varying vec3 vWorldPosition;
   varying vec3 vNormal;
@@ -119,7 +119,7 @@ export const glassFragmentShader = `
     vec3 normalView = normalize(mat3(viewMatrix) * normal);
     vec3 incident = normalize(positionView);
     float redDistance, greenDistance, blueDistance;
-    // A mild effective IOR fits the shallow, stylized lettering in the recording;
+    // A mild effective IOR fits the shallow, stylized lettering;
     // strong solid-glass bending compresses every background band into white ribs.
     vec2 red = transmissionUv(positionView, incident, normalView, 1.175, redDistance);
     vec2 green = transmissionUv(positionView, incident, normalView, 1.180, greenDistance);

@@ -1,6 +1,5 @@
 "use client";
 
-import { useId } from "react";
 import Image from "next/image";
 import type { PortfolioProject } from "../../data/portfolio";
 import styles from "./Portfolio.module.scss";
@@ -14,33 +13,11 @@ export default function ProjectCover({
   project: PortfolioProject;
   priority?: boolean;
 }) {
-  const filterId = `cover-${useId().replaceAll(":", "")}`;
   return (
     <div
       data-paper-cover
       className={`${styles.cover} ${styles[project.visual]}`}
     >
-      <svg className={styles.coverFilter} aria-hidden="true">
-        <defs>
-          <filter
-            id={filterId}
-            data-curl-filter
-            filterUnits="userSpaceOnUse"
-            primitiveUnits="userSpaceOnUse"
-            colorInterpolationFilters="sRGB"
-          >
-            <feImage data-curl-map result="curl" preserveAspectRatio="none" />
-            <feDisplacementMap
-              data-curl-scale
-              in="SourceGraphic"
-              in2="curl"
-              scale="0"
-              xChannelSelector="R"
-              yChannelSelector="G"
-            />
-          </filter>
-        </defs>
-      </svg>
       <div className={styles.coverSurface} data-cover-surface>
         {project.visual === "lexus" || project.visual === "kia" ? (
           <WorkCoverMockup kind={project.visual} priority={priority} />
