@@ -28,6 +28,23 @@ export const glassFragmentShader = `
   varying vec3 vNormal;
   varying float vLocalHeight;
 
+  // A long studio strip reflected by the actual surface normal forms a curved
+  // highlight along the inflated lettering, without painting a screen outline.
+  float reflectedStrip(vec3 direction, vec3 aim, vec3 longAxis, float width, float halfLength) {
+    aim = normalize(aim);
+    vec3 across = normalize(cross(longAxis, aim));
+    vec3 along = cross(aim, across);
+    float forward = dot(direction, aim);
+    vec2 panelUv = vec2(dot(direction, across), dot(direction, along)) / max(forward, 0.01);
+    float footprint = fwidth(panelUv.x);
+    float sigma = sqrt(width * width + footprint * footprint * 0.35);
+    float core = exp(-0.5 * pow(panelUv.x / sigma, 2.0));
+    float ends = 1.0 - smoothstep(halfLength * 0.7, halfLength, abs(panelUv.y));
+    // Conserve the strip's energy when filtering subpixel reflections. Keeping
+    // the full peak after widening the footprint turns mobile curves white.
+    return core * (width / sigma) * ends * smoothstep(0.05, 0.25, forward);
+  }
+
   void main() {
     vec2 screenUv = gl_FragCoord.xy / uResolution;
     vec2 flow = texture2D(uFlow, screenUv).xy * uMotion;
@@ -58,7 +75,7 @@ export const glassFragmentShader = `
     vec3 halfway = normalize(light + view);
     float highlight = max(dot(normal, halfway), 0.0);
     float specular = pow(highlight, 220.0) * 0.25 + pow(highlight, 650.0) * 2.7;
-    specular *= 1.0 - gradient * 0.88;
+    specular *= 1.0 - gradient * 0.55;
     float fresnel = 0.04 + 0.96 * pow(1.0 - facing, 5.0);
     color *= 1.0 - edge * 0.035;
     float side = smoothstep(-0.5, 0.7, dot(normal, normalize(vec3(-1.0, 1.0, 1.0))));
@@ -74,11 +91,12 @@ export const glassFragmentShader = `
     // reflection to white. A separate sharp glint retains HDR glare.
     studio = studio / (vec3(1.0) + studio * 0.55);
     color = mix(color, studio, 0.015 + fresnel * 0.22);
-    float strip = pow(max(dot(reflected, normalize(vec3(-0.35, 0.8, 0.5))), 0.0), 110.0);
+    float strip = reflectedStrip(reflected, vec3(-0.32, 0.50, 0.82), vec3(-0.14, 1.0, 0.0), 0.045, 1.6);
+    float stripShoulder = reflectedStrip(reflected, vec3(-0.32, 0.50, 0.82), vec3(-0.14, 1.0, 0.0), 0.11, 1.6);
+    float fillStrip = reflectedStrip(reflected, vec3(0.72, -0.22, 0.65), vec3(0.22, 1.0, 0.0), 0.025, 1.5);
     float rim = pow(max(dot(reflected, normalize(vec3(0.75, 0.25, 0.6))), 0.0), 160.0);
-    float ceiling = pow(max(dot(reflected, normalize(vec3(0.1, 0.97, -0.2))), 0.0), 150.0);
-    color += vec3(1.0, 0.98, 0.93) * (specular + strip * 0.2 + ceiling * 0.2);
-    color += vec3(0.68, 0.84, 1.0) * (rim * 0.25 + fresnel * side * 0.08);
+    color += vec3(1.0, 0.98, 0.93) * (specular + strip * 1.10 + stripShoulder * 0.10);
+    color += vec3(0.68, 0.84, 1.0) * (fillStrip * 0.25 + rim * 0.18 + fresnel * side * 0.08);
     gl_FragColor = vec4(color, 1.0);
     #include <colorspace_fragment>
   }
