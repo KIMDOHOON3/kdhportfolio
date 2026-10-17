@@ -24,6 +24,9 @@
 /output/
 /.playwright-cli/
 
+# local documents
+/docs/
+
 # misc
 .DS_Store
 *.pem
