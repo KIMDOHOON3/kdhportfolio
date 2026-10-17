@@ -1,41 +1,68 @@
 $ink: #191b1e;
 $line: rgba(35, 56, 69, 0.17);
-$mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+$sans: "Pretendard-Regular", Arial, sans-serif;
+$heading: "Pretendard-Bold", Arial, sans-serif;
+$display: "NewYork", "Pretendard-Bold", sans-serif;
+$intro: "Paperlogy-Regular", "Pretendard-Regular", sans-serif;
+$label: "Paperlogy-Medium", "Pretendard-Regular", sans-serif;
+
+@mixin grid-cross {
+  content: "";
+  position: absolute;
+  width: 9px;
+  height: 9px;
+  background:
+    linear-gradient(#728d9880, #728d9880) center / 1px 9px no-repeat,
+    linear-gradient(#728d9880, #728d9880) center / 9px 1px no-repeat;
+  pointer-events: none;
+}
+
+.portfolio,
+.header,
+.footer,
+.detail {
+  --page-inset: 4.2%;
+  --grid-gap: 32px;
+  --grid-count: 4;
+  --grid-columns: repeat(var(--grid-count), minmax(0, 1fr));
+}
 
 .header {
   position: absolute;
   inset: 0 0 auto;
   z-index: 20;
-  display: flex;
+  display: grid;
+  grid-template-columns: var(--grid-columns);
   align-items: center;
   justify-content: space-between;
-  gap: 30px;
-  padding: 30px 4.2%;
+  gap: var(--grid-gap);
+  padding: 30px var(--page-inset);
   color: $ink;
 }
 .logo {
-  font:
-    900 25px/1 Arial,
-    sans-serif;
-  letter-spacing: -1.8px;
+  font: 400 32px/1 $display;
+  letter-spacing: -0.03em;
   span {
-    font: 11px/1 Arial;
+    font: 12px/1 $sans;
     vertical-align: top;
     margin-left: 3px;
   }
 }
 .headerNote {
-  margin-right: auto;
-  margin-left: 45px;
-  font: 10px/1.5 $mono;
+  font: 13px/1.6 $sans;
   letter-spacing: 0.03em;
 }
 .nav {
+  grid-column: 3 / -1;
+  justify-self: end;
   display: flex;
   gap: 34px;
   align-items: center;
-  font-size: 14px;
+  font-size: 18px;
   a {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
     padding: 10px 0;
     border-bottom: 1px solid transparent;
     transition: border-color 0.2s;
@@ -44,7 +71,7 @@ $mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
     }
   }
   sup {
-    font: 9px $mono;
+    font: 12px $label;
     margin-left: 3px;
   }
 }
@@ -53,78 +80,59 @@ $mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
 }
 .portfolio {
   overflow: clip;
+  isolation: isolate;
+}
+.heroStage {
+  &::after {
+    content: "";
+    display: block;
+    height: 100svh;
+  }
 }
 .hero {
-  position: relative;
+  position: sticky;
+  top: min(0px, calc(100svh - 850px));
   min-height: 850px;
   height: 100svh;
   max-height: 1100px;
-  padding: 126px 4.2% 0;
-  background:
-    radial-gradient(ellipse at 68% 65%, #fffde9 0%, transparent 28%),
-    radial-gradient(ellipse at 10% 90%, #e4e8e3 0%, transparent 40%), #beddeb;
-}
-.heroGrid {
-  position: absolute;
-  pointer-events: none;
-  inset: 0 2.5%;
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  border-left: 1px solid $line;
+  grid-template-columns: var(--grid-columns);
+  grid-template-rows: minmax(0, 1fr) auto auto;
+  column-gap: var(--grid-gap);
+  padding: 110px var(--page-inset) 0;
+  background: #beddeb;
+}
+.pageGrid {
+  position: absolute;
+  z-index: 6;
+  pointer-events: none;
+  inset: 0 var(--page-inset);
+  opacity: 0.45;
+  display: grid;
+  grid-template-columns: var(--grid-columns);
+  column-gap: var(--grid-gap);
   span {
-    position: relative;
-    border-right: 1px solid $line;
-    &::before,
-    &::after {
-      content: "+";
-      position: absolute;
-      right: -5px;
-      color: #728d98;
-      font: 18px/1 $mono;
-    }
-    &::before {
-      top: 33%;
-    }
-    &::after {
-      top: 72%;
-    }
-  }
-  &::before,
-  &::after {
-    content: "";
-    position: absolute;
-    inset: 33% 0 auto;
-    border-top: 1px solid $line;
-  }
-  &::after {
-    top: 72%;
+    border-inline: 1px solid $line;
   }
 }
-.heroTop {
-  position: relative;
-  z-index: 2;
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  h1 {
-    font:
-      800 clamp(46px, 5.5vw, 88px) / 0.95 Arial,
-      sans-serif;
-    letter-spacing: -0.065em;
-  }
-}
-.heroIndex {
-  font: 10px/1.6 $mono;
-  text-align: right;
-  padding-top: 8px;
+.visuallyHidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
 }
 .glassScene {
-  position: absolute;
-  top: 35%;
-  right: 0;
-  width: 78%;
-  height: 45%;
-  z-index: 3;
+  grid-area: 1 / 1 / 2 / -1;
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+  z-index: 7;
+  border-top: 1px solid $line;
   touch-action: pan-y;
   canvas {
     display: block;
@@ -132,16 +140,16 @@ $mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
     z-index: 1;
   }
   &::before {
-    content: "";
-    position: absolute;
-    width: 62%;
-    height: 30%;
-    background: #faf8d5;
-    filter: blur(38px);
-    opacity: 0.7;
-    left: 22%;
-    bottom: 10%;
-    transform: rotate(-12deg);
+    @include grid-cross;
+    top: -5px;
+    left: -4px;
+    z-index: 2;
+  }
+  &::after {
+    @include grid-cross;
+    top: -5px;
+    right: -4px;
+    z-index: 2;
   }
 }
 .glassFallback {
@@ -151,7 +159,7 @@ $mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
   align-items: center;
   justify-content: center;
   font:
-    italic bold clamp(120px, 24vw, 330px) / 1 "Segoe Script",
+    italic bold clamp(120px, 32vw, 430px) / 1 "Segoe Script",
     cursive;
   letter-spacing: -0.1em;
   padding-right: 0.1em;
@@ -164,64 +172,59 @@ $mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
 .glassReady {
   opacity: 0;
 }
-.orbitMark {
-  position: absolute;
-  right: 8%;
-  top: 66%;
-  font-size: 86px;
-  color: #528ee3;
-  line-height: 1;
-  transform: rotate(-15deg);
-  text-shadow:
-    2px 4px #cfe2f5,
-    4px 7px 14px #3a6d9e44;
-}
 .heroBottom {
-  position: absolute;
+  grid-column: 1 / -1;
+  position: relative;
   z-index: 4;
-  left: 4.2%;
-  right: 4.2%;
-  bottom: 95px;
-  display: flex;
+  display: grid;
+  grid-template-columns: var(--grid-columns);
+  column-gap: var(--grid-gap);
   align-items: flex-end;
   justify-content: space-between;
-  gap: 30px;
+  padding-block: 24px;
+  border-top: 1px solid $line;
 }
 .heroIntro {
-  font:
-    16px/1.8 "Pretendard-Regular",
-    sans-serif;
-  letter-spacing: -0.03em;
+  grid-column: 1 / 3;
+  word-break: keep-all;
+  font: 18px/1.9 $intro;
+  letter-spacing: -0.015em;
   strong {
-    font-family: "Pretendard-Bold";
+    font-family: "Paperlogy-Bold", sans-serif;
   }
 }
 .explore {
-  font: 10px $mono;
+  grid-column: 4;
+  justify-self: end;
+  font: 14px/1.5 $sans;
   display: flex;
   align-items: center;
-  gap: 22px;
+  gap: 12px;
   span {
     display: grid;
     place-items: center;
-    width: 43px;
-    height: 43px;
+    width: 28px;
+    height: 28px;
     border: 1px solid #586b7277;
     border-radius: 50%;
-    font: 22px Arial;
+    .arrowIcon {
+      width: 14px;
+      height: 14px;
+    }
     transition: transform 0.3s;
   }
   &:hover span {
-    transform: translateY(5px);
+    transform: translateY(2px);
   }
 }
 .heroStatus {
-  position: absolute;
-  bottom: 25px;
-  inset-inline: 4.2%;
+  grid-column: 1 / -1;
+  position: relative;
+  padding-block: 20px;
+  border-top: 1px solid $line;
   display: flex;
   justify-content: space-between;
-  font: 10px $mono;
+  font: 12px/1.6 $sans;
   letter-spacing: 0.025em;
   i {
     display: inline-block;
@@ -239,10 +242,15 @@ $mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
 .work,
 .about,
 .footer {
-  padding: 0 4.2%;
+  padding: 0 var(--page-inset);
   scroll-margin-top: 30px;
 }
 .work {
+  position: relative;
+  z-index: 2;
+  margin-top: -100svh;
+  border-top: 1px solid #ffffffb3;
+  box-shadow: 0 -18px 45px -28px #263e5755;
   background: #faf9f5;
   padding-top: 58px;
   padding-bottom: 115px;
@@ -254,38 +262,40 @@ $mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
   gap: 20px;
   border-top: 1px solid $line;
   padding-top: 17px;
-  font: 10px/1.5 $mono;
+  font: 15px/1.6 $sans;
   letter-spacing: 0.04em;
 }
 .workHeading {
-  display: flex;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: var(--grid-columns);
   align-items: flex-end;
   padding: 62px 0 58px;
-  gap: 30px;
+  gap: var(--grid-gap);
   h2 {
+    grid-column: 1 / 3;
+    justify-self: start;
     position: relative;
-    font:
-      500 clamp(60px, 7vw, 108px) / 0.91 Arial,
-      sans-serif;
-    letter-spacing: -0.065em;
+    font: 700 clamp(44px, 5.2vw, 78px) / 1.2 $heading;
+    letter-spacing: -0.045em;
+    word-break: keep-all;
     i {
-      font-family: "NewYork", Georgia, serif;
-      font-weight: 400;
+      font: inherit;
+      color: #4b74b1;
     }
     sup {
       position: absolute;
       top: 4px;
       right: -40px;
-      font: 12px $mono;
+      font: 14px $label;
       letter-spacing: 0;
     }
   }
 }
 .workAside {
-  max-width: 390px;
+  grid-column: 3 / -1;
   p {
-    font-size: 14px;
+    word-break: keep-all;
+    font-size: 18px;
     line-height: 1.8;
     color: #636664;
   }
@@ -299,12 +309,12 @@ $mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
     border-radius: 30px;
     padding: 10px 15px;
     color: #535751;
-    font-size: 11px;
+    font-size: 14px;
     transition:
       background 0.2s,
       color 0.2s;
     span {
-      font: 8px $mono;
+      font: 12px $label;
       margin-left: 9px;
       vertical-align: super;
     }
@@ -320,12 +330,29 @@ $mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
 }
 .projectGrid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  column-gap: 32px;
-  row-gap: 65px;
+  grid-template-columns: var(--grid-columns);
+  column-gap: var(--grid-gap);
+  row-gap: 64px;
 }
 .project {
+  grid-column: span 2;
+  position: relative;
   min-width: 0;
+  perspective: 1400px;
+  padding-bottom: 24px;
+  border-block: 1px solid $line;
+  &::before,
+  &::after {
+    @include grid-cross;
+    top: -5px;
+    z-index: 1;
+  }
+  &::before {
+    left: -4px;
+  }
+  &::after {
+    right: -4px;
+  }
 }
 .featured {
   grid-column: 1 / -1;
@@ -333,18 +360,28 @@ $mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
     aspect-ratio: 2.13;
   }
   .projectTitle h3 {
-    font-size: 32px;
+    font-size: 36px;
   }
 }
 .projectLink {
-  display: block;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  transform-origin: 50% 0;
+  backface-visibility: hidden;
+  > .cover {
+    flex-shrink: 0;
+    border-bottom: 1px solid $line;
+  }
+  > .stack {
+    margin-top: auto;
+    padding-top: 17px;
+  }
   &:hover .coverImage {
     transform: scale(1.035);
   }
   &:hover .coverArrow {
-    background: #f8faf5;
-    color: $ink;
-    transform: rotate(45deg);
+    transform: translate(2px, -2px);
   }
   &:hover .dogDeck {
     transform: translateY(-9px) rotate(-2deg);
@@ -384,24 +421,37 @@ $mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
   bottom: 33px;
   left: 35px;
   color: white;
-  font: 10px $mono;
-  letter-spacing: 0.12em;
+  font: 14px/1.6 $sans;
+  letter-spacing: 0.02em;
+  right: 75px;
 }
 .coverArrow {
   position: absolute;
   bottom: 25px;
   right: 25px;
-  width: 40px;
-  height: 40px;
+  width: 32px;
+  height: 32px;
   border: 1px solid #ffffff70;
   border-radius: 50%;
   display: grid;
   place-items: center;
   color: #fff;
-  font: 24px Arial;
-  transition:
-    transform 0.3s,
-    background 0.3s;
+  transition: transform 0.2s;
+  .arrowIcon {
+    width: 16px;
+    height: 16px;
+  }
+}
+.arrowIcon {
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  vertical-align: middle;
+  transform: rotate(-45deg);
+}
+.arrowDown {
+  transform: rotate(90deg);
 }
 .legacy {
   .coverImage {
@@ -418,8 +468,8 @@ $mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
   display: flex;
   justify-content: space-between;
   margin-top: 18px;
-  color: #72756f;
-  font: 10px/1.5 $mono;
+  color: #555c54;
+  font: 14px/1.7 $sans;
 }
 .projectTitle {
   display: flex;
@@ -427,13 +477,14 @@ $mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
   align-items: center;
   margin-top: 10px;
   h3 {
-    font:
-      500 26px/1.25 Arial,
-      sans-serif;
-    letter-spacing: -0.035em;
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 6px 15px;
+    font: 400 32px/1.3 $display;
+    letter-spacing: -0.02em;
     span {
-      font: 11px $mono;
-      margin-left: 15px;
+      font: 14px/1.5 $sans;
       color: #73766f;
       letter-spacing: 0;
     }
@@ -443,8 +494,10 @@ $mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
   }
 }
 .projectSubtitle {
-  font-size: 13px;
-  color: #6c706b;
+  font-size: 18px;
+  line-height: 1.65;
+  word-break: keep-all;
+  color: #575d56;
   margin-top: 7px;
 }
 .stack {
@@ -452,12 +505,36 @@ $mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
   flex-wrap: wrap;
   gap: 7px;
   margin-top: 17px;
-  span {
+  > span {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
     border: 1px solid #dedfd6;
     padding: 5px 9px;
-    font: 9px $mono;
-    color: #62665e;
+    font: 14px/1.6 $sans;
+    color: #40473e;
   }
+}
+.technologyIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  svg,
+  img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+}
+.actionIcon {
+  display: block;
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
 }
 .dog {
   background: #e8e5d7;
@@ -471,8 +548,8 @@ $mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
   position: absolute;
   top: 8%;
   left: 7%;
-  font: 11px $mono;
-  letter-spacing: 0.1em;
+  font: 14px/1.5 $sans;
+  letter-spacing: 0.03em;
 }
 .dogDeck {
   position: absolute;
@@ -504,7 +581,7 @@ $mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
     left: 5px;
     right: 5px;
     text-align: center;
-    font: 6px $mono;
+    font: 11px $sans;
     background: #f7f3e8cc;
     padding: 4px 1px;
   }
@@ -520,8 +597,8 @@ $mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
   position: absolute;
   bottom: 8%;
   left: 7%;
-  font: 8px $mono;
-  letter-spacing: 0.12em;
+  right: 68px;
+  font: 13px/1.5 $sans;
 }
 .couple {
   background:
@@ -536,17 +613,18 @@ $mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
 .coupleLabel {
   display: block;
   padding-top: 8%;
-  font: 9px $mono;
+  font: 13px/1.5 $sans;
 }
 .coupleTitle {
   position: absolute;
   left: 12%;
   top: 30%;
   text-align: left;
-  font: 500 clamp(32px, 4vw, 65px) / 0.9 Arial;
-  letter-spacing: -0.06em;
+  font: 700 clamp(28px, 3.2vw, 48px) / 1.2 $heading;
+  letter-spacing: -0.045em;
   i {
-    font-family: "NewYork", Georgia, serif;
+    font-family: inherit;
+    font-style: normal;
     font-size: 1.3em;
   }
 }
@@ -563,22 +641,32 @@ $mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
   position: absolute;
   bottom: 9%;
   left: 12%;
-  font-size: 10px;
+  right: 68px;
+  font-size: 13px;
+  line-height: 1.5;
+  text-align: left;
 }
 .filterResult {
   margin-top: 35px;
-  font-size: 13px;
+  font-size: 15px;
 }
 .about {
+  position: relative;
+  z-index: 3;
+  border-top: 1px solid #d3d5cb;
   background: #eeeee6;
   padding-top: 44px;
   padding-bottom: 100px;
 }
 .aboutContent {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8%;
+  grid-template-columns: var(--grid-columns);
+  gap: var(--grid-gap);
   padding-top: 70px;
+}
+.aboutLeft,
+.aboutText {
+  grid-column: span 2;
 }
 .aboutStar {
   display: block;
@@ -587,29 +675,31 @@ $mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
   margin-bottom: 45px;
 }
 .aboutLeft h2 {
-  font: 600 clamp(38px, 4.4vw, 70px) / 1 Arial;
-  letter-spacing: -0.065em;
+  font: 700 clamp(34px, 4vw, 60px) / 1.2 $heading;
+  letter-spacing: -0.045em;
+  word-break: keep-all;
   i {
-    font-family: "NewYork", Georgia, serif;
-    font-weight: 400;
+    font: inherit;
+    color: #4b74b1;
   }
 }
 .aboutCoordinates {
   display: block;
-  font: 9px $mono;
+  font: 14px/1.6 $sans;
   color: #6c706b;
   margin-top: 32px;
 }
 .aboutText {
-  padding-top: 15px;
   > p {
-    font-size: 14px;
-    line-height: 1.95;
-    color: #666a62;
+    word-break: keep-all;
+    overflow-wrap: break-word;
+    font-size: 18px;
+    line-height: 1.85;
+    color: #53594f;
     margin-bottom: 20px;
   }
   .aboutLead {
-    font-size: 25px;
+    font-size: 30px;
     line-height: 1.55;
     letter-spacing: -0.04em;
     color: $ink;
@@ -622,12 +712,17 @@ $mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
 .skillList {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 0 20px;
+  gap: 0 var(--grid-gap);
   margin-top: 33px;
-  span {
+  > span {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+    overflow-wrap: anywhere;
     border-top: 1px solid $line;
-    padding: 13px 0;
-    font: 10px/1.5 $mono;
+    padding: 16px 0;
+    font: 16px/1.6 $sans;
   }
 }
 .resumeLink {
@@ -638,7 +733,7 @@ $mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
   border-top: 1px solid $line;
   border-bottom: 1px solid $line;
   margin-top: 22px;
-  font-size: 13px;
+  font-size: 16px;
   span {
     font: 20px Arial;
   }
@@ -656,25 +751,30 @@ $mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
   gap: 25px;
   padding: 65px 0 42px;
   h2 {
-    font: 600 clamp(40px, 6.5vw, 100px) / 0.98 Arial;
-    letter-spacing: -0.065em;
+    font: 700 clamp(38px, 5.5vw, 82px) / 1.2 $heading;
+    letter-spacing: -0.045em;
+    word-break: keep-all;
     i {
-      font-family: "NewYork", Georgia, serif;
-      font-weight: 400;
+      font: inherit;
+      color: #4b74b1;
     }
   }
 }
 .contactArrow {
   display: grid;
   place-items: center;
-  width: 100px;
-  height: 100px;
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
   border: 1px solid #404d5280;
   border-radius: 50%;
-  font: 60px/1 Arial;
-  transition: transform 0.3s;
+  transition: transform 0.2s;
+  .arrowIcon {
+    width: 20px;
+    height: 20px;
+  }
   &:hover {
-    transform: rotate(45deg);
+    transform: translate(2px, -2px);
   }
 }
 .contactLinks {
@@ -682,10 +782,15 @@ $mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
   gap: 30px;
   flex-wrap: wrap;
   padding-bottom: 65px;
-  font-size: 13px;
-  a:hover {
-    text-decoration: underline;
-    text-underline-offset: 5px;
+  font-size: 16px;
+  a {
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    &:hover {
+      text-decoration: underline;
+      text-underline-offset: 5px;
+    }
   }
 }
 .footerBottom {
@@ -695,7 +800,7 @@ $mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
   gap: 20px;
   padding: 22px 0;
   border-top: 1px solid $line;
-  font: 9px/1.5 $mono;
+  font: 14px/1.6 $sans;
 }
 .motionReady [data-reveal] {
   opacity: 0;
@@ -709,13 +814,13 @@ $mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
   }
 }
 .detail {
-  padding: 140px 4.2% 100px;
+  padding: 140px var(--page-inset) 100px;
   background: #faf9f5;
   min-height: 80svh;
 }
 .backLink {
   display: inline-block;
-  font: 11px $mono;
+  font: 14px/1.5 $sans;
   margin-bottom: 55px;
 }
 .detailHeading {
@@ -725,12 +830,12 @@ $mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
   gap: 25px;
   margin: 24px 0 40px;
   h1 {
-    font: 500 clamp(46px, 7vw, 100px) / 1 Arial;
-    letter-spacing: -0.06em;
+    font: 400 clamp(46px, 7vw, 100px) / 1.15 $display;
+    letter-spacing: -0.03em;
   }
   p {
     margin-top: 15px;
-    font-size: 16px;
+    font-size: 18px;
     color: #686b64;
   }
 }
@@ -747,15 +852,16 @@ $mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
     display: grid;
     grid-template-columns: 70px 1fr;
     gap: 20px;
-    font-size: 12px;
+    font-size: 16px;
     line-height: 1.7;
   }
   dt {
     color: #74786e;
-    font: 10px $mono;
+    font: 13px/1.7 $sans;
   }
 }
 .detailDescription {
+  word-break: keep-all;
   font-size: 21px;
   line-height: 1.8;
   letter-spacing: -0.03em;
@@ -766,7 +872,10 @@ $mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
   gap: 15px;
   margin-top: 30px;
   a {
-    font: 11px $mono;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font: 15px/1.6 $sans;
     border-bottom: 1px solid $ink;
     padding-bottom: 7px;
   }
@@ -774,7 +883,7 @@ $mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
 .detailHighlights {
   padding-top: 65px;
   h2 {
-    font: 11px $mono;
+    font: 15px/1.6 $sans;
     margin-bottom: 40px;
   }
   article {
@@ -784,7 +893,7 @@ $mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
     padding: 30px 0;
     border-top: 1px solid $line;
     > span {
-      font: 12px $mono;
+      font: 14px $label;
       color: #777;
     }
     h3 {
@@ -794,7 +903,8 @@ $mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
       letter-spacing: -0.04em;
     }
     p {
-      font-size: 15px;
+      font-size: 18px;
+      word-break: keep-all;
       line-height: 1.9;
       color: #686c64;
       max-width: 730px;
@@ -812,56 +922,35 @@ $mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
   font-size: 28px;
   small {
     display: block;
-    font: 10px $mono;
+    font: 14px/1.5 $sans;
     margin-bottom: 15px;
   }
 }
 
-@media (min-width: 1600px) {
-  .heroTop h1 {
-    font-size: 90px;
-  }
-  .glassScene {
-    right: 4%;
-    width: 72%;
-  }
-}
 @media (max-width: 1000px) {
   .hero {
     min-height: 780px;
-  }
-  .headerNote {
-    margin-left: 15px;
-  }
-  .heroTop h1 {
-    font-size: 60px;
-  }
-  .heroIndex {
-    font-size: 8px;
-  }
-  .glassScene {
-    width: 92%;
-    top: 31%;
-    height: 41%;
-    right: -4%;
+    top: min(0px, calc(100svh - 780px));
   }
   .heroIntro {
-    font-size: 14px;
-  }
-  .projectTitle h3 span {
-    display: block;
-    margin: 7px 0 0;
-  }
-  .workAside {
-    max-width: 310px;
+    font-size: 17px;
   }
 }
 @media (max-width: 760px) {
+  .portfolio,
+  .header,
+  .footer,
+  .detail {
+    --page-inset: 6%;
+    --grid-gap: 16px;
+    --grid-count: 2;
+  }
   .header {
-    padding: 25px 6%;
+    display: flex;
+    padding: 25px var(--page-inset);
   }
   .logo {
-    font-size: 23px;
+    font-size: 28px;
   }
   .headerNote {
     display: none;
@@ -902,59 +991,44 @@ $mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
     }
   }
   .hero {
-    padding: 112px 6% 0;
+    top: min(-30px, calc(100svh - 760px));
+    padding: 90px var(--page-inset) 0;
+    grid-template-rows: minmax(240px, 1fr) auto auto;
     height: calc(100svh + 30px);
     min-height: 760px;
     max-height: 1000px;
   }
-  .heroTop h1 {
-    font-size: clamp(28px, 7.4vw, 50px);
-    line-height: 0.98;
-    letter-spacing: -0.06em;
-  }
-  .heroIndex {
-    display: none;
-  }
-  .heroGrid {
-    inset-inline: 4%;
-    grid-template-columns: repeat(2, 1fr);
+  .pageGrid {
     span:nth-child(n + 3) {
       display: none;
     }
   }
   .glassScene {
-    width: 112%;
-    right: -6%;
-    top: 28%;
-    height: 35%;
+    grid-column: 1 / -1;
   }
-  .orbitMark {
-    top: 56%;
-    right: 12%;
-    font-size: 55px;
+  .glassFallback {
+    font-size: clamp(60px, 27vw, 180px);
   }
   .heroBottom {
-    inset-inline: 6%;
-    bottom: 100px;
     display: block;
+    padding-block: 20px;
   }
   .heroIntro {
-    font-size: 14px;
+    font-size: 16px;
     line-height: 1.9;
   }
   .explore {
     margin-top: 23px;
-    font-size: 9px;
+    font-size: 14px;
     justify-content: space-between;
     span {
-      width: 34px;
-      height: 34px;
+      width: 28px;
+      height: 28px;
     }
   }
   .heroStatus {
-    inset-inline: 6%;
-    bottom: 26px;
-    font-size: 8px;
+    padding-block: 16px;
+    font-size: 11px;
     span:last-child {
       text-align: right;
     }
@@ -966,14 +1040,14 @@ $mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
   .work,
   .about,
   .footer {
-    padding-inline: 6%;
+    padding-inline: var(--page-inset);
   }
   .work {
     padding-top: 35px;
     padding-bottom: 65px;
   }
   .sectionLabel {
-    font-size: 9px;
+    font-size: 14px;
     span:last-child {
       display: none;
     }
@@ -982,7 +1056,7 @@ $mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
     display: block;
     padding: 44px 0 30px;
     h2 {
-      font-size: 65px;
+      font-size: clamp(36px, 9vw, 48px);
       display: inline-block;
       sup {
         right: -33px;
@@ -994,50 +1068,47 @@ $mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
     max-width: none;
     margin-top: 26px;
     p {
-      font-size: 12px;
+      font-size: 16px;
     }
   }
   .filters {
     margin-top: 20px;
     button {
-      font-size: 10px;
+      font-size: 14px;
       padding: 9px 13px;
     }
   }
   .projectGrid {
-    grid-template-columns: 1fr;
     row-gap: 36px;
   }
   .featured {
-    grid-column: auto;
+    grid-column: 1 / -1;
     .cover {
       aspect-ratio: 1.32;
     }
     .projectTitle h3 {
-      font-size: 25px;
+      font-size: 28px;
     }
   }
   .projectTitle {
     h3 {
-      font-size: 25px;
+      font-size: 28px;
       span {
-        display: inline;
-        margin-left: 10px;
-        font-size: 9px;
+        font-size: 13px;
       }
     }
   }
   .projectMeta {
-    font-size: 9px;
+    font-size: 14px;
     margin-top: 14px;
   }
   .projectSubtitle {
-    font-size: 12px;
+    font-size: 16px;
   }
   .stack {
     margin-top: 12px;
-    span {
-      font-size: 8px;
+    > span {
+      font-size: 14px;
     }
   }
   .coverBrand {
@@ -1048,24 +1119,26 @@ $mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
   .coverCaption {
     left: 25px;
     bottom: 26px;
-    font-size: 8px;
+    font-size: 12px;
   }
   .coverArrow {
     bottom: 18px;
     right: 18px;
-    width: 32px;
-    height: 32px;
-    font-size: 20px;
+    width: 28px;
+    height: 28px;
+    .arrowIcon {
+      width: 14px;
+      height: 14px;
+    }
   }
   .coupleTitle {
-    font-size: 47px;
+    font-size: clamp(25px, 7vw, 40px);
   }
   .about {
     padding-block: 34px 60px;
   }
   .aboutContent {
-    grid-template-columns: 1fr;
-    gap: 35px;
+    row-gap: 35px;
     padding-top: 40px;
   }
   .aboutStar {
@@ -1077,15 +1150,15 @@ $mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
   }
   .aboutCoordinates {
     margin-top: 22px;
-    font-size: 8px;
+    font-size: 13px;
   }
   .aboutText {
     padding-top: 0;
     > p {
-      font-size: 13px;
+      font-size: 16px;
     }
     .aboutLead {
-      font-size: 23px;
+      font-size: 25px;
     }
   }
   .footer {
@@ -1098,20 +1171,18 @@ $mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
     }
   }
   .contactArrow {
-    width: 52px;
-    height: 52px;
-    font-size: 32px;
-    flex-shrink: 0;
+    width: 36px;
+    height: 36px;
   }
   .contactLinks {
     gap: 16px 22px;
-    font-size: 12px;
+    font-size: 15px;
     padding-bottom: 45px;
   }
   .footerBottom {
     flex-wrap: wrap;
     gap: 10px;
-    font-size: 8px;
+    font-size: 14px;
     span:nth-child(2) {
       display: none;
     }
@@ -1128,7 +1199,7 @@ $mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
       font-size: 49px;
     }
     p {
-      font-size: 14px;
+      font-size: 16px;
     }
   }
   .detailVisual .cover {
@@ -1151,7 +1222,7 @@ $mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
         font-size: 20px;
       }
       p {
-        font-size: 13px;
+        font-size: 16px;
       }
     }
   }
@@ -1160,7 +1231,31 @@ $mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
     margin-top: 40px;
   }
 }
+@media (max-width: 480px) {
+  .skillList {
+    grid-template-columns: 1fr;
+  }
+  .dogLabel,
+  .coupleLabel {
+    font-size: 12px;
+  }
+  .dogFoot,
+  .coupleFoot {
+    font-size: 11px;
+    right: 56px;
+  }
+}
 @media (prefers-reduced-motion: reduce) {
+  .heroStage::after {
+    display: none;
+  }
+  .hero {
+    position: relative;
+    top: auto;
+  }
+  .work {
+    margin-top: 0;
+  }
   .motionReady [data-reveal] {
     opacity: 1;
     transform: none;

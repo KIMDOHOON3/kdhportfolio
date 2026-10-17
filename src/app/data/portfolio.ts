@@ -2,7 +2,7 @@ export type PortfolioProject = {
   id: number;
   title: string;
   subtitle: string;
-  category: "Client work" | "Personal project";
+  category: "실무 프로젝트" | "개인 프로젝트";
   year: string;
   visual: "lexus" | "legacy" | "kia" | "dog" | "couple";
   image?: string;
@@ -18,8 +18,8 @@ export const portfolioProjects: PortfolioProject[] = [
   {
     id: 1,
     title: "LEXUS",
-    subtitle: "A new digital experience",
-    category: "Client work",
+    subtitle: "상담·예약·마이페이지를 연결한 웹사이트 리뉴얼",
+    category: "실무 프로젝트",
     year: "2026",
     visual: "lexus",
     image: "/projects/lexus-renewal.webp",
@@ -49,8 +49,8 @@ export const portfolioProjects: PortfolioProject[] = [
   {
     id: 2,
     title: "LEXUS",
-    subtitle: "Details make the experience",
-    category: "Client work",
+    subtitle: "360° 차량 뷰어와 서비스 사용성 개선",
+    category: "실무 프로젝트",
     year: "2025—26",
     visual: "legacy",
     image: "/projects/lexus-experience.webp",
@@ -80,8 +80,8 @@ export const portfolioProjects: PortfolioProject[] = [
   {
     id: 3,
     title: "Kia Worldwide",
-    subtitle: "Movement, made interactive",
-    category: "Client work",
+    subtitle: "스크롤 인터랙션으로 전하는 글로벌 브랜드 경험",
+    category: "실무 프로젝트",
     year: "2025—26",
     visual: "kia",
     image: "/projects/kia-worldwide.webp",
@@ -111,8 +111,8 @@ export const portfolioProjects: PortfolioProject[] = [
   {
     id: 4,
     title: "Dog Atlas",
-    subtitle: "A little curiosity. A lifelong friend.",
-    category: "Personal project",
+    subtitle: "376종의 강아지를 발견하고 이해하는 견종도감",
+    category: "개인 프로젝트",
     year: "2026",
     visual: "dog",
     description:
@@ -141,15 +141,17 @@ export const portfolioProjects: PortfolioProject[] = [
   },
   {
     id: 5,
-    title: "Couple Web",
-    subtitle: "Every little moment, together.",
-    category: "Personal project",
+    title: "커플 웹",
+    subtitle: "사진·일정·편지를 함께 기록하는 커플 웹앱",
+    category: "개인 프로젝트",
     year: "2026",
     visual: "couple",
     description:
       "둘의 일상과 기억을 함께 쌓는 커플 웹앱. 사진과 일정, 기념일, 편지를 하나의 공간에 담았습니다.",
     stack: ["Next.js", "TypeScript", "Supabase", "Zustand", "PWA"],
     role: "개인 프로젝트 · 기획, 디자인, 프론트엔드 개발",
+    site: "https://aeppy.app/",
+    github: "https://github.com/KIMDOHOON3/couple-web-2026",
     highlights: [
       {
         title: "둘만의 공간 연결",

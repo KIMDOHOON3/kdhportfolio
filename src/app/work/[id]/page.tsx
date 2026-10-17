@@ -3,6 +3,9 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { portfolioProjects } from "../../data/portfolio";
 import ProjectCover from "../../components/portfolio/ProjectCover";
+import TechnologyIcon from "../../components/portfolio/TechnologyIcon";
+import ArrowIcon from "../../components/portfolio/ArrowIcon";
+import { LinkIcon, GithubIcon } from "../../components/Icons";
 import styles from "../../components/portfolio/Portfolio.module.scss";
 
 type Props = { params: Promise<{ id: string }> };
@@ -38,7 +41,7 @@ export default async function ProjectDetail({ params }: Props) {
   return (
     <main id="top" className={styles.detail}>
       <Link href="/#work" className={styles.backLink}>
-        ← BACK TO SELECTED WORK
+        ← 프로젝트 목록으로
       </Link>
       <div className={styles.sectionLabel}>
         <span>
@@ -53,7 +56,10 @@ export default async function ProjectDetail({ params }: Props) {
         </div>
         <div className={styles.stack}>
           {project.stack.map((tech) => (
-            <span key={tech}>{tech}</span>
+            <span key={tech}>
+              <TechnologyIcon name={tech} />
+              {tech}
+            </span>
           ))}
         </div>
       </div>
@@ -62,15 +68,15 @@ export default async function ProjectDetail({ params }: Props) {
       </div>
       <div className={styles.detailInfo}>
         <dl>
-          <dt>ROLE</dt>
+          <dt>담당 역할</dt>
           <dd>{project.role}</dd>
-          <dt>YEAR</dt>
+          <dt>작업 연도</dt>
           <dd>{project.year}</dd>
-          <dt>STACK</dt>
+          <dt>사용 기술</dt>
           <dd>{project.stack.join(" / ")}</dd>
-          <dt>TYPE</dt>
+          <dt>작업 유형</dt>
           <dd>
-            {project.category === "Client work"
+            {project.category === "실무 프로젝트"
               ? "실무 프로젝트 · 팀 작업"
               : "개인 프로젝트"}
           </dd>
@@ -80,12 +86,22 @@ export default async function ProjectDetail({ params }: Props) {
           <div className={styles.detailLinks}>
             {project.site && (
               <a href={project.site} target="_blank" rel="noreferrer">
-                VISIT WEBSITE ↗
+                <LinkIcon
+                  className={styles.actionIcon}
+                  fill="currentColor"
+                  aria-hidden="true"
+                />
+                사이트 바로가기
               </a>
             )}
             {project.github && (
               <a href={project.github} target="_blank" rel="noreferrer">
-                VIEW SOURCE ↗
+                <GithubIcon
+                  className={styles.actionIcon}
+                  fill="currentColor"
+                  aria-hidden="true"
+                />
+                GitHub 코드 보기
               </a>
             )}
             {!project.site && !project.github && (
@@ -95,7 +111,7 @@ export default async function ProjectDetail({ params }: Props) {
         </div>
       </div>
       <section className={styles.detailHighlights}>
-        <h2>WHAT I WORKED ON / 주요 구현 내용</h2>
+        <h2>주요 구현 내용</h2>
         {project.highlights.map((item, i) => (
           <article key={item.title}>
             <span>0{i + 1}</span>
@@ -108,10 +124,12 @@ export default async function ProjectDetail({ params }: Props) {
       </section>
       <Link className={styles.nextProject} href={`/work/${next.id}`}>
         <span>
-          <small>NEXT PROJECT</small>
+          <small>다음 프로젝트</small>
           {next.title}
         </span>
-        <span aria-hidden="true">↗</span>
+        <span aria-hidden="true">
+          <ArrowIcon />
+        </span>
       </Link>
     </main>
   );

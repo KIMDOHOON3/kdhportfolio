@@ -5,7 +5,22 @@ import Link from "next/link";
 import { portfolioProjects } from "../../data/portfolio";
 import GlassScene from "./GlassScene";
 import ProjectCover from "./ProjectCover";
+import usePaperMotion from "./usePaperMotion";
+import ArrowIcon from "./ArrowIcon";
+import TechnologyIcon from "./TechnologyIcon";
+import { MailIcon, GithubIcon, DownloadIcon, SkillIconMap } from "../Icons";
 import styles from "./Portfolio.module.scss";
+
+function GridGuides() {
+  return (
+    <div className={styles.pageGrid} aria-hidden="true">
+      <span />
+      <span />
+      <span />
+      <span />
+    </div>
+  );
+}
 
 export function PortfolioHeader() {
   const [open, setOpen] = useState(false);
@@ -27,9 +42,9 @@ export function PortfolioHeader() {
         DOHOON<span>®</span>
       </Link>
       <span className={styles.headerNote}>
-        FRONTEND DEVELOPER
+        프론트엔드 개발자
         <br />
-        BASED IN KOREA
+        김도훈의 포트폴리오
       </span>
       <button
         className={styles.menuButton}
@@ -47,13 +62,13 @@ export function PortfolioHeader() {
         aria-label="메인 메뉴"
       >
         <Link href="/#work" onClick={() => setOpen(false)}>
-          Work <sup>05</sup>
+          프로젝트 <sup>05</sup>
         </Link>
         <Link href="/#about" onClick={() => setOpen(false)}>
-          About
+          소개
         </Link>
         <Link href="/#contact" onClick={() => setOpen(false)}>
-          Let’s talk <span>↗</span>
+          연락하기 <ArrowIcon />
         </Link>
       </nav>
     </header>
@@ -63,50 +78,73 @@ export function PortfolioHeader() {
 export function PortfolioFooter() {
   return (
     <footer className={styles.footer} id="contact">
+      <GridGuides />
       <div className={styles.sectionLabel}>
-        <span>03 / CONTACT</span>
-        <span>GOOD THINGS START WITH A HELLO.</span>
+        <span>03 / 연락하기</span>
+        <span>함께할 다음 이야기를 기다립니다.</span>
       </div>
       <div className={styles.contactMain}>
         <h2>
-          LET’S MAKE
+          함께 만들
           <br />
-          SOMETHING <i>GOOD.</i>
+          다음 <i>경험.</i>
         </h2>
         <a
           className={styles.contactArrow}
           href="mailto:kingyska@nate.com"
           aria-label="김도훈에게 이메일 보내기"
         >
-          ↗
+          <MailIcon
+            className={styles.actionIcon}
+            fill="currentColor"
+            aria-hidden="true"
+          />
         </a>
       </div>
       <div className={styles.contactLinks}>
-        <a href="mailto:kingyska@nate.com">kingyska@nate.com ↗</a>
+        <a href="mailto:kingyska@nate.com">
+          <MailIcon
+            className={styles.actionIcon}
+            fill="currentColor"
+            aria-hidden="true"
+          />
+          kingyska@nate.com
+        </a>
         <a
           href="https://github.com/KIMDOHOON3"
           target="_blank"
           rel="noreferrer"
         >
-          GitHub ↗
+          <GithubIcon
+            className={styles.actionIcon}
+            fill="currentColor"
+            aria-hidden="true"
+          />
+          GitHub
         </a>
         <a href="/resume/김도훈-이력서.pdf" download>
-          이력서 다운로드 ↓
+          <DownloadIcon
+            className={styles.actionIcon}
+            fill="currentColor"
+            aria-hidden="true"
+          />
+          이력서 다운로드
         </a>
       </div>
       <div className={styles.footerBottom}>
-        <span>© {new Date().getFullYear()} KIM DOHOON</span>
-        <span>DESIGNED & DEVELOPED WITH CARE.</span>
-        <a href="#top">BACK TO TOP ↑</a>
+        <span>© {new Date().getFullYear()} 김도훈</span>
+        <span>기획 · 디자인 · 개발 김도훈</span>
+        <a href="#top">맨 위로 ↑</a>
       </div>
     </footer>
   );
 }
 
 export default function Portfolio() {
-  const [filter, setFilter] = useState("All");
+  const [filter, setFilter] = useState("전체");
   const [clock, setClock] = useState("--:--");
   const root = useRef<HTMLElement>(null);
+  usePaperMotion(root, filter);
   useEffect(() => {
     const update = () =>
       setClock(
@@ -138,68 +176,55 @@ export default function Portfolio() {
     };
   }, [filter]);
   const visibleProjects = portfolioProjects.filter(
-    (project) => filter === "All" || project.category === filter,
+    (project) => filter === "전체" || project.category === filter,
   );
 
   return (
     <main ref={root} id="top" className={styles.portfolio}>
-      <section className={styles.hero} aria-labelledby="hero-title">
-        <div className={styles.heroGrid} aria-hidden="true">
-          <span />
-          <span />
-          <span />
-          <span />
-        </div>
-        <div className={styles.heroTop}>
-          <h1 id="hero-title">
-            THOUGHTFUL CODE.
-            <br />
-            TANGIBLE
-            <br />
-            <span>EXPERIENCES.</span>
+      <div className={styles.heroStage}>
+        <section className={styles.hero} aria-labelledby="hero-title">
+          <GridGuides />
+          <h1 id="hero-title" className={styles.visuallyHidden}>
+            김도훈 — 프론트엔드 개발자 포트폴리오
           </h1>
-          <span className={styles.heroIndex}>
-            PORTFOLIO — 2026
-            <br />
-            DESIGN MEETS DEVELOPMENT
-          </span>
-        </div>
-        <GlassScene />
-        <span className={styles.orbitMark} aria-hidden="true">
-          ✳
-        </span>
-        <div className={styles.heroBottom}>
-          <p className={styles.heroIntro}>
-            안녕하세요, 프론트엔드 개발자 <strong>김도훈</strong>입니다.
-            <br />
-            섬세한 인터랙션과 견고한 코드로
-            <br />
-            기억에 남는 웹 경험을 만듭니다.
-          </p>
-          <a href="#work" className={styles.explore}>
-            EXPLORE SELECTED WORK <span>↓</span>
-          </a>
-        </div>
-        <div className={styles.heroStatus}>
-          <span>
-            <i /> OPEN TO NEW OPPORTUNITIES
-          </span>
-          <span>
-            SEOUL, KR <b>{clock}</b>
-          </span>
-        </div>
-      </section>
+          <GlassScene />
+          <div className={styles.heroBottom}>
+            <p className={styles.heroIntro}>
+              안녕하세요, 프론트엔드 개발자 <strong>김도훈</strong>입니다.
+              <br />
+              브랜드 웹사이트와 일상 속 서비스를
+              <br />
+              직접 구현하고 다듬습니다.
+            </p>
+            <a href="#work" className={styles.explore}>
+              프로젝트 살펴보기{" "}
+              <span>
+                <ArrowIcon down />
+              </span>
+            </a>
+          </div>
+          <div className={styles.heroStatus}>
+            <span>
+              <i /> 함께할 팀을 찾고 있습니다
+            </span>
+            <span>
+              한국 시간 <b>{clock}</b>
+            </span>
+          </div>
+        </section>
+      </div>
 
       <section id="work" className={styles.work} aria-labelledby="work-title">
+        <GridGuides />
         <div className={styles.sectionLabel}>
-          <span>01 / SELECTED WORK</span>
-          <span>CLIENT WORK & PERSONAL EXPLORATIONS</span>
+          <span>01 / 프로젝트</span>
+          <span>실무에서 쌓은 경험과 직접 만든 서비스</span>
         </div>
         <div className={styles.workHeading}>
           <h2 id="work-title">
-            Made with
+            고민을 담아
             <br />
-            <i>purpose.</i>
+            <i>만든 작업들.</i>
             <sup>(05)</sup>
           </h2>
           <div className={styles.workAside}>
@@ -213,21 +238,21 @@ export default function Portfolio() {
               role="group"
               aria-label="프로젝트 필터"
             >
-              {["All", "Client work", "Personal project"].map((value) => (
+              {["전체", "실무 프로젝트", "개인 프로젝트"].map((value) => (
                 <button
                   key={value}
                   onClick={() => setFilter(value)}
                   aria-pressed={filter === value}
                 >
-                  {value === "All"
-                    ? "All work"
-                    : value === "Client work"
-                      ? "Client"
-                      : "Personal"}
+                  {value === "전체"
+                    ? "전체"
+                    : value === "실무 프로젝트"
+                      ? "실무"
+                      : "개인"}
                   <span>
-                    {value === "All"
+                    {value === "전체"
                       ? "05"
-                      : value === "Client work"
+                      : value === "실무 프로젝트"
                         ? "03"
                         : "02"}
                   </span>
@@ -239,13 +264,14 @@ export default function Portfolio() {
         <div className={styles.projectGrid}>
           {visibleProjects.map((project) => (
             <article
-              data-reveal
+              data-paper
               key={project.id}
               className={`${styles.project} ${project.id === 1 ? styles.featured : ""}`}
             >
               <Link
                 href={`/work/${project.id}`}
                 className={styles.projectLink}
+                data-paper-surface
                 aria-label={`${project.title} ${project.id === 1 ? "리뉴얼" : project.id === 2 ? "운영 및 개선" : ""} 프로젝트 보기`}
               >
                 <ProjectCover project={project} />
@@ -258,22 +284,27 @@ export default function Portfolio() {
                 <div className={styles.projectTitle}>
                   <h3>
                     {project.title}
-                    {project.id === 1 && <span>Renewal</span>}
-                    {project.id === 2 && <span>Digital experience</span>}
+                    {project.id === 1 && <span>리뉴얼</span>}
+                    {project.id === 2 && <span>운영 · 개선</span>}
                   </h3>
-                  <span aria-hidden="true">↗</span>
+                  <span aria-hidden="true">
+                    <ArrowIcon />
+                  </span>
                 </div>
                 <p className={styles.projectSubtitle}>{project.subtitle}</p>
                 <div className={styles.stack}>
                   {project.stack.slice(0, 3).map((tech) => (
-                    <span key={tech}>{tech}</span>
+                    <span key={tech}>
+                      <TechnologyIcon name={tech} />
+                      {tech}
+                    </span>
                   ))}
                 </div>
               </Link>
             </article>
           ))}
         </div>
-        {filter !== "All" && (
+        {filter !== "전체" && (
           <p className={styles.filterResult} aria-live="polite">
             {visibleProjects.length}개의 프로젝트를 보고 있습니다.
           </p>
@@ -285,9 +316,10 @@ export default function Portfolio() {
         className={styles.about}
         aria-labelledby="about-title"
       >
+        <GridGuides />
         <div className={styles.sectionLabel}>
-          <span>02 / A LITTLE ABOUT ME</span>
-          <span>CURIOUS MIND. CAREFUL HANDS.</span>
+          <span>02 / 소개</span>
+          <span>궁금한 것은 깊게, 작은 부분은 세심하게.</span>
         </div>
         <div className={styles.aboutContent}>
           <div className={styles.aboutLeft}>
@@ -295,12 +327,12 @@ export default function Portfolio() {
               ✳
             </span>
             <h2 id="about-title">
-              CRAFT IN
+              작은 차이까지
               <br />
-              EVERY <i>DETAIL.</i>
+              <i>꼼꼼하게.</i>
             </h2>
             <span className={styles.aboutCoordinates}>
-              CODE × INTERACTION × EXPERIENCE
+              코드 × 인터랙션 × 사용자 경험
             </span>
           </div>
           <div className={styles.aboutText} data-reveal>
@@ -319,19 +351,26 @@ export default function Portfolio() {
               기획부터 디자인, 개발까지 직접 맡아 서비스를 만들어가고 있습니다.
             </p>
             <div className={styles.skillList}>
-              <span>React / Next.js</span>
-              <span>TypeScript / JavaScript</span>
-              <span>Zustand / Supabase</span>
-              <span>GSAP / Three.js</span>
-              <span>SCSS / Emotion</span>
-              <span>Responsive & Accessible UI</span>
+              {Object.keys(SkillIconMap).map((skill) => (
+                <span key={skill}>
+                  <TechnologyIcon name={skill} />
+                  {skill}
+                </span>
+              ))}
             </div>
             <a
               href="/resume/김도훈-이력서.pdf"
               download
               className={styles.resumeLink}
             >
-              조금 더 자세한 이야기는 이력서에 <span>↗</span>
+              조금 더 자세한 이야기는 이력서에{" "}
+              <span>
+                <DownloadIcon
+                  className={styles.actionIcon}
+                  fill="currentColor"
+                  aria-hidden="true"
+                />
+              </span>
             </a>
           </div>
         </div>

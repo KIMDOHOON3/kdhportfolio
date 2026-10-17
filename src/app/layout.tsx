@@ -9,7 +9,7 @@ import Script from "next/script";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://kdhportfolio.vercel.app"),
-  title: "김도훈 — Frontend Developer",
+  title: "김도훈 — 프론트엔드 개발자",
   description:
     "섬세한 인터랙션과 견고한 코드로 기억에 남는 웹 경험을 만드는 프론트엔드 개발자 김도훈의 포트폴리오.",
   keywords:
