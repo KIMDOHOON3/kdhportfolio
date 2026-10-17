@@ -1413,16 +1413,18 @@ $label: "Paperlogy-Medium", "Pretendard-Regular", sans-serif;
   padding-block: 70px 96px;
 }
 .workHeading {
-  grid-template-columns: repeat(12, minmax(0, 1fr));
-  padding: 42px 8px 50px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 20px 32px;
+  padding: 28px 8px 32px;
   h2 {
-    grid-column: 1 / 5;
+    flex: 0 0 auto;
     font-size: clamp(28px, 3.3vw, 46px);
   }
-  h2 sup {
-    position: static;
-    vertical-align: top;
-    margin-left: 12px;
+  .filters {
+    margin-top: 0;
   }
 }
 .workAside {

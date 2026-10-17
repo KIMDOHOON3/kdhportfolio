@@ -196,50 +196,34 @@ export default function Portfolio() {
       <AboutSection />
 
       <section id="work" className={styles.work} aria-labelledby="work-title">
-        <div className={styles.sectionLabel}>
-          <span>01 / 프로젝트</span>
-          <span>실무에서 쌓은 경험과 직접 만든 서비스</span>
-        </div>
         <div className={styles.workHeading}>
-          <h2 id="work-title">
-            고민을 담아
-            <br />
-            <i>만든 작업들.</i>
-            <sup>({projectCount(portfolioProjects.length)})</sup>
-          </h2>
-          <div className={styles.workAside}>
-            <p>
-              브랜드의 경험부터 일상 속 작은 서비스까지.
-              <br />
-              직접 고민하고, 구현하고, 다듬은 작업들입니다.
-            </p>
-            <div
-              className={styles.filters}
-              role="group"
-              aria-label="프로젝트 필터"
-            >
-              {["전체", "실무 프로젝트", "개인 프로젝트"].map((value) => (
-                <button
-                  key={value}
-                  onClick={() => setFilter(value)}
-                  aria-pressed={filter === value}
-                >
-                  {value === "전체"
-                    ? "전체"
-                    : value === "실무 프로젝트"
-                      ? "실무"
-                      : "개인"}
-                  <span>
-                    {projectCount(
-                      portfolioProjects.filter(
-                        (project) =>
-                          value === "전체" || project.category === value,
-                      ).length,
-                    )}
-                  </span>
-                </button>
-              ))}
-            </div>
+          <h2 id="work-title">프로젝트</h2>
+          <div
+            className={styles.filters}
+            role="group"
+            aria-label="프로젝트 필터"
+          >
+            {["전체", "실무 프로젝트", "개인 프로젝트"].map((value) => (
+              <button
+                key={value}
+                onClick={() => setFilter(value)}
+                aria-pressed={filter === value}
+              >
+                {value === "전체"
+                  ? "전체"
+                  : value === "실무 프로젝트"
+                    ? "실무"
+                    : "개인"}
+                <span>
+                  {projectCount(
+                    portfolioProjects.filter(
+                      (project) =>
+                        value === "전체" || project.category === value,
+                    ).length,
+                  )}
+                </span>
+              </button>
+            ))}
           </div>
         </div>
         <div className={styles.projectGrid}>
