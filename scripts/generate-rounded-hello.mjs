@@ -94,7 +94,43 @@ const curves = counterStrokes.map(
       "centripetal",
     ),
 );
-const paths = curves.map((curve) => curve.getPoints(samples));
+const letterPaths = curves.map((curve) => curve.getPoints(samples));
+// Adjacent letters used to touch only where their inflated end caps overlapped.
+// Give the handwriting actual connecting centerlines, with tangents that carry
+// the exit stroke into the next letter instead of leaving a pinched junction.
+const joins = curves.slice(0, -1).map((curve, index) => {
+  const next = curves[index + 1];
+  const start = curve.getPoint(1);
+  let entry = 0;
+  if (index === 3) {
+    // The o starts at its upper right for the loop construction. Join its left
+    // entry, not that distant start or the decorative right-hand exit stroke.
+    let nearest = Infinity;
+    letterPaths[index + 1].forEach((point, sample) => {
+      const distance = start.distanceToSquared(point);
+      if (distance < nearest) {
+        nearest = distance;
+        entry = sample / samples;
+      }
+    });
+  }
+  const end = next.getPoint(entry);
+  const handle = start.distanceTo(end) * 0.28;
+  const direction = end.clone().sub(start).normalize();
+  const incoming = curve.getTangent(1);
+  // At the side of the o the authored loop can run against the joining stroke.
+  // Use its geometric tangent in the direction of travel through this join.
+  const outgoing = next.getTangent(entry);
+  if (outgoing.dot(direction) < 0) outgoing.negate();
+  return new THREE.CubicBezierCurve3(
+    start,
+    start.clone().addScaledVector(incoming, handle),
+    end.clone().addScaledVector(outgoing, -handle),
+    end,
+  );
+});
+const joinPaths = joins.map((curve) => curve.getPoints(32));
+const paths = [...letterPaths, ...joinPaths];
 const pointBounds = new THREE.Box3().setFromPoints(paths.flat());
 const center = pointBounds.getCenter(new THREE.Vector3());
 const span =
@@ -278,6 +314,21 @@ function sampleField(x, y, z) {
       }
   return value;
 }
+// Topological connectivity alone allowed visually weak, near-tangent contacts.
+// The center of every connector must retain a substantial interior clearance
+// after closing and smoothing, so the joining stroke cannot collapse to a seam.
+const joinClearances = joins.map((curve) =>
+  Math.min(
+    ...curve
+      .getPoints(24)
+      .map((point) =>
+        sampleField(grid(point.x, "x"), grid(point.y, "y"), grid(point.z, "z")),
+      ),
+  ),
+);
+if (joinClearances.some((clearance) => clearance < radius * 0.6)) {
+  throw new Error(`Thin handwriting join: ${JSON.stringify(joinClearances)}`);
+}
 const position = geometry.getAttribute("position");
 const normals = new Float32Array(position.count * 3);
 const normal = new THREE.Vector3();
@@ -392,6 +443,8 @@ console.log(
       radius,
       letterSpacing,
       blend,
+      joins: joins.length,
+      joinClearances,
       vertices: position.count,
       triangles: indices.length / 3,
       bytes: buffer.byteLength,
