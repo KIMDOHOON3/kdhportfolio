@@ -1,26 +1,21 @@
 import { expect, test } from "@playwright/test";
 
-test("retired external assets are absent and lettering has an OFL source", async ({ request, page }, info) => {
+test("presentation assets load while local documents remain excluded", async ({ request, page }, info) => {
   test.skip(info.project.name !== "desktop", "Asset routes do not vary by viewport");
-  const retired = [
+  const restored = [
     "/models/hello.glb", "/models/thank-you.glb",
-    "/models/hello-rounded.glb", "/models/thank-you-rounded.glb",
-    "/font/NewYork.woff2", "/projects/mockups/lexus-desktop.png",
-    "/projects/mockups/kia-mobile.png", "/work/bg/1_1.jpg", "/icons/zustand.png",
-    "/docs/internal-notes.md",
+    "/font/NewYork.woff2", "/icons/github.svg", "/icons/react.svg", "/icons/zustand.png",
+    "/projects/mockups/lexus-desktop.png", "/projects/mockups/lexus-mobile.png",
+    "/projects/mockups/kia-desktop.png", "/projects/mockups/kia-mobile.png",
   ];
-  for (const path of retired) expect((await request.get(path)).status(), path).toBe(404);
-  for (const path of ["/models/hello-open.glb", "/models/thank-you-open.glb"]) {
-    const response = await request.get(path);
-    expect(response.status()).toBe(200);
-    const bytes = await response.body();
-    expect(bytes.readUInt32LE(0)).toBe(0x46546c67);
-    const json = JSON.parse(bytes.subarray(20, 20 + bytes.readUInt32LE(12)).toString("utf8").trim());
-    expect(json.scenes[0].extras).toMatchObject({ source: "Pacifico", license: "SIL OFL 1.1" });
-    expect(json.images ?? []).toHaveLength(0);
-  }
+  for (const path of restored) expect((await request.get(path)).status(), path).toBe(200);
+  expect((await request.get("/docs/internal-notes.md")).status()).toBe(404);
   await page.goto("/");
-  await expect(page.locator("[data-glass-scene]")).toHaveAttribute("data-hello-geometry", "ofl-lettering");
-  await expect(page.locator("[data-glass-scene]")).toHaveAttribute("data-footer-geometry", "ofl-lettering");
-  expect(await page.locator('[data-work-cover-mockup] img').count()).toBe(0);
+  const scene = page.locator("[data-glass-scene]");
+  await expect(scene).toHaveAttribute("data-hello-geometry", "glass-mesh");
+  await expect(scene).toHaveAttribute("data-footer-geometry", "glass-path");
+  await expect(page.locator("header nav a").first()).toHaveCSS("font-family", /NewYork/);
+  await expect.poll(() => page.locator('[data-work-cover-mockup] img').evaluateAll(
+    images => images.length === 4 && images.every(image => (image as HTMLImageElement).complete && (image as HTMLImageElement).naturalWidth > 0),
+  )).toBe(true);
 });

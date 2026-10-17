@@ -75,7 +75,7 @@ export default function ScrollButton() {
         <div className={styles.scrollDownWrap}>
           <Image
             className={styles.scrollDownImage}
-            src="/icons/scroll-down.svg"
+            src="/icons/scroll-down-white.png"
             alt="스크롤 다운"
             width={80}
             height={80}
@@ -83,7 +83,7 @@ export default function ScrollButton() {
         </div>
         <Image
           className={styles.downArrowImage}
-          src="/icons/right-arrow.svg"
+          src="/icons/right-arrow-white.png"
           alt="스크롤 화살표"
           width={18}
           height={26}

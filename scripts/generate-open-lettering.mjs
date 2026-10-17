@@ -1,5 +1,5 @@
 // Build glass lettering from the bundled OFL-licensed Pacifico outlines.
-// import fs from "node:fs";
+import fs from "node:fs";
 import * as THREE from "three";
 import { FontLoader } from "three/addons/loaders/FontLoader.js";
 import { TextGeometry } from "three/addons/geometries/TextGeometry.js";

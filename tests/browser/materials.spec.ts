@@ -90,7 +90,7 @@ test("hero: pointer bends light, settles and preserves touch/reduced motion", as
       );
       await expect(p.locator("[data-glass-scene]")).toHaveAttribute(
         "data-hello-geometry",
-        "ofl-lettering",
+        "glass-mesh",
       );
       await expect(p.locator("[data-story-backdrop]")).toHaveAttribute(
         "data-ready",

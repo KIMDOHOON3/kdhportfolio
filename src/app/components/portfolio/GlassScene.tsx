@@ -691,7 +691,7 @@ export default function GlassScene() {
           .then(({ GLTFLoader }) => {
             const loader = new GLTFLoader();
             void loader
-              .loadAsync("/models/hello-open.glb")
+              .loadAsync("/models/hello.glb")
               .then((gltf) => {
                 let geometry: InstanceType<typeof THREE.BufferGeometry> | null =
                   null;
@@ -723,7 +723,7 @@ export default function GlassScene() {
                 bounds.getCenter(center);
                 group.position.y = savedY;
                 group.updateMatrixWorld(true);
-                element.dataset.helloGeometry = "ofl-lettering";
+                element.dataset.helloGeometry = "glass-mesh";
               })
               .catch(() => {
                 // Keep a licensed HTML text fallback if geometry cannot load.
@@ -738,7 +738,7 @@ export default function GlassScene() {
                 render(performance.now());
                 setReady(true);
               });
-            return loader.loadAsync("/models/thank-you-open.glb");
+            return loader.loadAsync("/models/thank-you.glb");
           })
           .then((gltf) => {
             gltf.scene.traverse((object) => {
@@ -763,7 +763,7 @@ export default function GlassScene() {
               footerGroup.add(mesh);
               footerWords.push({ mesh, extent, baseline: mesh.userData.baseline });
             }
-            element.dataset.footerGeometry = "ofl-lettering";
+            element.dataset.footerGeometry = "glass-path";
             placeFooter();
             resume();
           })
