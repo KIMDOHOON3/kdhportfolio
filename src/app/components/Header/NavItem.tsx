@@ -16,12 +16,13 @@ export default function NavItem({ item, onNavItemClick }: NavItemProps) {
   return (
     <li className={styles.navItemContainer}>
       <div className={styles.svgWrapper}>
-        <svg xmlns="http://www.w3.org/2000/svg">
+        <svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
           <rect className={styles.shape} />
         </svg>
         <Link
           className={styles.navLink}
-          href={`#${item.toLowerCase()}`}
+          href={`/#${item.toLowerCase()}`}
+          scroll={false}
           onClick={handleClick}
         >
           {item}

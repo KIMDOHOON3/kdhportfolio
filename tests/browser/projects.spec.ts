@@ -9,6 +9,26 @@ test("one Lexus project retains renewal and operations details", async ({
   await page.evaluate(() => document.fonts.ready);
   const gallery = page.locator("#work");
   await expect(gallery.locator("article")).toHaveCount(4);
+  await expect(gallery.locator("[data-work-cover-mockup]")).toHaveCount(2);
+  await expect.poll(() => gallery.locator('[data-work-cover-mockup] img').evaluateAll(
+    images => images.length === 4 && images.every(image => (image as HTMLImageElement).complete && (image as HTMLImageElement).naturalWidth > 0),
+  )).toBe(true);
+  await expect(gallery.locator('img[src*="lexus-renewal"], img[src*="kia-worldwide"]')).toHaveCount(0);
+  if (page.viewportSize()!.width > 760) {
+    const cards = await gallery.locator("article").evaluateAll((elements) =>
+      elements.map((element) => {
+        const rect = element.getBoundingClientRect();
+        return { top: rect.top, left: rect.left, right: rect.right, width: rect.width };
+      }),
+    );
+    expect(Math.abs(cards[0].top - cards[1].top)).toBeLessThan(1);
+    expect(Math.abs(cards[2].top - cards[3].top)).toBeLessThan(1);
+    expect(cards[2].top).toBeGreaterThan(cards[0].top);
+    expect(cards[1].left).toBeGreaterThan(cards[0].right);
+    expect(Math.abs(cards[0].left - cards[2].left)).toBeLessThan(1);
+    expect(Math.abs(cards[1].left - cards[3].left)).toBeLessThan(1);
+    cards.forEach((card) => expect(Math.abs(card.width - cards[0].width)).toBeLessThan(1));
+  }
   await expect(
     gallery.getByRole("link", { name: "LEXUS 프로젝트 보기", exact: true }),
   ).toHaveCount(1);
@@ -19,7 +39,18 @@ test("one Lexus project retains renewal and operations details", async ({
     "Dog Atlas",
     "Aeppy",
   ]);
-  await expect(page.locator("#main-navigation sup")).toHaveText("04");
+  const sectionOrder = await page.locator("main#top > section").evaluateAll(
+    sections => sections.slice(0, 3).map(section => section.id),
+  );
+  expect(sectionOrder).toEqual(["home", "work", "about"]);
+  const lexus = gallery.locator('a[href="/work/1"]');
+  const kia = gallery.locator('a[href="/work/3"]');
+  await expect(lexus.getByRole("listitem")).toHaveText([
+    "상담·예약·마이페이지 UI 개발", "상담 API·인증 연동 및 폼 검증", "360° 차량 뷰어·공통 UI 개선",
+  ]);
+  await expect(kia.getByRole("listitem")).toHaveText([
+    "브랜드 페이지·스크롤 인터랙션 구현", "차량 슬라이더·공통 컴포넌트 구현", "Safari 등 브라우저별 화면·동작 조율",
+  ]);
   const filters = gallery.getByRole("group", { name: "프로젝트 필터" });
   await expect(filters.getByRole("button").locator("span")).toHaveText([
     "04",
@@ -52,6 +83,8 @@ test("one Lexus project retains renewal and operations details", async ({
     page.getByRole("heading", { name: "LEXUS", exact: true }),
   ).toBeVisible();
   await capture("lexus-summary");
+  await expect(page.locator('[data-work-cover-mockup="lexus"]')).toBeVisible();
+  await expect(page.locator('meta[property="og:image"][content*="lexus-renewal"]')).toHaveCount(0);
   const renewal = page.getByRole("region", {
     name: "웹사이트 리뉴얼",
     exact: true,

@@ -1,14 +1,16 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type PointerEvent } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
+import Navigation from "../Header/Navigation";
+import NavTrigger from "../Header/NavTrigger";
 import { portfolioProjects } from "../../data/portfolio";
 import GlassScene from "./GlassScene";
 import ProjectCover from "./ProjectCover";
 import usePaperMotion from "./usePaperMotion";
 import ArrowIcon from "./ArrowIcon";
 import TechnologyIcon from "./TechnologyIcon";
-import ViewportGrid from "./ViewportGrid";
 import AboutSection from "./AboutSection";
 import ScrollStory from "./ScrollStory";
 import BackgroundScreen from "./BackgroundScreen";
@@ -18,17 +20,46 @@ import styles from "./Portfolio.module.scss";
 
 const projectCount = (count: number) => String(count).padStart(2, "0");
 
+const positionExploreFill = (event: PointerEvent<HTMLAnchorElement>) => {
+  if (event.pointerType !== "mouse" ||
+      !matchMedia("(hover: hover) and (pointer: fine)").matches ||
+      matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  const rect = event.currentTarget.getBoundingClientRect();
+  event.currentTarget.style.setProperty("--explore-x", `${event.clientX - rect.left}px`);
+  event.currentTarget.style.setProperty("--explore-y", `${event.clientY - rect.top}px`);
+};
+const clearExplorePress = (event: PointerEvent<HTMLAnchorElement>) => {
+  delete event.currentTarget.dataset.pressed;
+};
+
 export function PortfolioHeader() {
   const [open, setOpen] = useState(false);
+  const header = useRef<HTMLElement>(null);
+  const pathname = usePathname();
+  useEffect(() => setOpen(false), [pathname]);
   useEffect(() => {
     const escape = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setOpen(false);
+      if (event.key === "Escape" && open) {
+        setOpen(false);
+        header.current?.querySelector<HTMLButtonElement>("#navTrigger")
+          ?.focus({ preventScroll: true });
+      }
     };
+    const keyboardTrigger = header.current?.querySelector("#navTrigger:focus-visible");
+    if (open && keyboardTrigger)
+      header.current?.querySelector<HTMLAnchorElement>("nav a")
+        ?.focus({ preventScroll: true });
     window.addEventListener("keydown", escape);
     return () => window.removeEventListener("keydown", escape);
+  }, [open]);
+  useEffect(() => {
+    const mobile = matchMedia("(max-width: 768px)");
+    const closeOnDesktop = () => { if (!mobile.matches) setOpen(false); };
+    mobile.addEventListener("change", closeOnDesktop);
+    return () => mobile.removeEventListener("change", closeOnDesktop);
   }, []);
   return (
-    <header className={styles.header}>
+    <header ref={header} className={styles.header}>
       <Link
         className={styles.logo}
         href="/#top"
@@ -38,36 +69,10 @@ export function PortfolioHeader() {
       >
         DOHOON<span>®</span>
       </Link>
-      <span className={styles.headerNote}>
-        프론트엔드 개발자
-        <br />
-        김도훈의 포트폴리오
-      </span>
-      <button
-        className={styles.menuButton}
-        aria-label={open ? "메뉴 닫기" : "메뉴 열기"}
-        aria-expanded={open}
-        aria-controls="main-navigation"
-        onClick={() => setOpen(!open)}
-      >
-        <span />
-        <span />
-      </button>
-      <nav
-        id="main-navigation"
-        className={`${styles.nav} ${open ? styles.navOpen : ""}`}
-        aria-label="메인 메뉴"
-      >
-        <Link href="/#work" scroll={false} onClick={() => setOpen(false)}>
-          프로젝트 <sup>{projectCount(portfolioProjects.length)}</sup>
-        </Link>
-        <Link href="/#about" scroll={false} onClick={() => setOpen(false)}>
-          소개
-        </Link>
-        <Link href="/#contact" scroll={false} onClick={() => setOpen(false)}>
-          연락하기 <ArrowIcon />
-        </Link>
-      </nav>
+      <div className={styles.headerMenu}>
+        <NavTrigger isActive={open} onClick={() => setOpen(!open)} />
+        <Navigation isActive={open} onNavItemClick={() => setOpen(false)} />
+      </div>
     </header>
   );
 }
@@ -75,19 +80,10 @@ export function PortfolioHeader() {
 export function PortfolioFooter() {
   return (
     <footer className={styles.footer} id="contact">
-      <div className={styles.sectionLabel}>
-        <span>03 / 연락하기</span>
-        <span>함께할 다음 이야기를 기다립니다.</span>
-      </div>
       <div className={styles.contactMain}>
         <h2 className={styles.thankYou} lang="en" data-footer-thanks>
           <span>THANK</span> <span>YOU</span>
         </h2>
-        <p className={styles.contactThanks}>
-          포트폴리오를 봐주셔서 감사합니다.
-          <br />
-          함께 만들 다음 경험을 기다립니다.
-        </p>
       </div>
       <div className={styles.contactLinks}>
         <a href="mailto:kingyska@nate.com">
@@ -156,7 +152,6 @@ export default function Portfolio() {
 
   return (
     <main ref={root} id="top" className={styles.portfolio}>
-      <ViewportGrid />
       <GlassScene />
       <BackgroundScreen />
       <section
@@ -165,13 +160,7 @@ export default function Portfolio() {
         aria-labelledby="hero-title"
         data-hero
       >
-        <div className={styles.heroMeta}>
-          <h1 id="hero-title" className={styles.heroRole}>
-            프론트엔드
-            <br />
-            개발자 김도훈
-          </h1>
-        </div>
+        <h1 id="hero-title" className={styles.visuallyHidden}>김도훈 포트폴리오</h1>
         <div
           className={styles.heroLetteringFrame}
           data-hero-lettering-frame
@@ -179,25 +168,40 @@ export default function Portfolio() {
         />
         <div className={styles.heroBottom}>
           <div className={styles.heroSummary}>
-            <p className={styles.heroIntro}>
-              브랜드 웹사이트와 일상 속 서비스를
+            <p className={styles.heroCoordinates}>퍼블리싱에서 프론트엔드로</p>
+            <p className={styles.heroLead}>
+              화면과 기능을 함께 만드는
               <br />
-              직접 구현하고 다듬습니다.
+              프론트엔드 개발자 김도훈입니다.
             </p>
-            <p className={styles.heroCoordinates}>
-              코드 × 인터랙션 × 사용자 경험
+            <p className={styles.heroIntro}>
+              렉서스·기아 웹 프로젝트 참여
             </p>
           </div>
-          <a href="#work" className={styles.explore}>
-            프로젝트 살펴보기{" "}
-            <span>
+          <a
+            href="#work"
+            className={styles.explore}
+            aria-label="프로젝트 살펴보기"
+            onPointerEnter={positionExploreFill}
+            onPointerMove={positionExploreFill}
+            onPointerDown={(event) => {
+              if (event.pointerType === "touch") event.currentTarget.dataset.pressed = "true";
+            }}
+            onPointerUp={clearExplorePress}
+            onPointerCancel={clearExplorePress}
+            onPointerLeave={clearExplorePress}
+          >
+            <span className={styles.exploreLabel} aria-hidden="true">
+              <span>프로젝트 살펴보기</span>
+              <span>프로젝트 살펴보기</span>
+            </span>
+            <span className={styles.exploreIcon} aria-hidden="true">
+              <ArrowIcon down />
               <ArrowIcon down />
             </span>
           </a>
         </div>
       </section>
-      <AboutSection />
-
       <section id="work" className={styles.work} aria-labelledby="work-title">
         <div className={styles.workHeading}>
           <h2 id="work-title">프로젝트</h2>
@@ -234,7 +238,7 @@ export default function Portfolio() {
             <article
               data-paper
               key={project.id}
-              className={`${styles.project} ${project.id === 1 ? styles.featured : ""}`}
+              className={styles.project}
             >
               <Link
                 href={`/work/${project.id}`}
@@ -242,11 +246,11 @@ export default function Portfolio() {
                 className={styles.projectLink}
                 data-paper-surface
                 aria-label={`${project.title} 프로젝트 보기`}
+                aria-describedby={project.responsibilities ? `project-tasks-${project.id}` : undefined}
               >
-                <ProjectCover project={project} />
                 <div className={styles.projectMeta}>
                   <span>
-                    {projectCount(portfolioProjects.indexOf(project) + 1)} /{" "}
+                    {projectCount(portfolioProjects.indexOf(project) + 1)}{" "}
                     {project.category}
                   </span>
                   <span>{project.year}</span>
@@ -257,7 +261,17 @@ export default function Portfolio() {
                     <ArrowIcon />
                   </span>
                 </div>
-                <p className={styles.projectSubtitle}>{project.subtitle}</p>
+                {project.responsibilities ? (
+                  <div className={styles.projectTasks}>
+                    <p>담당 업무</p>
+                    <ul id={`project-tasks-${project.id}`}>
+                      {project.responsibilities.map((task) => <li key={task}>{task}</li>)}
+                    </ul>
+                  </div>
+                ) : (
+                  <p className={styles.projectSubtitle}>{project.subtitle}</p>
+                )}
+                <ProjectCover project={project} />
                 <div className={styles.stack}>
                   {project.stack.slice(0, 3).map((tech) => (
                     <span key={tech}>
@@ -277,6 +291,7 @@ export default function Portfolio() {
         )}
       </section>
 
+      <AboutSection />
       <StoryBackdrop />
       <ScrollStory />
     </main>

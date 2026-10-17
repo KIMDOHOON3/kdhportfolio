@@ -5,6 +5,7 @@ import Image from "next/image";
 import type { PortfolioProject } from "../../data/portfolio";
 import styles from "./Portfolio.module.scss";
 import ArrowIcon from "./ArrowIcon";
+import WorkCoverMockup from "./WorkCoverMockup";
 
 export default function ProjectCover({
   project,
@@ -41,39 +42,29 @@ export default function ProjectCover({
         </defs>
       </svg>
       <div className={styles.coverSurface} data-cover-surface>
-        {project.visual === "couple" ? (
+        {project.visual === "lexus" || project.visual === "kia" ? (
+          <WorkCoverMockup kind={project.visual} priority={priority} />
+        ) : project.visual === "couple" ? (
           <Image
             src={project.image!}
             alt="Aeppy — 추억과 일상을 함께 기록하는 우리만의 공간"
             fill
             sizes="(max-width: 760px) 100vw, 60vw"
             className={styles.aeppyCover}
+            priority={priority}
           />
         ) : project.image ? (
-          <>
-            <Image
-              src={project.image}
-              alt={`${project.title} 브랜드 이미지`}
-              fill
-              sizes="(max-width: 760px) 100vw, 60vw"
-              priority={priority}
-              className={styles.coverImage}
-            />
-            <div className={styles.coverShade} />
-            <span className={styles.coverBrand}>
-              {project.visual === "kia" ? "Kia" : "LEXUS"}
-            </span>
-            <span className={styles.coverCaption}>
-              {project.visual === "lexus"
-                ? "렉서스 웹사이트 리뉴얼 · 운영"
-                : project.visual === "kia"
-                  ? "기아 글로벌 브랜드 웹사이트"
-                  : "렉서스 웹사이트 운영 · 개선"}
-            </span>
-          </>
+          <Image
+            src={project.image}
+            alt={`${project.title} 프로젝트 이미지`}
+            fill
+            sizes="(max-width: 760px) 100vw, 60vw"
+            priority={priority}
+            className={styles.coverImage}
+          />
         ) : project.visual === "dog" ? (
           <>
-            <span className={styles.dogLabel}>DOG ATLAS / 견종도감</span>
+            <span className={styles.dogLabel}>DOG ATLAS 견종도감</span>
             <div className={styles.dogDeck}>
               {["jindo", "golden", "poodle"].map((dog, i) => (
                 <div className={styles.dogCard} key={dog}>

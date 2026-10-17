@@ -59,6 +59,14 @@ button {
 
 // 폰트 정의
 @font-face {
+  font-family: "Pacifico-Footer";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/font/Pacifico-Footer.woff2") format("woff2");
+}
+
+@font-face {
   font-family: "Pretendard-Regular";
   font-style: normal;
   font-display: swap;

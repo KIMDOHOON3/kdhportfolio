@@ -19,6 +19,7 @@ export type PortfolioProject = {
   stack: string[];
   role: string;
   site?: string;
+  responsibilities?: string[];
   github?: string;
   highlights: { title: string; description: string }[];
   phases?: ProjectPhase[];
@@ -32,7 +33,6 @@ export const portfolioProjects: PortfolioProject[] = [
     category: "실무 프로젝트",
     year: "2025—26",
     visual: "lexus",
-    image: "/projects/lexus-renewal.webp",
     description:
       "렉서스 웹사이트의 리뉴얼과 운영·개선에 참여했습니다. 리뉴얼에서는 상담·예약·마이페이지를 연결하고, 운영에서는 차량 360° 뷰어와 신청 폼, 공통 UI의 사용성을 다듬었습니다.",
     stack: [
@@ -46,6 +46,11 @@ export const portfolioProjects: PortfolioProject[] = [
       "Swiper",
     ],
     role: "프론트엔드 개발 · 웹사이트 리뉴얼 및 운영·개선",
+    responsibilities: [
+      "상담·예약·마이페이지 UI 개발",
+      "상담 API·인증 연동 및 폼 검증",
+      "360° 차량 뷰어·공통 UI 개선",
+    ],
     site: "https://www.lexus.co.kr/",
     highlights: [],
     phases: [
@@ -106,11 +111,15 @@ export const portfolioProjects: PortfolioProject[] = [
     category: "실무 프로젝트",
     year: "2025—26",
     visual: "kia",
-    image: "/projects/kia-worldwide.webp",
     description:
       "기아 글로벌 브랜드의 이야기를 웹 인터랙션으로 전달했습니다. 스크롤 모션과 차량 슬라이더를 구현하고 다양한 브라우저에서 디테일을 조율했습니다.",
     stack: ["React", "TypeScript", "Emotion", "Vite"],
     role: "프론트엔드 개발 · 브랜드 페이지 및 인터랙션",
+    responsibilities: [
+      "브랜드 페이지·스크롤 인터랙션 구현",
+      "차량 슬라이더·공통 컴포넌트 구현",
+      "Safari 등 브라우저별 화면·동작 조율",
+    ],
     site: "https://worldwide.kia.com/int",
     highlights: [
       {
@@ -121,7 +130,7 @@ export const portfolioProjects: PortfolioProject[] = [
       {
         title: "재사용할 수 있는 화면",
         description:
-          "차량 슬라이더와 페이지 구성 요소를 분리하고 CMS 콘텐츠에 대응할 수 있도록 컴포넌트를 구성했습니다.",
+          "차량 슬라이더와 페이지 구성 요소를 공통 컴포넌트로 구현해 여러 화면에서 재사용할 수 있도록 구성했습니다.",
       },
       {
         title: "브라우저별 디테일 조율",

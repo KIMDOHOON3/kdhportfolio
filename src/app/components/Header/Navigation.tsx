@@ -14,6 +14,8 @@ export default function Navigation({
 }: NavigationProps) {
   return (
     <nav
+      id="main-navigation"
+      aria-label="메인 메뉴"
       className={`${styles.navigationContainer} ${isActive ? styles.active : ""}`}
     >
       <ul className={styles.navigationList}>

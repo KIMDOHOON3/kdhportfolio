@@ -16,13 +16,13 @@
     height: 100%;
   }
 
-  &:hover .shape {
+  &:hover .shape, &:focus-within .shape {
     width: 100%;
     height: 100%;
     stroke-dasharray: 50 0;
     stroke-width: 3px;
     stroke-dashoffset: 0;
-    stroke: $white;
+    stroke: currentColor;
   }
 }
 
@@ -31,7 +31,7 @@
   height: 100%;
   stroke-width: 3px;
   fill: transparent;
-  stroke: $white;
+  stroke: currentColor;
   stroke-dasharray: 112 300;
   stroke-dashoffset: -150;
   transition: 1s all ease;
@@ -46,9 +46,13 @@
   height: 100%;
   text-align: center;
   line-height: 40px;
-  color: $white;
+  color: inherit;
 
   &:hover {
     font-weight: bold;
   }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .shape { transition: none; }
 }

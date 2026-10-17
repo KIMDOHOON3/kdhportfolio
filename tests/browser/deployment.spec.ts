@@ -76,7 +76,7 @@ test("deployment revision, illuminated glass and centered thank-you footer", asy
     .poll(() =>
       page
         .locator("#contact")
-        .evaluate((e) => Math.abs(e.getBoundingClientRect().top)),
+        .evaluate((e) => Math.abs(e.getBoundingClientRect().bottom - innerHeight)),
     )
     .toBeLessThan(1.5);
   await expect(page.locator("[data-glass-scene]")).toHaveAttribute(
@@ -85,7 +85,7 @@ test("deployment revision, illuminated glass and centered thank-you footer", asy
   );
   const heading = page.locator("[data-footer-thanks]");
   await expect(heading).toHaveText("THANK YOU");
-  await expect(heading).toHaveCSS("font-family", /NewYork/);
+  await expect(heading).toHaveCSS("font-family", /Pacifico-Footer/);
   await expect(heading).toHaveAttribute("data-glass-ready", "true");
   await expect(heading).toHaveCSS("color", "rgba(0, 0, 0, 0)");
   const rectangles = await page.locator("#contact").evaluate((element) => {
@@ -102,6 +102,7 @@ test("deployment revision, illuminated glass and centered thank-you footer", asy
     };
     return {
       footer: rect(element),
+      footerContent: rect(element.lastElementChild!),
       heading: rect(element.querySelector("[data-footer-thanks]")!),
       links: [...element.querySelectorAll("a")].map(rect),
       bodyScroll: scrollY,
@@ -115,7 +116,8 @@ test("deployment revision, illuminated glass and centered thank-you footer", asy
       rectangles.heading.left + rectangles.heading.width / 2 - width / 2,
     ),
   ).toBeLessThan(1.5);
-  expect(Math.abs(rectangles.footer.height - height)).toBeLessThan(1.5);
+  expect(rectangles.footer.height).toBeLessThan(height);
+  expect(rectangles.footer.bottom - rectangles.footerContent.bottom).toBeLessThanOrEqual(48);
   expect(rectangles.bodyScroll).toBe(0);
   expect(rectangles.overflow).toBe(0);
   for (const rect of [rectangles.heading, ...rectangles.links]) {

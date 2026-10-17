@@ -199,7 +199,7 @@ test("filters, anchors, mobile menu and detail return", async ({ page }) => {
   }
   await page
     .getByRole("navigation")
-    .getByRole("link", { name: "소개", exact: true })
+    .getByRole("link", { name: "ABOUT", exact: true })
     .click();
   await expect
     .poll(() =>

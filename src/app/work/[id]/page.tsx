@@ -45,7 +45,7 @@ export default async function ProjectDetail({ params }: Props) {
       </Link>
       <div className={styles.sectionLabel}>
         <span>
-          {String(index + 1).padStart(2, "0")} / {project.category}
+          {String(index + 1).padStart(2, "0")} {project.category}
         </span>
         <span>{project.year}</span>
       </div>
@@ -73,7 +73,7 @@ export default async function ProjectDetail({ params }: Props) {
           <dt>작업 연도</dt>
           <dd>{project.year}</dd>
           <dt>사용 기술</dt>
-          <dd>{project.stack.join(" / ")}</dd>
+          <dd>{project.stack.join(", ")}</dd>
           <dt>작업 유형</dt>
           <dd>
             {project.category === "실무 프로젝트"

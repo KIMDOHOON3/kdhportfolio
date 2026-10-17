@@ -12,10 +12,9 @@
     width: 36px;
     height: 36px;
     background: none;
-    outline: none;
     border: none;
     cursor: pointer;
-    -webkit-appearence: none;
+    -webkit-appearance: none;
     -webkit-tap-highlight-color: transparent;
     transition: top 0.75s cubic-bezier(0.4, 0, 0.2, 1);
   }
@@ -25,7 +24,7 @@
     height: 48px;
     top: -8px;
     left: -10px;
-    stroke: $white;
+    stroke: currentColor;
     stroke-width: 2px;
     stroke-linecap: round;
     stroke-linejoin: round;
@@ -57,12 +56,6 @@
     }
   }
 
-  &.on {
-    svg {
-      stroke: var(--black);
-    }
-  }
-
   &.active {
     svg {
       stroke: $white;
@@ -88,4 +81,8 @@
       }
     }
   }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .navTrigger, .navTrigger svg path { transition: none; }
 }

@@ -31,12 +31,10 @@ $label: "Paperlogy-Medium", "Pretendard-Regular", sans-serif;
   position: fixed;
   inset: 0 0 auto;
   z-index: 20;
-  display: grid;
-  grid-template-columns: var(--grid-columns);
+  display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: var(--grid-gap);
-  padding: 30px var(--page-inset);
+  padding: 35px 35px 0;
   color: $ink;
 }
 .logo {
@@ -48,35 +46,14 @@ $label: "Paperlogy-Medium", "Pretendard-Regular", sans-serif;
     margin-left: 3px;
   }
 }
-.headerNote {
-  font: 13px/1.6 $sans;
-  letter-spacing: 0.03em;
-}
-.nav {
-  grid-column: 3 / -1;
-  justify-self: end;
+.headerMenu {
   display: flex;
-  gap: 34px;
   align-items: center;
-  font-size: 18px;
-  a {
-    display: inline-flex;
-    align-items: center;
-    gap: 7px;
-    padding: 10px 0;
-    border-bottom: 1px solid transparent;
-    transition: border-color 0.2s;
-    &:hover {
-      border-color: $ink;
-    }
-  }
-  sup {
-    font: 12px $label;
-    margin-left: 3px;
-  }
+  margin-left: auto;
 }
-.menuButton {
-  display: none;
+@media (max-width: 768px) {
+  .header { padding: 15px 15px 0; }
+  .logo { font-size: 28px; }
 }
 .portfolio {
   position: relative;
@@ -92,30 +69,6 @@ $label: "Paperlogy-Medium", "Pretendard-Regular", sans-serif;
   column-gap: var(--grid-gap);
   padding: 110px var(--page-inset) 0;
   background: transparent;
-}
-.viewportGrid {
-  position: fixed;
-  inset: 0;
-  z-index: 10;
-  pointer-events: none;
-  mix-blend-mode: difference;
-  svg {
-    display: block;
-    width: 100%;
-    height: 100%;
-    overflow: visible;
-  }
-  path {
-    stroke: #fff;
-    stroke-width: 1;
-    vector-effect: non-scaling-stroke;
-  }
-  .gridLines {
-    opacity: 0.1;
-  }
-  .gridCrosses {
-    opacity: 0.4;
-  }
 }
 .visuallyHidden {
   position: absolute;
@@ -195,21 +148,79 @@ $label: "Paperlogy-Medium", "Pretendard-Regular", sans-serif;
   display: flex;
   align-items: center;
   gap: 12px;
-  span {
-    display: grid;
-    place-items: center;
-    width: 28px;
-    height: 28px;
-    border: 1px solid #586b7277;
+  isolation: isolate;
+  overflow: hidden;
+  &::before {
+    content: "";
+    position: absolute;
+    z-index: 0;
+    left: var(--explore-x, 50%);
+    top: var(--explore-y, 50%);
+    width: 240%;
+    aspect-ratio: 1;
     border-radius: 50%;
-    .arrowIcon {
-      width: 14px;
-      height: 14px;
-    }
-    transition: transform 0.3s;
+    background: #1461d4;
+    transform: translate(-50%, -50%) scale(0);
+    transition: transform 600ms cubic-bezier(0.22, 1, 0.36, 1);
+    pointer-events: none;
   }
-  &:hover span {
-    transform: translateY(2px);
+}
+.exploreLabel {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  height: 1.5em;
+  overflow: hidden;
+  > span {
+    grid-area: 1 / 1;
+    white-space: nowrap;
+    transition: transform 450ms cubic-bezier(0.22, 1, 0.36, 1);
+    &:last-child { transform: translateY(120%); }
+  }
+}
+.exploreIcon {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  overflow: hidden;
+  border: 1px solid #fbfaf455;
+  border-radius: 50%;
+  transition: background 350ms, color 350ms, border-color 350ms;
+  .arrowIcon {
+    grid-area: 1 / 1;
+    width: 14px;
+    height: 14px;
+    transition: translate 450ms cubic-bezier(0.22, 1, 0.36, 1);
+    &:last-child { translate: 0 -32px; }
+  }
+}
+@mixin explore-active {
+  &::before { transform: translate(-50%, -50%) scale(1); }
+  .exploreLabel > span:first-child { transform: translateY(-120%); }
+  .exploreLabel > span:last-child { transform: translateY(0); }
+  .exploreIcon {
+    background: #fbfaf4;
+    color: #1461d4;
+    border-color: transparent;
+    .arrowIcon:first-child { translate: 0 32px; }
+    .arrowIcon:last-child { translate: 0 0; }
+  }
+}
+@media (hover: hover) and (pointer: fine) {
+  .explore:hover { @include explore-active; }
+}
+.explore:focus-visible { @include explore-active; }
+@media (hover: none) {
+  .heroBottom .explore:active,
+  .heroBottom .explore[data-pressed="true"] { background: #1461d4; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .explore::before, .exploreLabel > span, .exploreIcon, .exploreIcon .arrowIcon {
+    transition: none;
   }
 }
 .work,
@@ -482,6 +493,22 @@ $label: "Paperlogy-Medium", "Pretendard-Regular", sans-serif;
   word-break: keep-all;
   color: #575d56;
   margin-top: 7px;
+}
+.projectTasks {
+  margin-top: 12px;
+  font: 15px/1.65 $sans;
+  word-break: keep-all;
+  > p {
+    margin-bottom: 6px;
+    font-size: 12px;
+    color: #555c54;
+  }
+  ul { display: grid; gap: 3px; }
+  li {
+    position: relative;
+    padding-left: 12px;
+    &::before { content: "·"; position: absolute; left: 0; }
+  }
 }
 .stack {
   display: flex;
@@ -964,51 +991,6 @@ $label: "Paperlogy-Medium", "Pretendard-Regular", sans-serif;
     --grid-gap: 16px;
     --grid-count: 2;
   }
-  .header {
-    display: flex;
-    padding: 25px var(--page-inset);
-  }
-  .logo {
-    font-size: 28px;
-  }
-  .headerNote {
-    display: none;
-  }
-  .menuButton {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    gap: 7px;
-    width: 32px;
-    height: 28px;
-    z-index: 2;
-    span {
-      display: block;
-      height: 1px;
-      width: 27px;
-      background: $ink;
-    }
-  }
-  .nav {
-    display: none;
-    position: absolute;
-    top: 72px;
-    left: 4%;
-    right: 4%;
-    background: #f6f8f1f5;
-    backdrop-filter: blur(15px);
-    padding: 26px;
-    border: 1px solid $line;
-    flex-direction: column;
-    align-items: stretch;
-    gap: 15px;
-    &.navOpen {
-      display: flex;
-    }
-    a {
-      padding: 8px 0;
-    }
-  }
   .hero {
     top: min(-30px, calc(100svh - 760px));
     padding: 90px var(--page-inset) 0;
@@ -1035,10 +1017,6 @@ $label: "Paperlogy-Medium", "Pretendard-Regular", sans-serif;
     margin-top: 23px;
     font-size: 14px;
     justify-content: space-between;
-    span {
-      width: 28px;
-      height: 28px;
-    }
   }
   .work,
   .about,
@@ -1296,25 +1274,8 @@ $label: "Paperlogy-Medium", "Pretendard-Regular", sans-serif;
   inset: 0;
   z-index: 1;
   pointer-events: none;
-  --screen-radius: 0px;
-  background-image: radial-gradient(
-    circle,
-    #fbfaf4 var(--screen-radius),
-    transparent calc(var(--screen-radius) + 0.25px)
-  );
-  background-size: 4px 4px;
-}
-.header {
-  grid-template-columns: repeat(12, minmax(0, 1fr));
-  .logo {
-    grid-column: 1 / 5;
-  }
-  .headerNote {
-    display: none;
-  }
-  .nav {
-    grid-column: 7 / -1;
-  }
+  background: #fbfaf4;
+  opacity: var(--screen-opacity, 0);
 }
 :global([data-story-dark="true"]) .header {
   color: #fbfaf4;
@@ -1322,32 +1283,15 @@ $label: "Paperlogy-Medium", "Pretendard-Regular", sans-serif;
 :global([data-home="false"]) .header {
   background: #faf9f5;
 }
-.menuButton span {
-  background: currentColor;
-}
 .hero {
   top: auto;
   height: 100dvh;
   min-height: 0;
   max-height: none;
   padding: 96px var(--page-inset) clamp(28px, 5dvh, 56px);
-  grid-template-rows: auto minmax(0, 1fr) auto;
+  grid-template-rows: minmax(0, 1fr) auto;
   grid-template-columns: repeat(12, minmax(0, 1fr));
   row-gap: clamp(16px, 2.5dvh, 28px);
-}
-.heroMeta {
-  display: grid;
-  grid-template-columns: repeat(12, minmax(0, 1fr));
-  grid-column: 1 / -1;
-  align-items: start;
-  > h1 {
-    padding: 8px;
-  }
-}
-.heroRole {
-  grid-column: 1 / 9;
-  font: 700 clamp(32px, 4.1vw, 56px) / 1.12 $heading;
-  letter-spacing: -0.045em;
 }
 .heroLetteringFrame {
   grid-column: 1 / -1;
@@ -1356,7 +1300,14 @@ $label: "Paperlogy-Medium", "Pretendard-Regular", sans-serif;
 }
 .heroSummary {
   display: grid;
-  gap: 14px;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
+  > * { grid-column: 1; }
+}
+.heroLead {
+  font: 400 clamp(24px, 2.5vw, 34px)/1.4 $sans;
+  letter-spacing: -0.035em;
+  word-break: keep-all;
 }
 .heroCoordinates {
   margin: 0;
@@ -1365,7 +1316,8 @@ $label: "Paperlogy-Medium", "Pretendard-Regular", sans-serif;
 }
 .heroIntro {
   max-width: 32em;
-  font: 17px/1.65 $intro;
+  font: 15px/1.65 $sans;
+  color: #435a6a;
 }
 .heroBottom {
   grid-column: 1 / -1;
@@ -1376,10 +1328,15 @@ $label: "Paperlogy-Medium", "Pretendard-Regular", sans-serif;
   border: 0;
   padding: 0 8px;
   .explore {
-    position: static;
-    min-height: 44px;
+    position: relative;
+    min-height: 56px;
     margin: 0;
-    font-size: 13px;
+    padding: 12px 14px 12px 24px;
+    gap: 24px;
+    border-radius: 999px;
+    background: $ink;
+    color: #fbfaf4;
+    font: 14px/1.5 $sans;
   }
 }
 .about {
@@ -1444,7 +1401,7 @@ $label: "Paperlogy-Medium", "Pretendard-Regular", sans-serif;
 }
 .projectGrid {
   grid-template-columns: repeat(12, minmax(0, 1fr));
-  gap: clamp(48px, 7vw, 120px) 0;
+  gap: clamp(40px, 5vw, 72px) clamp(20px, 3vw, 40px);
 }
 .project {
   grid-column: span 6;
@@ -1454,12 +1411,6 @@ $label: "Paperlogy-Medium", "Pretendard-Regular", sans-serif;
   &::before,
   &::after {
     display: none;
-  }
-  &:nth-child(2) {
-    grid-column: 1 / 6;
-  }
-  &:nth-child(3) {
-    grid-column: 8 / -1;
   }
 }
 .featured {
@@ -1472,6 +1423,7 @@ $label: "Paperlogy-Medium", "Pretendard-Regular", sans-serif;
   transform: none;
   > .cover {
     border: 0;
+    margin-top: 20px;
   }
 }
 .cover {
@@ -1585,13 +1537,13 @@ $label: "Paperlogy-Medium", "Pretendard-Regular", sans-serif;
   z-index: 2;
 }
 :global([data-home="true"]) .footer {
-  height: 100dvh;
-  min-height: 560px;
-  padding: 96px var(--page-inset) 80px;
+  height: auto;
+  min-height: 0;
+  padding: 80px var(--page-inset) 24px;
   background: transparent;
   display: flex;
   flex-direction: column;
-  justify-content: center;
+  justify-content: flex-start;
   .sectionLabel {
     border: 0;
   }
@@ -1606,6 +1558,7 @@ $label: "Paperlogy-Medium", "Pretendard-Regular", sans-serif;
   }
   .footerBottom {
     font-size: 12px;
+    padding-block: 16px;
   }
 }
 @media (max-width: 1023px) {
@@ -1618,14 +1571,8 @@ $label: "Paperlogy-Medium", "Pretendard-Regular", sans-serif;
     --grid-gap: 0px;
     --grid-count: 12;
   }
-  .header {
-    padding: 22px var(--page-inset);
-  }
   .hero {
     padding-top: 86px;
-  }
-  .heroRole {
-    font-size: clamp(32px, 4.5vw, 46px);
   }
   .heroIntro {
     font-size: 16px;
@@ -1638,12 +1585,7 @@ $label: "Paperlogy-Medium", "Pretendard-Regular", sans-serif;
     max-height: none;
     padding: 86px 16px calc(28px + env(safe-area-inset-bottom, 0px));
   }
-  .heroMeta {
-    display: block;
-    .heroRole {
-      font-size: clamp(30px, 7.5vw, 46px);
-    }
-  }
+  .heroLead { font-size: clamp(20px, 5.2vw, 26px); }
   .heroIntro {
     max-width: 100%;
     font-size: 15px;
@@ -1660,9 +1602,6 @@ $label: "Paperlogy-Medium", "Pretendard-Regular", sans-serif;
       gap: 12px;
       align-self: flex-end;
     }
-  }
-  .nav {
-    color: $ink;
   }
   .about {
     padding: 72px 16px;
@@ -1715,9 +1654,7 @@ $label: "Paperlogy-Medium", "Pretendard-Regular", sans-serif;
     font-size: 12px;
   }
   :global([data-home="true"]) .footer {
-    height: 100dvh;
-    min-height: 560px;
-    padding: 88px 24px 70px;
+    padding: 64px 24px 24px;
     .contactMain h2 {
       font-size: 42px;
     }
@@ -1764,15 +1701,7 @@ $label: "Paperlogy-Medium", "Pretendard-Regular", sans-serif;
     padding-block: 72px calc(20px + env(safe-area-inset-bottom, 0px));
     row-gap: 10px;
   }
-  .heroMeta {
-    .heroRole {
-      font-size: clamp(24px, 5.5vh, 32px);
-    }
-    .heroIntro,
-    .heroCoordinates {
-      font-size: 12px;
-    }
-  }
+  .heroLead { font-size: clamp(18px, 5vh, 24px); }
   .heroIntro {
     font-size: 13px;
     line-height: 1.5;
@@ -1799,8 +1728,7 @@ $label: "Paperlogy-Medium", "Pretendard-Regular", sans-serif;
     font-size: 12px;
   }
   :global([data-home="true"]) .footer {
-    min-height: 100dvh;
-    padding-block: 72px 50px;
+    padding-block: 48px 20px;
     .sectionLabel {
       font-size: 12px;
     }
@@ -2014,6 +1942,14 @@ $label: "Paperlogy-Medium", "Pretendard-Regular", sans-serif;
 }
 .cover.couple {
   background: #fff5ed;
+}
+.cover.kia .coverArrow {
+  color: #e5edef;
+  border-color: #e5edef66;
+}
+.cover.lexus .coverArrow {
+  color: #44515c;
+  border-color: #44515c55;
 }
 .storySkills {
   display: flex;
@@ -2345,8 +2281,12 @@ $label: "Paperlogy-Medium", "Pretendard-Regular", sans-serif;
   display: flex;
   justify-content: center;
   gap: 0.22em;
-  font: 400 clamp(64px, 12.5vw, 168px) / 1.05 $display;
-  letter-spacing: -0.045em;
+  font: 400 clamp(80px, 14.5vw, 196px) / 1.8 "Pacifico-Footer", cursive;
+  letter-spacing: 0;
+  text-transform: lowercase;
+  font-kerning: none;
+  font-variant-ligatures: none;
+  font-feature-settings: "calt" 0;
   color: $ink;
 }
 :global([data-home="true"])
@@ -2354,11 +2294,6 @@ $label: "Paperlogy-Medium", "Pretendard-Regular", sans-serif;
   .contactMain
   .thankYou[data-glass-ready="true"] {
   color: transparent;
-}
-.contactThanks {
-  margin-top: 20px;
-  font: 16px/1.8 $sans;
-  letter-spacing: -0.015em;
 }
 .footer .contactLinks {
   justify-content: center;
@@ -2371,11 +2306,8 @@ $label: "Paperlogy-Medium", "Pretendard-Regular", sans-serif;
   :global([data-home="true"]) .footer .contactMain .thankYou {
     flex-direction: column;
     gap: 0;
-    font-size: clamp(64px, 19vw, 112px);
-    line-height: 0.98;
-  }
-  .contactThanks {
-    font-size: 15px;
+    font-size: clamp(80px, 28vw, 164px);
+    line-height: 1.35;
   }
   .footer .contactLinks {
     gap: 12px 22px;
@@ -2387,11 +2319,6 @@ $label: "Paperlogy-Medium", "Pretendard-Regular", sans-serif;
   }
   .footer .contactMain .thankYou,
   :global([data-home="true"]) .footer .contactMain .thankYou {
-    font-size: clamp(36px, 11vh, 60px);
-  }
-  .contactThanks {
-    margin-top: 10px;
-    font-size: 12px;
-    line-height: 1.6;
+    font-size: clamp(44px, 14vh, 76px);
   }
 }

@@ -3,6 +3,7 @@
 Run with Python + fonttools==4.67.0. The generated JSON is consumed by Three.js
 FontLoader; no font conversion or Python dependency runs in the browser.
 """
+import argparse
 import json
 from pathlib import Path
 
@@ -11,7 +12,13 @@ from fontTools.pens.boundsPen import BoundsPen
 from fontTools.ttLib import TTFont
 
 root = Path(__file__).resolve().parents[1]
-font = TTFont(root / "public/font/NewYork.woff")
+parser = argparse.ArgumentParser()
+parser.add_argument("--font", default="public/font/NewYork.woff")
+parser.add_argument("--text", default="THANK YOU")
+parser.add_argument("--output", default="src/app/components/portfolio/thankYouFont.json")
+parser.add_argument("--woff2")
+args = parser.parse_args()
+font = TTFont(root / args.font)
 glyph_set = font.getGlyphSet()
 
 
@@ -46,7 +53,7 @@ class ThreeOutline(BasePen):
 
 
 glyphs = {}
-for character in sorted(set("THANK YOU")):
+for character in sorted(set(args.text)):
     name = font.getBestCmap()[ord(character)]
     pen = ThreeOutline()
     glyph_set[name].draw(pen)
@@ -61,15 +68,24 @@ for character in sorted(set("THANK YOU")):
 head, hhea, post = font["head"], font["hhea"], font["post"]
 data = {
     "glyphs": glyphs,
-    "familyName": "NewYork",
+    "familyName": font["name"].getDebugName(1),
     "ascender": hhea.ascent,
     "descender": hhea.descent,
     "underlinePosition": post.underlinePosition,
     "underlineThickness": post.underlineThickness,
     "boundingBox": {key: getattr(head, key) for key in ("xMin", "xMax", "yMin", "yMax")},
     "resolution": head.unitsPerEm,
-    "original_font_information": {"source": "public/font/NewYork.woff"},
+    "original_font_information": {"source": args.font},
 }
-target = root / "src/app/components/portfolio/thankYouFont.json"
+target = root / args.output
 target.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
 print(f"Wrote {len(glyphs)} glyphs, {target.stat().st_size} bytes")
+if args.woff2:
+    from fontTools import subset
+
+    subsetter = subset.Subsetter()
+    subsetter.populate(text=args.text)
+    subsetter.subset(font)
+    font.flavor = "woff2"
+    font.save(root / args.woff2)
+    print(f"Wrote {args.woff2}")

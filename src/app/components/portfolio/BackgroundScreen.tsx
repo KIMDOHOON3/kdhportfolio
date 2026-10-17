@@ -12,13 +12,20 @@ export default function BackgroundScreen() {
         const heroBottom =
           document.querySelector("[data-hero]")?.getBoundingClientRect()
             .bottom ?? height;
-        const footerTop =
-          document.getElementById("contact")?.getBoundingClientRect().top ??
-          height;
+        const footer = document.getElementById("contact")?.getBoundingClientRect();
+        const footerTop = footer?.top ?? height;
+        // A compact footer cannot reach the top of a tall viewport. Reveal
+        // its glass fully once the complete footer fits above the fold.
+        const footerReveal = Math.min(
+          1,
+          Math.max(0, (height - footerTop) / Math.max(1, Math.min(height, footer?.height ?? height))),
+        );
         const alpha =
           Math.min(1, Math.max(0, (height - heroBottom) / (height * 0.75))) *
-          Math.min(1, Math.max(0, footerTop / height));
-        ref.current?.style.setProperty("--screen-radius", `${3.6 * alpha}px`);
+          (1 - footerReveal);
+        const progress = Math.min(1, Math.max(0, (alpha - 0.12) / 0.72));
+        const opacity = progress * progress * (3 - 2 * progress);
+        ref.current?.style.setProperty("--screen-opacity", String(opacity));
         if (ref.current) ref.current.dataset.progress = String(alpha);
         document
           .querySelector<HTMLElement>("[data-glass-scene]")

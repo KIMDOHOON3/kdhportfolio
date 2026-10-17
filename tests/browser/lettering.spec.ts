@@ -42,15 +42,14 @@ test("footer lettering is rendered by WebGL and survives context restoration", a
   await page.goto("/#contact");
   const scene = page.locator("[data-glass-scene]");
   const heading = page.locator("[data-footer-thanks]");
+  const footerAlignment = () =>
+    page.locator("#contact").evaluate((element) => {
+      const rect = element.getBoundingClientRect();
+      return Math.abs(rect.top - Math.max(0, innerHeight - rect.height));
+    });
   await expect(scene).toHaveAttribute("data-ready", "true");
   await page.evaluate(() => document.fonts.ready);
-  await expect
-    .poll(() =>
-      page
-        .locator("#contact")
-        .evaluate((e) => Math.abs(e.getBoundingClientRect().top)),
-    )
-    .toBeLessThan(1.5);
+  await expect.poll(footerAlignment).toBeLessThan(1.5);
   // Reproduce late font/story sizing deterministically: before user input the
   // initial deep link must stay aligned even if preceding content grows.
   await page.locator("#contact").evaluate((footer) => {
@@ -59,21 +58,9 @@ test("footer lettering is rendered by WebGL and survives context restoration", a
     spacer.style.height = "80px";
     footer.before(spacer);
   });
-  await expect
-    .poll(() =>
-      page
-        .locator("#contact")
-        .evaluate((e) => Math.abs(e.getBoundingClientRect().top)),
-    )
-    .toBeLessThan(1.5);
+  await expect.poll(footerAlignment).toBeLessThan(1.5);
   await page.locator("#late-layout-spacer").evaluate((e) => e.remove());
-  await expect
-    .poll(() =>
-      page
-        .locator("#contact")
-        .evaluate((e) => Math.abs(e.getBoundingClientRect().top)),
-    )
-    .toBeLessThan(1.5);
+  await expect.poll(footerAlignment).toBeLessThan(1.5);
   await expect(scene).toHaveAttribute("data-scene", "thank-you");
   await expect(heading).toHaveCSS("color", "rgba(0, 0, 0, 0)");
   const rect = (await heading.boundingBox())!;
@@ -149,13 +136,16 @@ test("footer lettering is rendered by WebGL and survives context restoration", a
   const inputScale = await page.evaluate(() =>
     navigator.maxTouchPoints > 0 ? devicePixelRatio : 1,
   );
+  const footerTopBeforeInput = await page
+    .locator("#contact")
+    .evaluate((e) => e.getBoundingClientRect().top);
   await page.mouse.move(width * 0.7, height * 0.5);
   await page.mouse.wheel(0, -80 * inputScale);
   await expect
     .poll(() =>
       page.locator("#contact").evaluate((e) => e.getBoundingClientRect().top),
     )
-    .toBeGreaterThan(40);
+    .toBeGreaterThan(footerTopBeforeInput + 40);
   const topBeforeLayout = await page
     .locator("[data-scroll-viewport]")
     .evaluate((e) => e.scrollTop);

@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-test("hero, background transition, about and gallery remain in document flow", async ({
+test("hero, background transition, gallery and about remain in document flow", async ({
   page,
 }, info) => {
   const height = page.viewportSize()!.height;
@@ -34,8 +34,8 @@ test("hero, background transition, about and gallery remain in document flow", a
       const regions = isLocal
         ? [
             document.querySelector("#home")!,
-            document.querySelector("#about")!,
             document.querySelector("#work")!,
+            document.querySelector("#about")!,
           ]
         : [...content.children].slice(0, 3);
       const rect = (e: Element) => {
@@ -77,9 +77,9 @@ test("hero, background transition, about and gallery remain in document flow", a
     });
     for (const [name, y] of [
       ["hero", 0],
-      ["dots", Math.round(height * 0.4)],
-      ["about", height],
-      ["gallery", Math.round(metrics.sections[2].top)],
+      ["transition", Math.round(height * 0.4)],
+      ["gallery", Math.round(metrics.sections[local ? 1 : 2].top)],
+      ["about", Math.round(metrics.sections[local ? 2 : 1].top)],
     ] as const) {
       const current = await page.locator(selector).evaluate((e) => e.scrollTop);
       const scale = await page.evaluate(() =>
@@ -137,11 +137,17 @@ test("hero, background transition, about and gallery remain in document flow", a
       expect(frame.body).toBe(0);
       expect(frame.overflow).toBe(0);
       expect(Math.abs(frame.top + y)).toBeLessThanOrEqual(4);
-      if (local && name === "dots")
+      if (local && name === "transition") {
         expect(Number(frame.progress)).toBeCloseTo(
           frame.scroll / (height * 0.75),
           3,
         );
+        const background = page.locator("[data-background-screen]");
+        await expect(background).toHaveCSS("background-image", "none");
+        const opacity = Number(await background.evaluate((e) => getComputedStyle(e).opacity));
+        expect(opacity).toBeGreaterThan(0);
+        expect(opacity).toBeLessThan(1);
+      }
       const path = info.outputPath(`${target.name}-${name}.png`);
       await page.screenshot({ path, scale: "css" });
       await info.attach(`${target.name}-${name}`, {
