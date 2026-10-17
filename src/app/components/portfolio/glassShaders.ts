@@ -112,7 +112,7 @@ export const glassFragmentShader = `
   void main() {
     vec2 screenUv = gl_FragCoord.xy / uResolution;
     vec2 flow = texture2D(uFlow, screenUv).xy * uMotion;
-    vec3 normal = normalize(vNormal + vec3(flow * 0.18, 0.0));
+    vec3 normal = normalize(vNormal + vec3(flow * 0.06, 0.0));
     vec3 view = normalize(cameraPosition - vWorldPosition);
     float facing = clamp(dot(normal, view), 0.0, 1.0);
     vec3 positionView = (viewMatrix * vec4(vWorldPosition, 1.0)).xyz;
@@ -147,7 +147,7 @@ export const glassFragmentShader = `
     vec3 reflected = reflect(-view, normal);
     // Move the broad studio reflection with the pointer as well as the small
     // specular light. The cubemap itself still needs only one capture.
-    vec2 angle = uPointer * vec2(0.9, -0.7) * uMotion;
+    vec2 angle = uPointer * vec2(1.2, -0.9) * uMotion;
     reflected.xz = mat2(cos(angle.x), -sin(angle.x), sin(angle.x), cos(angle.x)) * reflected.xz;
     reflected.yz = mat2(cos(angle.y), -sin(angle.y), sin(angle.y), cos(angle.y)) * reflected.yz;
     // A small reflection cone softens softbox edges, without blurring the

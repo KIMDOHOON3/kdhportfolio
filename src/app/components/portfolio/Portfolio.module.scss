@@ -1331,35 +1331,47 @@ $label: "Paperlogy-Medium", "Pretendard-Regular", sans-serif;
   min-height: 0;
   max-height: none;
   padding: 96px var(--page-inset) clamp(28px, 5dvh, 56px);
-  grid-template-rows: auto 1fr;
+  grid-template-rows: auto minmax(0, 1fr) auto;
   grid-template-columns: repeat(12, minmax(0, 1fr));
+  row-gap: clamp(16px, 2.5dvh, 28px);
 }
 .heroMeta {
   display: grid;
   grid-template-columns: repeat(12, minmax(0, 1fr));
   grid-column: 1 / -1;
   align-items: start;
-  > p {
+  > h1 {
     padding: 8px;
   }
 }
 .heroRole {
-  grid-column: 1 / 4;
-  font: 26px/1.35 $intro;
+  grid-column: 1 / 9;
+  font: 700 clamp(32px, 4.1vw, 56px) / 1.12 $heading;
+  letter-spacing: -0.045em;
+}
+.heroLetteringFrame {
+  grid-column: 1 / -1;
+  min-height: 0;
+  pointer-events: none;
+}
+.heroSummary {
+  display: grid;
+  gap: 14px;
 }
 .heroCoordinates {
   margin: 0;
-  font: 15px/1.6 $label;
+  font: 12px/1.6 $label;
+  color: #435a6a;
 }
 .heroIntro {
-  grid-column: 9 / -1;
-  font: 16px/1.6 $intro;
+  max-width: 32em;
+  font: 17px/1.65 $intro;
 }
 .heroBottom {
   grid-column: 1 / -1;
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-end;
   align-self: end;
   border: 0;
   padding: 0 8px;
@@ -1613,11 +1625,10 @@ $label: "Paperlogy-Medium", "Pretendard-Regular", sans-serif;
     padding-top: 86px;
   }
   .heroRole {
-    font-size: 22px;
+    font-size: clamp(32px, 4.5vw, 46px);
   }
   .heroIntro {
-    grid-column: 7 / -1;
-    font-size: 14px;
+    font-size: 16px;
   }
 }
 @media (max-width: 760px) {
@@ -1629,16 +1640,17 @@ $label: "Paperlogy-Medium", "Pretendard-Regular", sans-serif;
   }
   .heroMeta {
     display: block;
-    .heroRole,
-    .heroCoordinates {
-      display: none;
+    .heroRole {
+      font-size: clamp(30px, 7.5vw, 46px);
     }
   }
   .heroIntro {
     max-width: 100%;
-    font-size: 14px;
+    font-size: 15px;
   }
   .heroBottom {
+    flex-direction: column;
+    align-items: stretch;
     gap: 16px;
     .heroCoordinates {
       font-size: 12px;
@@ -1646,6 +1658,7 @@ $label: "Paperlogy-Medium", "Pretendard-Regular", sans-serif;
     .explore {
       font-size: 13px;
       gap: 12px;
+      align-self: flex-end;
     }
   }
   .nav {
@@ -1749,14 +1762,30 @@ $label: "Paperlogy-Medium", "Pretendard-Regular", sans-serif;
 @media (max-height: 600px) {
   .hero {
     padding-block: 72px calc(20px + env(safe-area-inset-bottom, 0px));
+    row-gap: 10px;
   }
   .heroMeta {
     .heroRole {
-      font-size: 17px;
+      font-size: clamp(24px, 5.5vh, 32px);
     }
     .heroIntro,
     .heroCoordinates {
       font-size: 12px;
+    }
+  }
+  .heroIntro {
+    font-size: 13px;
+    line-height: 1.5;
+  }
+  .heroSummary {
+    gap: 8px;
+  }
+  .heroBottom {
+    flex-direction: row;
+    align-items: flex-end;
+    gap: 16px;
+    .heroCoordinates {
+      font-size: 10px;
     }
   }
   .storyPinned {

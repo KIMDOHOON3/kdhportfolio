@@ -165,26 +165,29 @@ export default function Portfolio() {
         aria-labelledby="hero-title"
         data-hero
       >
-        <h1 id="hero-title" className={styles.visuallyHidden}>
-          김도훈 — 프론트엔드 개발자 포트폴리오
-        </h1>
         <div className={styles.heroMeta}>
-          <p className={styles.heroRole}>
+          <h1 id="hero-title" className={styles.heroRole}>
             프론트엔드
             <br />
             개발자 김도훈
-          </p>
-          <p className={styles.heroIntro}>
-            안녕하세요, 프론트엔드 개발자 <strong>김도훈</strong>입니다.
-            <br />
-            브랜드 웹사이트와 일상 속 서비스를 직접 구현하고 다듬습니다.
-          </p>
+          </h1>
         </div>
+        <div
+          className={styles.heroLetteringFrame}
+          data-hero-lettering-frame
+          aria-hidden="true"
+        />
         <div className={styles.heroBottom}>
-          <p className={styles.heroCoordinates}>
-            코드 × 인터랙션
-            <br />× 사용자 경험
-          </p>
+          <div className={styles.heroSummary}>
+            <p className={styles.heroIntro}>
+              브랜드 웹사이트와 일상 속 서비스를
+              <br />
+              직접 구현하고 다듬습니다.
+            </p>
+            <p className={styles.heroCoordinates}>
+              코드 × 인터랙션 × 사용자 경험
+            </p>
+          </div>
           <a href="#work" className={styles.explore}>
             프로젝트 살펴보기{" "}
             <span>

@@ -8,7 +8,10 @@ import {
   glassBackVertexShader,
   glassBackFragmentShader,
 } from "./glassShaders";
-import { pointerRefractionShader } from "./pointerRefractionShader";
+import {
+  pointerRefractionShader,
+  backdropRefractionShader,
+} from "./pointerRefractionShader";
 import { flowFragmentShader } from "./flowShader";
 import { createStudioEnvironment } from "./studioEnvironment";
 import { createFluidProjection } from "./FluidProjection";
@@ -124,7 +127,7 @@ export default function GlassScene() {
         const group = new THREE.Group();
         group.scale.setScalar(1.7);
         group.position.set(2, -0.4, 0);
-        group.rotation.set(0, -0.07, 0);
+        group.rotation.set(0, 0.07, 0);
         scene.add(group);
         const refractionTarget = new THREE.WebGLRenderTarget(1, 1, {
           depthBuffer: false,
@@ -199,10 +202,6 @@ export default function GlassScene() {
           uniforms: {
             uScene: { value: sceneTarget.texture },
             uFlare: { value: flareTarget.texture },
-            uResolution: { value: new THREE.Vector2() },
-            uFlow: { value: flowRead.texture },
-            uFlowTexel: { value: flowMaterial.uniforms.uTexel.value },
-            uMotion: { value: 1 },
           },
           vertexShader: `varying vec2 vUv; void main() { vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }`,
           fragmentShader: pointerRefractionShader,
@@ -221,11 +220,14 @@ export default function GlassScene() {
           toneMapped: false,
           depthWrite: false,
           uniforms: {
-            uTime: { value: 0 },
             uAspect: { value: 1 },
             uSky: { value: new THREE.Color("#beddeb") },
             uWarm: { value: new THREE.Color("#fffaf1") },
             uCool: { value: new THREE.Color("#8fbde9") },
+            uResolution: { value: new THREE.Vector2() },
+            uFlow: { value: flowRead.texture },
+            uFlowTexel: { value: flowMaterial.uniforms.uTexel.value },
+            uMotion: { value: 1 },
           },
           vertexShader: `
             varying vec2 vUv;
@@ -236,27 +238,26 @@ export default function GlassScene() {
           `,
           fragmentShader: `
             varying vec2 vUv;
-            uniform float uTime;
             uniform float uAspect;
             uniform vec3 uSky;
             uniform vec3 uWarm;
             uniform vec3 uCool;
+            uniform vec2 uResolution;
+            ${backdropRefractionShader}
             void main() {
-              vec2 uv = vUv;
-              float drift = sin(uTime * 0.22) * 0.045;
-              float lane = uv.x + uv.y * 0.48 + drift
-                + sin(uv.y * 8.0 + uv.x * 5.0) * .025;
-              float beams=0.0;
-              for(int i=0;i<9;i++){
-                float center=-0.10+float(i)*0.20;
-                beams+=exp(-pow((lane-center)/0.032,2.0));
-              }
+              vec2 uv = refractedBackdropUv(vUv, gl_FragCoord.xy / uResolution);
+              float lane = uv.x + uv.y * 0.42
+                + sin(uv.y * 5.0 + uv.x * 3.0) * .012;
+              float beams = exp(-pow((lane - 0.35) / 0.13, 2.0))
+                + 0.8 * exp(-pow((lane - 1.02) / 0.17, 2.0));
               float edge = smoothstep(0.0, 0.15, uv.x) * smoothstep(0.0, 0.15, 1.0 - uv.x)
                          * smoothstep(0.0, 0.16, uv.y) * smoothstep(0.0, 0.16, 1.0 - uv.y);
               float glow = exp(-dot((uv - vec2(0.55, 0.42)) * vec2(uAspect, 1.0),
                                    (uv - vec2(0.55, 0.42)) * vec2(uAspect, 1.0)) * 6.0);
-              vec3 color = mix(uSky, uCool, 0.18 * edge);
-              color = mix(color, uWarm, clamp((beams*0.96 + glow*0.04)*edge,0.0,0.98));
+              float warmBase = smoothstep(0.38, 0.98, 1.0 - uv.y);
+              vec3 color = mix(uSky, uWarm, warmBase * 0.92);
+              color = mix(color, uCool, 0.05 * edge * (1.0 - warmBase));
+              color = mix(color, uWarm, clamp((beams*0.48 + glow*0.04)*edge,0.0,0.52));
               // The reference uses a separate fixed SVG grid above the scene.
               gl_FragColor = vec4(color, 1.0);
               #include <colorspace_fragment>
@@ -424,30 +425,28 @@ export default function GlassScene() {
           }
           renderer.setRenderTarget(null);
           renderer.setClearColor("#beddeb", 1);
-          displayMaterial.uniforms.uResolution.value.copy(
+          backdropMaterial.uniforms.uResolution.value.copy(
             material.uniforms.uResolution.value,
           );
           camera.aspect = width / Math.max(height, 1);
           const halfFov = (camera.fov * Math.PI) / 360;
           const hero = document.querySelector<HTMLElement>("[data-hero]");
           const heroTop = hero?.getBoundingClientRect().top ?? 0;
-          const introBottom = hero
-            ?.querySelector(`.${styles.heroMeta}`)
-            ?.getBoundingClientRect().bottom;
-          const linkTop = hero
-            ?.querySelector('a[href="#work"]')
-            ?.getBoundingClientRect().top;
-          // Short viewports reserve space for the intro and project link.
-          const framed =
-            height <= 600 && introBottom != null && linkTop != null;
-          const frameTop = framed ? introBottom - heroTop + 16 : 0;
-          const frameBottom = framed ? linkTop - heroTop - 16 : height;
+          const letteringFrame = hero
+            ?.querySelector("[data-hero-lettering-frame]")
+            ?.getBoundingClientRect();
+          // Fit the real lettering to the layout's middle row. Typography and
+          // the introduction reserve their space on every viewport, not just
+          // on short landscape screens.
+          const frameTop = letteringFrame ? letteringFrame.top - heroTop : 0;
+          const frameBottom = letteringFrame
+            ? letteringFrame.bottom - heroTop
+            : height;
           const frameHeight = Math.max(64, frameBottom - frameTop);
-          const fitHeight = framed
-            ? ((size.y * height) / frameHeight) * 1.35
-            : size.y * 1.75;
+          const fitHeight = ((size.y * height) / frameHeight) * 1.12;
+          const widthMargin = width <= 760 ? 1.24 : 1.7;
           const distance =
-            Math.max(fitHeight, (size.x / camera.aspect) * 1.7) /
+            Math.max(fitHeight, (size.x / camera.aspect) * widthMargin) /
               (2 * Math.tan(halfFov)) +
             size.z / 2;
           camera.position.set(center.x, center.y, distance);
@@ -457,9 +456,8 @@ export default function GlassScene() {
           camera.far = Math.max(100, distance * 3);
           camera.updateProjectionMatrix();
           worldHeight = 2 * Math.tan(halfFov) * distance;
-          heroOffsetY = framed
-            ? (0.5 - (frameTop + frameBottom) / (2 * height)) * worldHeight
-            : 0;
+          heroOffsetY =
+            (0.5 - (frameTop + frameBottom) / (2 * height)) * worldHeight;
           backdrop.position.x = center.x;
           backdrop.position.y = center.y;
           const viewHeight =
@@ -523,8 +521,8 @@ export default function GlassScene() {
           } else {
             [flowRead, flowWrite] = [flowWrite, flowRead];
           }
-          displayMaterial.uniforms.uFlow.value = flowRead.texture;
-          displayMaterial.uniforms.uMotion.value = motionEnabled;
+          backdropMaterial.uniforms.uFlow.value = flowRead.texture;
+          backdropMaterial.uniforms.uMotion.value = motionEnabled;
           material.uniforms.uFlow.value = flowRead.texture;
           material.uniforms.uMotion.value = motionEnabled;
           material.uniforms.uPointer.value.lerp(
@@ -540,9 +538,8 @@ export default function GlassScene() {
               ),
               1 - Math.exp(-8 * dt),
             );
-            backdropMaterial.uniforms.uTime.value = time * 0.001;
             group.rotation.y +=
-              (-0.07 +
+              (0.07 +
                 Math.min(1, scrollTop / viewportHeight) * 1.64 +
                 pointer.x * 0.16 -
                 group.rotation.y) *
@@ -673,7 +670,7 @@ export default function GlassScene() {
           .then(({ GLTFLoader }) => {
             const loader = new GLTFLoader();
             void loader
-              .loadAsync("/models/hello-rounded.glb")
+              .loadAsync("/models/hello.glb")
               .then((gltf) => {
                 let geometry: InstanceType<typeof THREE.BufferGeometry> | null =
                   null;
@@ -705,7 +702,7 @@ export default function GlassScene() {
                 bounds.getCenter(center);
                 group.position.y = savedY;
                 group.updateMatrixWorld(true);
-                element.dataset.helloGeometry = "fused-capsules";
+                element.dataset.helloGeometry = "glass-mesh";
               })
               .catch(() => {
                 // Keep the procedural tube fallback if the baked mesh is unavailable.

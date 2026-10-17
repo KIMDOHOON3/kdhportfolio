@@ -31,7 +31,9 @@ async function lightDifference(
       };
       const [left, right] = await Promise.all([decode(a), decode(b)]);
       let sum = 0,
-        count = 0;
+        count = 0,
+        changed = 0;
+      const differences: number[] = [];
       for (
         let y = Math.floor(left.height * (lettering ? 0.34 : 0.19));
         y < left.height * (lettering ? 0.68 : 0.25);
@@ -39,13 +41,25 @@ async function lightDifference(
       ) {
         for (let x = Math.floor(left.width * 0.2); x < left.width * 0.8; x++) {
           const index = (y * left.width + x) * 4;
+          let delta = 0;
           for (let c = 0; c < 3; c++) {
-            sum += Math.abs(left.data[index + c] - right.data[index + c]);
+            const value = Math.abs(
+              left.data[index + c] - right.data[index + c],
+            );
+            sum += value;
+            delta += value;
             count++;
           }
+          differences.push(delta / 3);
+          if (delta > 30) changed++;
         }
       }
-      return sum / count;
+      differences.sort((a, b) => a - b);
+      return {
+        mean: sum / count,
+        changedShare: changed / differences.length,
+        p99: differences[Math.floor(differences.length * 0.99)],
+      };
     },
     { a, b, lettering },
   );
@@ -77,7 +91,7 @@ test("hero: pointer bends light, settles and preserves touch/reduced motion", as
       );
       await expect(p.locator("[data-glass-scene]")).toHaveAttribute(
         "data-hello-geometry",
-        "fused-capsules",
+        "glass-mesh",
       );
       await expect(p.locator("[data-story-backdrop]")).toHaveAttribute(
         "data-ready",
@@ -145,8 +159,8 @@ test("hero: pointer bends light, settles and preserves touch/reduced motion", as
         .toBeGreaterThan(0.05);
     }
     const active = await capture(p, info, `${target.name}-material-pointer`);
-    const idleDifference = await lightDifference(p, before, control);
-    const pointerDifference = await lightDifference(p, control, active);
+    const idleDifference = (await lightDifference(p, before, control)).mean;
+    const pointerDifference = (await lightDifference(p, control, active)).mean;
     // Desktop has a large uncovered band. On touch layouts the text and model
     // occupy this area, so the local effect is instead checked by touch below.
     if (target.name === "portfolio" && info.project.name === "desktop") {
@@ -154,8 +168,8 @@ test("hero: pointer bends light, settles and preserves touch/reduced motion", as
       expect(pointerDifference).toBeGreaterThan(idleDifference * 1.5);
     }
     if (target.name === "portfolio" && !info.project.use.hasTouch) {
-      // The recording visibly deforms the letters, not only the empty sky band.
-      // Sample the word itself with timed pointer input and an idle control.
+      // Sample the word's reflection and internal refraction with timed input
+      // and an idle control. A response does not require warping its silhouette.
       await p.waitForTimeout(1000);
       const glassBefore = await capture(p, info, "hello-geometry-idle");
       await p.waitForTimeout(120);
@@ -170,8 +184,14 @@ test("hero: pointer bends light, settles and preserves touch/reduced motion", as
       const glassActive = await capture(p, info, "hello-geometry-cursor-wake");
       const idle = await lightDifference(p, glassBefore, glassControl, true);
       const active = await lightDifference(p, glassControl, glassActive, true);
-      expect(active).toBeGreaterThan(2);
-      expect(active).toBeGreaterThan(idle * 2);
+      // Rigid glass responds in localized highlights. Requiring a large mean
+      // over the whole word rewarded the removed jelly-like silhouette warp.
+      // Require a clearly visible (>10 levels) change over >=2% of this region,
+      // strong glints and a response greater than the normal idle control.
+      expect(active.mean).toBeGreaterThan(idle.mean * 2);
+      expect(active.changedShare).toBeGreaterThan(0.02);
+      expect(active.changedShare).toBeGreaterThan(idle.changedShare * 2);
+      expect(active.p99).toBeGreaterThan(20);
       metrics.push({
         site: target.name,
         region: "hello lettering",

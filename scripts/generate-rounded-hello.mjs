@@ -49,15 +49,18 @@ if (
 
 const { values: options } = parseArgs({
   options: {
-    radius: { type: "string", default: "0.35" },
+    radius: { type: "string", default: "0.30" },
     output: { type: "string", default: "public/models/hello-rounded.glb" },
+    diagnostic: { type: "string" },
   },
 });
 const radius = Number(options.radius);
 if (!Number.isFinite(radius) || radius <= 0)
   throw new Error("Radius must be positive.");
 const letterSpacing = 0.72;
-const blend = 0.1;
+const joinRadius = radius * (2 / 3);
+const depthRatio = 0.78;
+const blend = 0.06;
 const resolution = 256;
 const smoothingPasses = 3;
 const maxPolygons = 200000;
@@ -67,14 +70,17 @@ const samples = 180;
 const counterStrokes = strokes.map((stroke, index) =>
   stroke.map(([x, y], i) => {
     if (index === 2 || index === 3) {
-      const offsets = { 1: 0.37, 2: 0.12, 4: -0.35, 5: -0.32 };
+      const offsets = { 1: 0.24, 2: 0.12, 4: -0.2, 5: -0.12 };
       x += offsets[i] ?? 0;
       // Keep the widened neighboring loops separate above their shared baseline.
-      if (index === 3) x += 0.5 * Math.min(1, Math.max(0, y / 0.75));
+      if (index === 3) x += 0.35 * Math.min(1, Math.max(0, y / 0.75));
     } else if (index === 1) {
       if (i === 2) x += 0.2;
       if (i === 3) y += 0.3;
       if (i === 4) x -= 0.15;
+      // Keep the e exit below its ascending stroke; their near contact used
+      // to enclose an unintended second counter beneath the real e loop.
+      if (i === stroke.length - 1) y = -0.5;
     }
     return [x, y];
   }),
@@ -83,12 +89,7 @@ const curves = counterStrokes.map(
   (stroke, index) =>
     new THREE.CatmullRomCurve3(
       stroke.map(
-        ([x, y], i) =>
-          new THREE.Vector3(
-            x + index * letterSpacing,
-            y,
-            Math.sin(i * 0.75 + index) * 0.075,
-          ),
+        ([x, y]) => new THREE.Vector3(x + index * letterSpacing, y, 0),
       ),
       false,
       "centripetal",
@@ -148,11 +149,12 @@ const marcher = new MarchingCubes(
 );
 marcher.isolation = 0;
 marcher.field.fill(-1);
-const support = radius + blend + 2 * step;
 const curveField = new Float32Array(marcher.field.length);
 const grid = (value, axis) => (value - origin[axis]) / step;
 
-for (const points of paths) {
+for (const [pathIndex, points] of paths.entries()) {
+  const pathRadius = pathIndex < letterPaths.length ? radius : joinRadius;
+  const support = pathRadius + blend + 2 * step;
   curveField.fill(-1);
   for (let segment = 0; segment < points.length - 1; segment++) {
     const a = points[segment],
@@ -191,7 +193,7 @@ for (const points of paths) {
                 )
               : 0;
           const value =
-            radius - Math.hypot(px - t * dx, py - t * dy, pz - t * dz);
+            pathRadius - Math.hypot(px - t * dx, py - t * dy, pz - t * dz);
           if (value > curveField[index]) curveField[index] = value;
         }
       }
@@ -206,50 +208,10 @@ for (const points of paths) {
     marcher.field[i] = Math.max(a, b) + h * h * blend * 0.25;
   }
 }
-// Close sub-cell fissures at near-tangent joins before extraction. A single
-// grid-cell scalar closing removes accidental pinholes while retaining the
-// deliberately widened counters. Work separably to keep the offline pass small.
-// Round the e/l junction locally to seal its accidental interstitial pinhole.
-// This short depth capsule stays inside that join and leaves all four intended
-// counters open; it does not alter the original baseline endpoints.
-for (let z = 1; z < resolution - 1; z++) {
-  const pz = origin.z + z * step;
-  if (Math.abs(pz) > 0.5) continue;
-  for (let y = 1; y < resolution - 1; y++) {
-    const py = origin.y + y * step - 0.2;
-    if (Math.abs(py) > 0.35) continue;
-    for (let x = 1; x < resolution - 1; x++) {
-      const px = origin.x + x * step + 1.15;
-      if (Math.abs(px) > 0.35) continue;
-      const index = z * size2 + y * resolution + x;
-      const b =
-        0.18 - Math.hypot(px, py, pz - Math.max(-0.18, Math.min(0.18, pz)));
-      const a = marcher.field[index];
-      const h = Math.max(0, blend - Math.abs(a - b)) / blend;
-      marcher.field[index] = Math.max(a, b) + h * h * blend * 0.25;
-    }
-  }
-}
+// Explicit connecting strokes make blanket closing and a local filler blob
+// unnecessary. Keep the authored spaces open instead of swelling every join.
 let filtered = marcher.field;
-for (const maximum of [true, false]) {
-  for (const stride of [1, resolution, size2]) {
-    const next = filtered.slice();
-    for (let z = 1; z < resolution - 1; z++) {
-      for (let y = 1; y < resolution - 1; y++) {
-        let i = z * size2 + y * resolution + 1;
-        for (let x = 1; x < resolution - 1; x++, i++) {
-          next[i] = maximum
-            ? Math.max(filtered[i - stride], filtered[i], filtered[i + stride])
-            : Math.min(filtered[i - stride], filtered[i], filtered[i + stride]);
-        }
-      }
-    }
-    filtered = next;
-  }
-}
-// Closing seals tiny gaps but its axis-aligned extrema can leave ridges in
-// reflections. Filter the scalar surface before extraction, so both geometry
-// and its gradient normals describe the same rounded, continuous surface.
+// Filter before extraction so geometry and gradient normals agree.
 for (let pass = 0; pass < smoothingPasses; pass++) {
   for (const stride of [1, resolution, size2]) {
     const next = filtered.slice();
@@ -326,7 +288,7 @@ const joinClearances = joins.map((curve) =>
       ),
   ),
 );
-if (joinClearances.some((clearance) => clearance < radius * 0.6)) {
+if (joinClearances.some((clearance) => clearance < joinRadius * 0.6)) {
   throw new Error(`Thin handwriting join: ${JSON.stringify(joinClearances)}`);
 }
 const position = geometry.getAttribute("position");
@@ -346,6 +308,9 @@ for (let i = 0; i < position.count; i++) {
   normals.set(normal.toArray(), i * 3);
 }
 geometry.setAttribute("normal", new THREE.BufferAttribute(normals, 3));
+// A shallow oval section avoids balloon-like volume. BufferGeometry.scale
+// applies the inverse-transpose to normals as well as scaling the positions.
+geometry.scale(1, 1, depthRatio);
 let maximumNormalLengthError = 0;
 for (let i = 0; i < position.count; i++) {
   const length = Math.hypot(
@@ -405,6 +370,19 @@ const nonManifoldEdges = [...edges.values()].filter(
 const components = new Set([...parent.keys()].map(find)).size;
 const eulerCharacteristic = position.count - edges.size + indices.length / 3;
 const throughTunnels = (2 * components - eulerCharacteristic) / 2;
+// Optional inspection data may describe a rejected candidate. It is never
+// exported as an application GLB or allowed to bypass the topology checks.
+if (options.diagnostic) {
+  fs.writeFileSync(
+    new URL(options.diagnostic, root),
+    JSON.stringify({
+      position: Array.from(position.array),
+      normal: Array.from(geometry.getAttribute("normal").array),
+      index: Array.from(indices),
+      throughTunnels,
+    }),
+  );
+}
 if (boundaryEdges || nonManifoldEdges || components !== 1) {
   throw new Error(
     `Surface validation failed: ${JSON.stringify({ boundaryEdges, nonManifoldEdges, components })}`,
@@ -441,6 +419,8 @@ console.log(
       smoothingPasses,
       samples,
       radius,
+      joinRadius,
+      depthRatio,
       letterSpacing,
       blend,
       joins: joins.length,
