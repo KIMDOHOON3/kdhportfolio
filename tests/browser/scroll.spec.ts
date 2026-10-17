@@ -135,7 +135,9 @@ test("wheel: entry, four stages, reverse, release and collision checks", async (
     expect(metric.collisions).toBe(0);
     expect(metric.height).toBe(height);
     if (offset >= 0.5 && offset <= 7)
-      expect(Math.abs(metric.pin)).toBeLessThan(1.5);
+      expect(
+        Math.abs(metric.pin - Math.min(0, metric.storyBottom - height)),
+      ).toBeLessThan(1.5);
     if (offset === 7.5)
       expect(Math.abs(metric.pin - (metric.storyBottom - height))).toBeLessThan(
         1.5,
@@ -229,6 +231,12 @@ test("filters, anchors, mobile menu and detail return", async ({ page }) => {
         .evaluate((e) => Math.abs(e.getBoundingClientRect().top)),
     )
     .toBeLessThan(100);
+  await page.getByRole("link", { name: "김도훈 포트폴리오 홈" }).click();
+  await expect
+    .poll(() =>
+      page.locator("[data-scroll-viewport]").evaluate((e) => e.scrollTop),
+    )
+    .toBe(0);
 });
 
 test("reduced motion and touch scroll", async ({ page, context, isMobile }) => {

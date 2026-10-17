@@ -29,7 +29,8 @@ export function PortfolioHeader() {
     <header className={styles.header}>
       <Link
         className={styles.logo}
-        href="/"
+        href="/#top"
+        scroll={false}
         onClick={() => setOpen(false)}
         aria-label="김도훈 포트폴리오 홈"
       >
@@ -55,13 +56,13 @@ export function PortfolioHeader() {
         className={`${styles.nav} ${open ? styles.navOpen : ""}`}
         aria-label="메인 메뉴"
       >
-        <Link href="/#work" onClick={() => setOpen(false)}>
+        <Link href="/#work" scroll={false} onClick={() => setOpen(false)}>
           프로젝트 <sup>05</sup>
         </Link>
-        <Link href="/#about" onClick={() => setOpen(false)}>
+        <Link href="/#about" scroll={false} onClick={() => setOpen(false)}>
           소개
         </Link>
-        <Link href="/#contact" onClick={() => setOpen(false)}>
+        <Link href="/#contact" scroll={false} onClick={() => setOpen(false)}>
           연락하기 <ArrowIcon />
         </Link>
       </nav>
@@ -267,6 +268,7 @@ export default function Portfolio() {
             >
               <Link
                 href={`/work/${project.id}`}
+                scroll={false}
                 className={styles.projectLink}
                 data-paper-surface
                 aria-label={`${project.title} ${project.id === 1 ? "리뉴얼" : project.id === 2 ? "운영 및 개선" : ""} 프로젝트 보기`}

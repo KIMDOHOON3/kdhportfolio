@@ -40,7 +40,7 @@ export default async function ProjectDetail({ params }: Props) {
   const next = portfolioProjects[(index + 1) % portfolioProjects.length];
   return (
     <main id="top" className={styles.detail}>
-      <Link href="/#work" className={styles.backLink}>
+      <Link href="/#work" scroll={false} className={styles.backLink}>
         ← 프로젝트 목록으로
       </Link>
       <div className={styles.sectionLabel}>
@@ -122,7 +122,11 @@ export default async function ProjectDetail({ params }: Props) {
           </article>
         ))}
       </section>
-      <Link className={styles.nextProject} href={`/work/${next.id}`}>
+      <Link
+        className={styles.nextProject}
+        href={`/work/${next.id}`}
+        scroll={false}
+      >
         <span>
           <small>다음 프로젝트</small>
           {next.title}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, type ReactNode } from "react";
+import { useEffect, useLayoutEffect, useRef, type ReactNode } from "react";
 import { usePathname } from "next/navigation";
 import Lenis from "lenis";
 import styles from "./Portfolio.module.scss";
@@ -134,7 +134,7 @@ export default function ScrollViewport({ children }: { children: ReactNode }) {
       resize.disconnect();
     };
   }, []);
-  useEffect(() => {
+  useLayoutEffect(() => {
     const element = viewport.current;
     if (!element) return;
     engine?.resize();
