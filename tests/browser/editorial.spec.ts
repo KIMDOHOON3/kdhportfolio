@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-test("drawn interface, aligned filters, real Aeppy cover and compact story", async ({
+test("drawn interface, aligned filters, real Aeppy cover and journey", async ({
   page,
 }, info) => {
   await page.goto("/#about");
@@ -68,25 +68,21 @@ test("drawn interface, aligned filters, real Aeppy cover and compact story", asy
       e.getBoundingClientRect().top +
       document.querySelector("[data-scroll-viewport]")!.scrollTop,
   }));
-  expect(Math.abs(geometry.height / size.height - 4)).toBeLessThan(0.01);
+  expect(geometry.height).toBeGreaterThan(size.height * 3);
   await page.locator("[data-scroll-viewport]").evaluate(
     (e, top) => {
       e.scrollTop = top;
     },
-    geometry.start + size.height * 1.9,
+    geometry.start + size.height * .72,
   );
-  await expect(story).toHaveAttribute("data-stage", "2");
+  await expect(story).toHaveAttribute("data-entered", "true");
   await expect(page.locator("[data-scroll-viewport]")).toHaveAttribute(
     "data-story-dark",
-    "true",
+    "false",
   );
-  await expect(
-    page.locator(
-      '[data-story-panel="2"] h2 > span:last-child > span:last-child',
-    ),
-  ).toHaveCSS("opacity", "1");
+  await expect(page.locator("[data-journey-page]")).toBeVisible();
   await expect(page.locator("[data-story-orbit]")).toHaveCount(0);
-  await expect(page.locator("[data-principle]")).toHaveCount(3);
+  await expect(page.locator("[data-journey-chapter]")).toHaveCount(5);
   await capture("centered-skill-groups");
   const overflow = await page
     .locator("[data-scroll-viewport]")

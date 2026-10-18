@@ -13,7 +13,6 @@ import TechnologyIcon from "./TechnologyIcon";
 import AboutSection from "./AboutSection";
 import ScrollStory from "./ScrollStory";
 import BackgroundScreen from "./BackgroundScreen";
-import StoryBackdrop from "./StoryBackdrop";
 import { MailIcon, GithubIcon, DownloadIcon } from "../Icons";
 import styles from "./Portfolio.module.scss";
 
@@ -290,7 +289,6 @@ export default function Portfolio() {
       </section>
 
       <AboutSection />
-      <StoryBackdrop />
       <ScrollStory />
     </main>
   );

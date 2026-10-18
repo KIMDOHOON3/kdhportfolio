@@ -1,104 +1,105 @@
 import { expect, test } from "@playwright/test";
 
-test("skills and existing career summary stay readable without extra scrolling", async ({
+test("rolling skills remain above the chronological career and anchors stay readable", async ({
   page,
-  isMobile,
 }, info) => {
   const errors: string[] = [];
   page.on("pageerror", (error) => errors.push(error.message));
-  await page.goto("/");
-  await page.evaluate(() => document.fonts.ready);
-  const story = page.locator("[data-scroll-story]");
-  await expect(story).toHaveAttribute("data-enhanced", "true");
-  const height = page.viewportSize()!.height;
+  await page.goto("/#about");
+  const journey = page.locator("[data-journey]");
   const viewport = page.locator("[data-scroll-viewport]");
-  const start = await story.evaluate(
-    (element) =>
-      element.getBoundingClientRect().top +
+  await expect(journey).toHaveAttribute("data-ready", "true");
+  await page.evaluate(() => document.fonts.ready);
+  const height = page.viewportSize()!.height;
+  const start = await journey.evaluate(
+    (e) =>
+      e.getBoundingClientRect().top +
       document.querySelector("[data-scroll-viewport]")!.scrollTop,
   );
   await viewport.evaluate(
-    (element, top) => {
-      element.scrollTop = top;
-    },
-    start + height * 1.9,
+    (e, top) => (e.scrollTop = top),
+    start + height * 0.72,
   );
-  await expect(story).toHaveAttribute("data-stage", "2");
-  const panel = page.locator('[data-story-panel="2"]');
-  const skills = panel.getByRole("tab", { name: "기술 활용" });
-  const career = panel.getByRole("tab", { name: "이력 요약" });
-  await expect(skills).toHaveAttribute("aria-selected", "true");
-  await expect(panel.getByRole("tabpanel")).toHaveCount(1);
-  await expect(panel.getByRole("tabpanel").locator("article")).toHaveCount(3);
-  await expect(panel.getByText(/예약·폼의 상태/)).toBeVisible();
-  const capture = async (name: string) => {
-    const path = info.outputPath(`${name}.png`);
-    await page.screenshot({ path, scale: "css" });
-    await info.attach(name, { path, contentType: "image/png" });
-  };
-  const bounds = async () => {
-    const boxes = await panel
-      .locator(
-        'h2, [role="tablist"], [role="tabpanel"]:not([hidden]) article, a',
+  await expect(journey).toHaveAttribute("data-entered", "true");
+  const content = page.locator("[data-journey-page]");
+  const skills = content.locator("[data-journey-skills]");
+  const track = skills.locator("[data-skills-track]");
+  const list = skills.locator('ul:not([aria-hidden="true"])');
+  await expect(list.locator("li")).toHaveCount(14);
+  for (const skill of [
+    "HTML",
+    "CSS",
+    "JavaScript",
+    "jQuery",
+    "React",
+    "Next.js",
+    "TypeScript",
+    "Zustand",
+    "Vercel",
+  ])
+    await expect(list.getByText(skill, { exact: true })).toHaveCount(1);
+  await page.mouse.move(2, height - 2);
+  const initial = await track.evaluate((e) => getComputedStyle(e).transform);
+  await expect
+    .poll(() => track.evaluate((e) => getComputedStyle(e).transform))
+    .not.toBe(initial);
+  const pause = skills.getByRole("button", { name: "스킬 롤링 일시 정지" });
+  await pause.click();
+  await expect(
+    skills.getByRole("button", { name: "스킬 롤링 재생" }),
+  ).toHaveAttribute("aria-pressed", "true");
+  await expect(track).toHaveCSS("animation-play-state", "paused");
+  await skills.getByRole("button", { name: "스킬 롤링 재생" }).click();
+  await page.mouse.move(2, height - 2);
+  await expect(track).toHaveCSS("animation-play-state", "running");
+  const chapters = content.locator("[data-journey-chapter]");
+  await expect(chapters).toHaveCount(5);
+  for (const [index, title] of [
+    "한경대학교",
+    "SBS아카데미",
+    "언제나 디자인",
+    "코드잇 스프린트",
+    "렉서스·기아",
+  ].entries())
+    await expect(chapters.nth(index)).toContainText(title);
+  await expect(chapters.nth(2)).toContainText("2022.07 — 2023.10");
+  await expect(chapters.nth(3)).toContainText("2024.08 — 2025.02");
+  const navigation = page.getByRole("navigation", {
+    name: "성장 과정 바로가기",
+  });
+  for (const id of ["2022", "2024", "now"]) {
+    const link = navigation.locator(`a[href="#journey-${id}"]`);
+    await link.click();
+    const chapter = page.locator(`#journey-${id}`);
+    await expect
+      .poll(() =>
+        chapter.evaluate((e) =>
+          Math.abs(
+            e.getBoundingClientRect().top -
+              parseFloat(getComputedStyle(e).scrollMarginTop),
+          ),
+        ),
       )
-      .evaluateAll((nodes) =>
-        nodes.map((node) => {
-          const rect = node.getBoundingClientRect();
-          return {
-            top: rect.top,
-            bottom: rect.bottom,
-            left: rect.left,
-            right: rect.right,
-          };
-        }),
-      );
-    for (const box of boxes) {
-      expect(box.top).toBeGreaterThan(64);
-      expect(box.bottom).toBeLessThan(height - 25);
-      expect(box.left).toBeGreaterThanOrEqual(0);
-      expect(box.right).toBeLessThanOrEqual(page.viewportSize()!.width);
-    }
-    return boxes[0].top;
-  };
-  await page.waitForTimeout(800);
-  const skillsTop = await bounds();
-  await capture("technical-explanations");
-  const scrollTop = await viewport.evaluate((element) => element.scrollTop);
-  if (isMobile) await career.tap();
-  else await career.click();
-  await expect(career).toHaveAttribute("aria-selected", "true");
-  await expect(panel.getByRole("tabpanel").locator("article")).toHaveCount(4);
-  await expect(panel.getByText("언제나 디자인", { exact: true })).toBeVisible();
-  await expect(
-    panel.getByText("2022.07 — 2023.10", { exact: true }),
-  ).toBeVisible();
-  await expect(
-    panel.getByText("코드잇 스프린트", { exact: true }),
-  ).toBeVisible();
-  expect(Math.abs((await bounds()) - skillsTop)).toBeLessThan(3);
-  expect(
-    Math.abs(
-      (await viewport.evaluate((element) => element.scrollTop)) - scrollTop,
-    ),
-  ).toBeLessThan(3);
-  await capture("existing-career-summary");
-  await career.focus();
-  await page.keyboard.press("ArrowLeft");
-  await expect(skills).toBeFocused();
-  await expect(skills).toHaveAttribute("aria-selected", "true");
-  await page.keyboard.press("End");
-  await expect(career).toBeFocused();
-  await expect(career).toHaveAttribute("aria-selected", "true");
-  await page.keyboard.press("Tab");
-  await expect(panel.getByRole("tabpanel")).toBeFocused();
-  const resume = panel.getByRole("link", { name: "이력서 내려받기" });
+      .toBeLessThan(3);
+    await expect(link).toHaveAttribute("aria-current", "step");
+    const dock = (await skills.boundingBox())!;
+    const header = (await page.locator("header").boundingBox())!;
+    const heading = (await chapter.getByRole("heading").boundingBox())!;
+    expect(dock.y).toBeGreaterThanOrEqual(header.y + header.height - 1);
+    expect(heading.y).toBeGreaterThan(dock.y + dock.height);
+    expect(heading.x).toBeGreaterThanOrEqual(0);
+    expect(heading.x + heading.width).toBeLessThanOrEqual(
+      page.viewportSize()!.width,
+    );
+  }
+  const resume = content.getByRole("link", { name: "이력서 내려받기" });
   await expect(resume).toHaveAttribute("download", "");
-  const response = await page.request.get((await resume.getAttribute("href"))!);
-  expect(response.ok()).toBe(true);
   expect(
-    await viewport.evaluate(
-      (element) => element.scrollWidth - element.clientWidth,
-    ),
-  ).toBe(0);
+    (await page.request.get((await resume.getAttribute("href"))!)).ok(),
+  ).toBe(true);
+  expect(await viewport.evaluate((e) => e.scrollWidth - e.clientWidth)).toBe(0);
   expect(errors).toEqual([]);
+  const path = info.outputPath("journey-current-work.png");
+  await page.screenshot({ path, scale: "css" });
+  await info.attach("journey-current-work", { path, contentType: "image/png" });
 });

@@ -35,7 +35,7 @@ test("deployment revision, illuminated glass and centered thank-you footer", asy
     "data-lighting",
     "studio-environment",
   );
-  await expect(page.locator("[data-story-backdrop]")).toHaveAttribute(
+  await expect(page.locator("[data-journey]")).toHaveAttribute(
     "data-ready",
     "true",
   );

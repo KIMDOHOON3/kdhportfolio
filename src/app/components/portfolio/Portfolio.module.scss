@@ -6,6 +6,17 @@ $display: "NewYork", "Pretendard-Bold", sans-serif;
 $intro: "Paperlogy-Regular", "Pretendard-Regular", sans-serif;
 $label: "Paperlogy-Medium", "Pretendard-Regular", sans-serif;
 
+// Keep the browser illustration after its introduction on narrow screens.
+@media (max-width: 768px) {
+  .portfolio .about {
+    display: flex;
+    flex-direction: column;
+    gap: 28px;
+  }
+  .portfolio .about .aboutText { order: 0; padding: 0; }
+  .portfolio .about .aboutPortrait { order: 1; width: min(100%, 360px); padding: 0; align-self: center; }
+}
+
 @mixin grid-cross {
   content: "";
   position: absolute;
@@ -1280,6 +1291,17 @@ $label: "Paperlogy-Medium", "Pretendard-Regular", sans-serif;
 :global([data-story-dark="true"]) .header {
   color: #fbfaf4;
 }
+.header::before {
+  content: "";
+  position: absolute;
+  inset: -10px 0 -16px;
+  z-index: -1;
+  background: linear-gradient(#f9f8f3 80%, rgba(249, 248, 243, 0));
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 180ms;
+}
+:global([data-journey-active="true"]) .header::before { opacity: 1; }
 :global([data-home="false"]) .header {
   background: #faf9f5;
 }

@@ -2,185 +2,207 @@ import { expect, test, type Page, type TestInfo } from "@playwright/test";
 
 async function ready(page: Page) {
   await page.goto("/");
-  await expect(
-    page.locator('[data-scroll-story][data-enhanced="true"]'),
-  ).toBeAttached();
+  await expect(page.locator("[data-journey]")).toHaveAttribute(
+    "data-ready",
+    "true",
+  );
   await page.evaluate(() => document.fonts.ready);
 }
-
-async function startOfStory(page: Page) {
-  return page
-    .locator("[data-scroll-story]")
-    .evaluate(
-      (element) =>
-        element.getBoundingClientRect().top +
-        document.querySelector<HTMLElement>("[data-scroll-viewport]")!
-          .scrollTop,
-    );
-}
-
-async function wheelTo(
-  page: Page,
-  target: number,
-  selector = "[data-scroll-viewport]",
-) {
-  const top = await page
-    .locator(selector)
-    .evaluate((element) => element.scrollTop);
-  const size = page.viewportSize()!;
-  await page.mouse.move(size.width * 0.7, size.height * 0.5);
-  const inputScale = await page.evaluate(() =>
+async function wheelTo(page: Page, target: number) {
+  const viewport = page.locator("[data-scroll-viewport]");
+  const scale = await page.evaluate(() =>
     navigator.maxTouchPoints > 0 ? devicePixelRatio : 1,
   );
-  await page.mouse.wheel(0, (target - top) * inputScale);
+  const size = page.viewportSize()!;
+  await page.mouse.move(size.width * 0.8, size.height * 0.5);
+  await page.mouse.wheel(
+    0,
+    (target - (await viewport.evaluate((e) => e.scrollTop))) * scale,
+  );
   let corrections = 0;
   await expect
     .poll(async () => {
-      let actual = await page
-        .locator(selector)
-        .evaluate((element) => element.scrollTop);
-      if (Math.abs(actual - target) > 4 && corrections < 3) {
-        // A prior wheel can still have a fractional Lenis target. Wait for it
-        // to settle before applying a small real wheel correction, as in the
-        // document-flow comparison; do not loosen transition assertions.
+      let current = await viewport.evaluate((e) => e.scrollTop);
+      if (Math.abs(current - target) > 4 && corrections < 3) {
         await page.waitForTimeout(750);
-        actual = await page
-          .locator(selector)
-          .evaluate((element) => element.scrollTop);
-        if (Math.abs(actual - target) > 4) {
-          await page.mouse.wheel(0, (target - actual) * inputScale);
+        current = await viewport.evaluate((e) => e.scrollTop);
+        if (Math.abs(current - target) > 4) {
+          await page.mouse.wheel(0, (target - current) * scale);
           corrections++;
         }
       }
-      return Math.abs(actual - target);
+      return Math.abs((await viewport.evaluate((e) => e.scrollTop)) - target);
     })
     .toBeLessThanOrEqual(4);
 }
-
 async function capture(page: Page, info: TestInfo, name: string) {
   const path = info.outputPath(`${name}.png`);
   await page.screenshot({ path, scale: "css" });
   await info.attach(name, { path, contentType: "image/png" });
 }
 
-test("wheel: entry, four stages, reverse, release and collision checks", async ({
+test("browser entry grows from the illustration, reverses and releases into the timeline", async ({
   page,
 }, info) => {
   const errors: string[] = [];
   page.on("pageerror", (error) => errors.push(error.message));
   await ready(page);
-  const height = page.viewportSize()!.height;
-  const start = await startOfStory(page);
-  await capture(page, info, "hero");
-  for (const offset of [
-    -0.25, -0.1, 0, 0.5, 0.78, 0.82, 1.58, 1.62, 2.38, 2.42, 3, 3.5,
-  ]) {
-    const target = Math.round(start + offset * height);
-    await wheelTo(page, target);
-    const stage = Math.min(3, Math.floor(Math.max(0, offset) / 0.8));
-    await expect(page.locator("[data-scroll-story]")).toHaveAttribute(
-      "data-stage",
-      String(stage),
-    );
-    await expect(page.locator("[data-story-panel]:not([hidden])")).toHaveCount(
-      1,
-    );
-    if (offset === -0.25)
-      await expect(
-        page.locator("[data-story-panel='0'] h2 span span").first(),
-      ).toHaveCSS("opacity", "0");
-    if (offset >= -0.1 && stage !== 2)
-      await expect(
-        page.locator(`[data-story-panel='${stage}'] h2 span span`).last(),
-      ).toHaveCSS("opacity", "1");
-    if (offset === 0.5 || offset === 1.62)
-      await expect(page.locator("[data-scroll-viewport]")).toHaveAttribute(
-        "data-story-dark",
-        "true",
-      );
-    if (offset === 3)
-      await expect(page.locator("[data-scroll-viewport]")).toHaveAttribute(
-        "data-story-dark",
-        "false",
-      );
-    const metric = await page.evaluate(() => {
-      const viewport = document.querySelector<HTMLElement>(
-        "[data-scroll-viewport]",
-      )!;
-      const pin = document
-        .querySelector("[data-story-pinned]")!
-        .getBoundingClientRect();
-      const regions = ["home", "about", "work"].map((id) =>
-        document.getElementById(id)!.getBoundingClientRect(),
-      );
-      regions.push(
-        document.querySelector("[data-scroll-story]")!.getBoundingClientRect(),
-        document.querySelector("footer")!.getBoundingClientRect(),
-      );
-      return {
-        body: window.scrollY,
-        overflow: viewport.scrollWidth - viewport.clientWidth,
-        pin: pin.top,
-        height: pin.height,
-        storyBottom: document
-          .querySelector("[data-scroll-story]")!
-          .getBoundingClientRect().bottom,
-        collisions: regions
-          .slice(1)
-          .filter((rect, i) => rect.top < regions[i].bottom - 1).length,
-      };
-    });
-    expect(metric.body).toBe(0);
-    expect(metric.overflow).toBe(0);
-    expect(metric.collisions).toBe(0);
-    expect(metric.height).toBe(height);
-    if (offset >= 0.5 && offset <= 3)
-      expect(
-        Math.abs(metric.pin - Math.min(0, metric.storyBottom - height)),
-      ).toBeLessThan(1.5);
-    if (offset === 3.5)
-      expect(Math.abs(metric.pin - (metric.storyBottom - height))).toBeLessThan(
-        1.5,
-      );
-    if ([0, 0.5, 0.82, 1.62, 2.42, 3.5].includes(offset))
-      await capture(page, info, `story-${offset}`);
+  const story = page.locator("[data-journey]");
+  const portal = page.locator("[data-browser-entry]");
+  const start = await story.evaluate(
+    (e) =>
+      e.getBoundingClientRect().top +
+      document.querySelector("[data-scroll-viewport]")!.scrollTop,
+  );
+  const { height, width } = page.viewportSize()!;
+  let previousWidth = 0;
+  for (const [name, offset] of [
+    ["early", -0.55],
+    ["middle", 0.025],
+    ["late", 0.55],
+  ] as const) {
+    await wheelTo(page, Math.round(start + height * offset));
+    await expect(portal).toBeVisible();
+    await expect(story).toHaveAttribute("data-phase", "entering");
+    const bounds = (await portal.boundingBox())!;
+    expect(bounds.width).toBeGreaterThan(previousWidth);
+    expect(bounds.width).toBeLessThanOrEqual(width + 3);
+    previousWidth = bounds.width;
+    await expect(page.locator("[data-journey-page]")).toHaveCSS("opacity", "0");
+    await capture(page, info, `browser-${name}`);
   }
-  for (const offset of [2.1, 1.1, 0.5]) {
-    await wheelTo(page, Math.round(start + offset * height));
-    await expect(page.locator("[data-scroll-story]")).toHaveAttribute(
-      "data-stage",
-      String(Math.floor(offset / 0.8)),
-    );
-  }
-  await wheelTo(page, Math.round(start + height * 1.9));
-  const blocks = await page
-    .locator("[data-principle], [data-story-panel='2'] a")
-    .evaluateAll((elements) =>
-      elements.map((element) => {
-        const r = element.getBoundingClientRect();
-        return { top: r.top, bottom: r.bottom, left: r.left, right: r.right };
-      }),
-    );
-  for (const block of blocks) {
-    expect(block.top).toBeGreaterThan(65);
-    expect(block.bottom).toBeLessThan(height - 35);
-    expect(block.left).toBeGreaterThanOrEqual(0);
-    expect(block.right).toBeLessThanOrEqual(page.viewportSize()!.width);
-  }
-  for (let i = 0; i < blocks.length; i++)
-    for (let j = i + 1; j < blocks.length; j++) {
-      const a = blocks[i],
-        b = blocks[j];
-      expect(
-        Math.max(0, Math.min(a.right, b.right) - Math.max(a.left, b.left)) *
-          Math.max(0, Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top)),
-      ).toBe(0);
-    }
+  await wheelTo(page, Math.round(start + height * 0.72));
+  await expect(portal).toBeHidden();
+  await expect(story).toHaveAttribute("data-entered", "true");
+  await expect(page.locator("[data-journey-page]")).toBeVisible();
+  await expect(page.locator("[data-story-backdrop]")).toHaveCount(0);
+  await expect(page.locator("[data-scroll-viewport]")).toHaveAttribute(
+    "data-story-dark",
+    "false",
+  );
+  await capture(page, info, "browser-inside");
+  await wheelTo(page, Math.round(start + height * 0.025));
+  await expect(portal).toBeVisible();
+  await expect(story).toHaveAttribute("data-phase", "entering");
+  await wheelTo(page, Math.round(start - height * 2));
+  await expect(portal).toBeHidden();
+  await expect(page.locator("[data-interface-sketch]")).toHaveCSS(
+    "opacity",
+    "1",
+  );
+  await page
+    .getByRole("link", { name: "언제든 연락주세요!" })
+    .scrollIntoViewIfNeeded();
+  await page.getByRole("link", { name: "언제든 연락주세요!" }).click();
+  await expect(page.locator("#contact")).toBeInViewport();
+  await expect(portal).toBeHidden();
+  expect(await page.evaluate(() => window.scrollY)).toBe(0);
+  expect(
+    await page
+      .locator("[data-scroll-viewport]")
+      .evaluate((e) => e.scrollWidth - e.clientWidth),
+  ).toBe(0);
   expect(errors).toEqual([]);
 });
 
-test("filters, anchors, mobile menu and detail return", async ({ page }) => {
+test("timeline branches draw into the contact background and reverse with scrolling", async ({
+  page,
+}, info) => {
   await ready(page);
+  const outro = page.locator("[data-journey-ending]");
+  const start = await outro.evaluate(
+    (e) =>
+      e.getBoundingClientRect().top +
+      document.querySelector("[data-scroll-viewport]")!.scrollTop,
+  );
+  const height = page.viewportSize()!.height;
+  const path = page.locator("[data-connection-path]").first();
+  await wheelTo(page, Math.round(start - height * 0.95));
+  const first = Number(await outro.getAttribute("data-progress"));
+  expect(first).toBe(0);
+  const line = page.locator("[data-journey-line]");
+  expect(
+    await line.evaluate((e) =>
+      Number(e.style.getPropertyValue("--line-progress")),
+    ),
+  ).toBeLessThan(1);
+  await expect(page.locator("[data-journey-connection]")).toHaveCSS(
+    "visibility",
+    "hidden",
+  );
+  const firstOffset = await path.evaluate((e) =>
+    parseFloat(getComputedStyle(e).strokeDashoffset),
+  );
+  await wheelTo(page, Math.round(start - height * 0.12));
+  await expect
+    .poll(async () => Number(await outro.getAttribute("data-progress")))
+    .toBeGreaterThan(first);
+  const nextOffset = await path.evaluate((e) =>
+    parseFloat(getComputedStyle(e).strokeDashoffset),
+  );
+  expect(nextOffset).toBeLessThan(firstOffset);
+  await expect
+    .poll(() =>
+      line.evaluate((e) => Number(e.style.getPropertyValue("--line-progress"))),
+    )
+    .toBe(1);
+  await expect(page.locator("[data-journey-connection]")).toHaveCSS(
+    "visibility",
+    "visible",
+  );
+  const connection = await page.evaluate(() => {
+    const area = document
+      .querySelector("[data-journey-ending]")!
+      .getBoundingClientRect();
+    const line = document
+      .querySelector("[data-journey-line]")!
+      .getBoundingClientRect();
+    const start = document
+      .querySelector<SVGPathElement>("[data-connection-path]")!
+      .getPointAtLength(0);
+    return {
+      horizontal: Math.abs(area.left + start.x - line.left),
+      vertical: Math.abs(area.top - line.bottom),
+    };
+  });
+  expect(connection.horizontal).toBeLessThan(1);
+  expect(connection.vertical).toBeLessThan(1);
+  await expect(page.locator("[data-connection-path]")).toHaveCount(7);
+  await expect(outro).toContainText("함께 일하고 싶은 프론트엔드 개발자");
+  await capture(page, info, "timeline-branches");
+  await wheelTo(page, Math.round(start - height * 0.95));
+  await expect
+    .poll(() =>
+      path.evaluate((e) => parseFloat(getComputedStyle(e).strokeDashoffset)),
+    )
+    .toBeGreaterThan(nextOffset);
+  await expect(page.locator("[data-journey-connection]")).toHaveCSS(
+    "visibility",
+    "hidden",
+  );
+  await wheelTo(page, Math.round(start + height * 0.15));
+  await capture(page, info, "timeline-to-thank-you");
+  expect(
+    await page
+      .locator("[data-scroll-viewport]")
+      .evaluate((e) => e.scrollWidth - e.clientWidth),
+  ).toBe(0);
+});
+
+test("filters, menu navigation and detail return remain usable", async ({
+  page,
+}) => {
+  await ready(page);
+  const resume = page
+    .locator("[data-journey-page]")
+    .getByRole("link", { name: "이력서 내려받기" });
+  await resume.focus();
+  await expect(resume).toBeFocused();
+  await expect(page.locator("[data-journey]")).toHaveAttribute(
+    "data-entered",
+    "true",
+  );
+  await page.getByRole("link", { name: "김도훈 포트폴리오 홈" }).click();
   for (const [name, count] of [
     ["실무", 2],
     ["개인", 2],
@@ -192,20 +214,19 @@ test("filters, anchors, mobile menu and detail return", async ({ page }) => {
   const menu = page.getByRole("button", { name: "메뉴 열기", exact: true });
   if (await menu.isVisible()) {
     await menu.click();
-    await expect(page.getByRole("navigation")).toBeVisible();
     await page.keyboard.press("Escape");
     await expect(menu).toHaveAttribute("aria-expanded", "false");
     await menu.click();
   }
   await page
-    .getByRole("navigation")
+    .getByRole("navigation", { name: "메인 메뉴" })
     .getByRole("link", { name: "ABOUT", exact: true })
     .click();
   await expect
     .poll(() =>
       page
         .locator("#about")
-        .evaluate((e) => Math.round(e.getBoundingClientRect().top)),
+        .evaluate((e) => Math.abs(e.getBoundingClientRect().top)),
     )
     .toBeLessThan(100);
   await page
@@ -215,11 +236,6 @@ test("filters, anchors, mobile menu and detail return", async ({ page }) => {
   await expect(
     page.getByRole("heading", { name: "LEXUS", exact: true }),
   ).toBeVisible();
-  await expect
-    .poll(() =>
-      page.locator("[data-scroll-viewport]").evaluate((e) => e.scrollTop),
-    )
-    .toBe(0);
   await page
     .getByRole("link", { name: "← 프로젝트 목록으로", exact: true })
     .click();
@@ -231,15 +247,13 @@ test("filters, anchors, mobile menu and detail return", async ({ page }) => {
         .evaluate((e) => Math.abs(e.getBoundingClientRect().top)),
     )
     .toBeLessThan(100);
-  await page.getByRole("link", { name: "김도훈 포트폴리오 홈" }).click();
-  await expect
-    .poll(() =>
-      page.locator("[data-scroll-viewport]").evaluate((e) => e.scrollTop),
-    )
-    .toBe(0);
 });
 
-test("reduced motion and touch scroll", async ({ page, context, isMobile }) => {
+test("touch and reduced motion retain all career content without zoom", async ({
+  page,
+  context,
+  isMobile,
+}) => {
   await ready(page);
   if (isMobile) {
     const session = await context.newCDPSession(page);
@@ -265,17 +279,54 @@ test("reduced motion and touch scroll", async ({ page, context, isMobile }) => {
     await session.detach();
   }
   await page.emulateMedia({ reducedMotion: "reduce" });
-  await expect(page.locator("[data-scroll-story]")).toHaveAttribute(
+  await expect(page.locator("[data-journey]")).toHaveAttribute(
     "data-enhanced",
     "false",
   );
-  await expect(page.locator("[data-story-panel]:not([hidden])")).toHaveCount(4);
-  await expect(page.locator("[data-story-pinned]")).toHaveCSS(
-    "position",
-    "relative",
+  await expect(page.locator("[data-browser-entry]")).toBeHidden();
+  await expect(page.locator("[data-journey-chapter]")).toHaveCount(5);
+  await expect(
+    page.locator("[data-journey-page] [data-skills-track]"),
+  ).toHaveCSS("animation-name", "none");
+  await page.locator("#journey-now").scrollIntoViewIfNeeded();
+  await expect(
+    page.locator("#journey-now").getByRole("heading"),
+  ).toBeInViewport();
+  await page.goto("/#journey-2022");
+  const directChapter = page.locator("#journey-2022");
+  await expect
+    .poll(() =>
+      directChapter.evaluate((e) =>
+        Math.abs(
+          e.getBoundingClientRect().top -
+            parseFloat(getComputedStyle(e).scrollMarginTop),
+        ),
+      ),
+    )
+    .toBeLessThan(3);
+});
+
+test("career content is readable before JavaScript enhancement", async ({
+  browser,
+}, info) => {
+  test.skip(
+    info.project.name !== "desktop",
+    "SSR content does not vary by device",
   );
-  await expect(page.locator("[data-story-backdrop]")).toHaveCSS(
-    "display",
-    "none",
+  const context = await browser.newContext({
+    javaScriptEnabled: false,
+    viewport: { width: 1280, height: 720 },
+  });
+  const page = await context.newPage();
+  await page.goto(process.env.PORTFOLIO_URL ?? "http://localhost:3010");
+  await expect(page.locator("[data-journey]")).toHaveAttribute(
+    "data-enhanced",
+    "false",
   );
+  await expect(page.locator("[data-browser-entry]")).toBeHidden();
+  await page.locator("#journey-2022").scrollIntoViewIfNeeded();
+  await expect(
+    page.locator("#journey-2022").getByRole("heading"),
+  ).toBeInViewport();
+  await context.close();
 });

@@ -48,18 +48,7 @@ export default function ScrollViewport({ children }: { children: ReactNode }) {
     let frame = 0;
     const notify = () => {
       const snapshot = readScroll();
-      const story = document
-        .querySelector<HTMLElement>("[data-scroll-story]")
-        ?.getBoundingClientRect();
-      if (
-        motion.matches ||
-        !story ||
-        wrapper.dataset.storyFallback === "true"
-      ) {
-        wrapper.dataset.storyDark = String(
-          !!story && story.top <= 80 && story.bottom > 80,
-        );
-      }
+      wrapper.dataset.storyDark = "false";
       listeners.forEach((listener) => listener(snapshot));
     };
     const configure = () => {
@@ -120,7 +109,7 @@ export default function ScrollViewport({ children }: { children: ReactNode }) {
         engine.scrollTo(Math.round(actualTop - margin));
       } else
         wrapper.scrollTo({
-          top: actualTop - (location.pathname === "/" ? 0 : margin),
+          top: actualTop - (location.pathname !== "/" || target.id.startsWith("journey-") ? margin : 0),
           behavior: "instant",
         });
     };
@@ -155,7 +144,7 @@ export default function ScrollViewport({ children }: { children: ReactNode }) {
       // Detail anchors keep their heading below the fixed header on first
       // entry too. Home's full-screen section alignment remains unchanged.
       const margin =
-        target && pathname !== "/"
+        target && (pathname !== "/" || id.startsWith("journey-"))
           ? parseFloat(getComputedStyle(target).scrollMarginTop) || 0
           : 0;
       const top = target

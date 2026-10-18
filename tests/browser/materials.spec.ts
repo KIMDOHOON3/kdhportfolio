@@ -92,7 +92,7 @@ test("hero: pointer bends light, settles and preserves touch/reduced motion", as
         "data-hello-geometry",
         "glass-mesh",
       );
-      await expect(p.locator("[data-story-backdrop]")).toHaveAttribute(
+      await expect(p.locator("[data-journey]")).toHaveAttribute(
         "data-ready",
         "true",
       );
@@ -240,10 +240,7 @@ test("hero: pointer bends light, settles and preserves touch/reduced motion", as
           ),
         )
         .toBe(0);
-      await expect(p.locator("[data-story-backdrop]")).toHaveCSS(
-        "display",
-        "none",
-      );
+      await expect(p.locator("[data-browser-entry]")).toBeHidden();
     }
   }
   await info.attach("material-metrics", {
