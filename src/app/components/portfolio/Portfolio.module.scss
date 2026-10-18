@@ -1316,6 +1316,7 @@ $label: "NewYork", "Pretendard-Regular", sans-serif;
   pointer-events: none;
   background: #fbfaf4;
   opacity: var(--screen-opacity, 0);
+  will-change: opacity;
 }
 :global([data-story-dark="true"]) .header {
   color: #fbfaf4;

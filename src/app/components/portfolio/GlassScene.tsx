@@ -402,6 +402,7 @@ export default function GlassScene() {
         let lastInteraction = -Infinity;
         let flowUntil = 0;
         let flowDirty = false;
+        let backdropDirty = true;
         let frame = 0;
         let visible = true;
         let exposed = true;
@@ -410,6 +411,7 @@ export default function GlassScene() {
         let scrollTop = readScroll().top;
         let viewportHeight = readScroll().height;
         let contactVisible = false;
+        let footerFraming = false;
         let worldHeight = 1;
         let accentPixel = 1;
         let heroOffsetY = 0;
@@ -419,28 +421,53 @@ export default function GlassScene() {
         );
         const size = bounds.getSize(new THREE.Vector3());
         const center = bounds.getCenter(new THREE.Vector3());
-        const placeFooter = () => {
+        const viewportSize = new THREE.Vector2();
+        const rendererSize = new THREE.Vector2();
+        let footerLayout: {
+          stacked: boolean;
+          words: {
+            x: number;
+            top: number;
+            height: number;
+            textWidth: number;
+          }[];
+        } | null = null;
+        const measureFooter = () => {
           if (!footerHeading) return;
-          const { width, height } = element.getBoundingClientRect();
-          const stacked =
-            getComputedStyle(footerHeading).flexDirection === "column";
+          const top = readScroll().top;
+          footerLayout = {
+            stacked: getComputedStyle(footerHeading).flexDirection === "column",
+            words: [...footerHeading.children].map((span) => {
+              const rect = span.getBoundingClientRect();
+              const range = document.createRange();
+              range.selectNodeContents(span);
+              return {
+                x: rect.left + rect.width / 2,
+                top: rect.top + top,
+                height: rect.height,
+                textWidth: range.getBoundingClientRect().width,
+              };
+            }),
+          };
+        };
+        const placeFooter = () => {
+          if (!footerLayout) return;
+          const { x: width, y: height } = viewportSize;
+          const { stacked } = footerLayout;
           footerWords.forEach(({ mesh, extent, baseline }, index) => {
-            const span = footerHeading.children[index];
-            if (!span) return;
-            const rect = span.getBoundingClientRect();
-            const range = document.createRange();
-            range.selectNodeContents(span);
-            const textRect = range.getBoundingClientRect();
+            const word = footerLayout!.words[index];
+            if (!word) return;
             const worldPixel = worldHeight / height;
             const scale = Math.min(
-              (textRect.width * worldPixel) / extent.x,
-              (rect.height * worldPixel * 0.92) / extent.y,
+              (word.textWidth * worldPixel) / extent.x,
+              (word.height * worldPixel * 0.92) / extent.y,
             );
-            const x = rect.left + rect.width / 2;
+            const x = word.x;
+            const top = word.top - scrollTop;
             // Inline words share the writing baseline, including y's descender.
             const y = stacked
-              ? rect.top + rect.height / 2
-              : rect.top + rect.height * 0.52 + (baseline * scale) / worldPixel;
+              ? top + word.height / 2
+              : top + word.height * 0.52 + (baseline * scale) / worldPixel;
             mesh.scale.setScalar(scale);
             mesh.position.set(
               center.x + (x / width - 0.5) * worldHeight * camera.aspect,
@@ -451,18 +478,23 @@ export default function GlassScene() {
         };
         const resize = () => {
           const { width, height } = element.getBoundingClientRect();
+          viewportSize.set(width, height);
+          measureFooter();
           // Narrow glass reflections need more than coverage MSAA at DPR 1.
           // Supersample the footer, with a pixel budget for large displays.
           const footerPixelRatio = Math.max(
             nativePixelRatio,
             Math.min(2, Math.sqrt(4_000_000 / Math.max(1, width * height))),
           );
-          const pixelRatio = contactVisible
+          const pixelRatio = footerFraming
             ? footerPixelRatio
             : nativePixelRatio;
-          if (renderer.getPixelRatio() !== pixelRatio)
+          if (renderer.getPixelRatio() !== pixelRatio) {
             renderer.setPixelRatio(pixelRatio);
-          renderer.setSize(width, height);
+          }
+          renderer.getSize(rendererSize);
+          if (rendererSize.x !== width || rendererSize.y !== height)
+            renderer.setSize(width, height);
           renderer.getDrawingBufferSize(material.uniforms.uResolution.value);
           refractionTarget.setSize(
             Math.max(1, Math.round(material.uniforms.uResolution.value.x)),
@@ -501,6 +533,7 @@ export default function GlassScene() {
           flowDirty = false;
           renderer.setRenderTarget(null);
           renderer.setClearColor("#beddeb", 1);
+          backdropDirty = true;
           backdropMaterial.uniforms.uResolution.value.copy(
             material.uniforms.uResolution.value,
           );
@@ -520,7 +553,7 @@ export default function GlassScene() {
             : height;
           const frameHeight = Math.max(64, frameBottom - frameTop);
           const fitHeight = ((size.y * height) / frameHeight) * 1.12;
-          const widthMargin = contactVisible
+          const widthMargin = footerFraming
             ? width <= 760
               ? 1.24
               : 1.7
@@ -594,12 +627,12 @@ export default function GlassScene() {
           lastInteraction = performance.now();
           resume();
         };
-        const render = (time: number) => {
+        const render = (time: number, force = false) => {
           frame = 0;
           if (
             disposed ||
             !visible ||
-            !exposed ||
+            (!exposed && !force) ||
             !shadersReady ||
             document.hidden ||
             contextLost
@@ -610,6 +643,7 @@ export default function GlassScene() {
           const interactive = time - lastInteraction < 1000;
           if (
             !motion.matches &&
+            !force &&
             !interactive &&
             time - lastPaint < 1000 / 30 - 1
           ) {
@@ -648,6 +682,7 @@ export default function GlassScene() {
             renderer.setRenderTarget(null);
             renderer.setClearColor("#beddeb", 1);
             flowDirty = false;
+            backdropDirty = true;
             inputStrength = 0;
           }
           backdropMaterial.uniforms.uFlow.value = flowRead.texture;
@@ -709,8 +744,8 @@ export default function GlassScene() {
           });
           // Measure the rear interface before sampling transmission. This data
           // pass contains only the currently visible lettering, never the sky.
-          group.visible = !contactVisible;
-          accentGroup.visible = !contactVisible;
+          group.visible = exposed && !contactVisible;
+          accentGroup.visible = exposed && !contactVisible;
           footerGroup.visible = contactVisible;
           backdrop.visible = false;
           scene.overrideMaterial = backSurfaceMaterial;
@@ -725,9 +760,12 @@ export default function GlassScene() {
           accentGroup.visible = false;
           footerGroup.visible = false;
           renderer.setRenderTarget(refractionTarget);
-          renderer.render(scene, camera);
-          group.visible = !contactVisible;
-          accentGroup.visible = !contactVisible;
+          if (backdropDirty || flowActive) {
+            renderer.render(scene, camera);
+            backdropDirty = false;
+          }
+          group.visible = exposed && !contactVisible;
+          accentGroup.visible = exposed && !contactVisible;
           footerGroup.visible = contactVisible;
           element.dataset.scene = contactVisible ? "thank-you" : "hello";
           renderer.setRenderTarget(sceneTarget);
@@ -737,12 +775,24 @@ export default function GlassScene() {
           renderer.setRenderTarget(null);
           renderer.render(displayScene, displayCamera);
           if (
+            contactVisible &&
             footerWords.length === 2 &&
             !footerHeading?.hasAttribute("data-glass-ready")
           )
             footerHeading?.setAttribute("data-glass-ready", "true");
-          if (!motion.matches && (!contactVisible || interactive || flowActive))
+          if (
+            !motion.matches &&
+            exposed &&
+            (!contactVisible || interactive || flowActive)
+          )
             frame = requestAnimationFrame(render);
+        };
+        const paint = () => {
+          // Resizing clears the drawing buffer. Repaint before this browser
+          // frame is composited, including when the 3D animation is paused.
+          cancelAnimationFrame(frame);
+          frame = 0;
+          render(performance.now(), true);
         };
         const resume = () => {
           if (
@@ -768,11 +818,18 @@ export default function GlassScene() {
             document.getElementById("contact")?.getBoundingClientRect().top ??
             viewportHeight;
           const wasContactVisible = contactVisible;
-          if (footerTop < viewportHeight * 2) loadFooter?.();
+          const wasFooterFraming = footerFraming;
+          if (footerTop < viewportHeight * 3) loadFooter?.();
           contactVisible = footerTop < viewportHeight;
-          if (wasContactVisible !== contactVisible) resize();
-          else if (contactVisible) placeFooter();
+          footerFraming = footerWords.length === 2 && heroBottom <= 0;
           exposed = heroBottom > 0 || contactVisible;
+          if (
+            wasContactVisible !== contactVisible ||
+            wasFooterFraming !== footerFraming
+          ) {
+            resize();
+            paint();
+          } else if (contactVisible) placeFooter();
           if (!exposed) {
             cancelAnimationFrame(frame);
             frame = 0;
@@ -789,10 +846,14 @@ export default function GlassScene() {
         });
         observer.observe(element);
         const resizer = new ResizeObserver(() => {
+          scroll();
           resize();
-          resume();
+          paint();
         });
         resizer.observe(element);
+        if (footerHeading) resizer.observe(footerHeading);
+        const scrollContent = document.querySelector("[data-scroll-content]");
+        if (scrollContent) resizer.observe(scrollContent);
         const pointerSurface = getScrollViewport();
         pointerSurface?.addEventListener("pointermove", move);
         pointerSurface?.addEventListener("pointerleave", leave);
@@ -806,9 +867,7 @@ export default function GlassScene() {
           inputStrength = 0;
           resize();
           scroll();
-          cancelAnimationFrame(frame);
-          frame = 0;
-          render(performance.now());
+          paint();
         };
         motion.addEventListener("change", resume);
         const lost = (event: Event) => {
@@ -827,7 +886,7 @@ export default function GlassScene() {
           studio = createStudioEnvironment(THREE, renderer);
           material.uniforms.uStudio.value = studio.texture;
           resize();
-          render(performance.now());
+          paint();
           resume();
           setReady(true);
           setFailed(false);
@@ -858,14 +917,58 @@ export default function GlassScene() {
           await Promise.all(pending);
         };
         const paintReady = async () => {
-          await prepareShaders();
+          if (!shadersReady) await prepareShaders();
           if (disposed) return;
           shadersReady = true;
+          footerFraming =
+            footerWords.length === 2 &&
+            (document.querySelector("[data-hero]")?.getBoundingClientRect()
+              .bottom ?? 0) <= 0;
           cancelAnimationFrame(frame);
           frame = 0;
           resize();
-          render(performance.now());
+          paint();
           setReady(true);
+        };
+        const idle = () =>
+          new Promise<void>((resolve) => {
+            if (window.requestIdleCallback)
+              window.requestIdleCallback(() => resolve(), { timeout: 200 });
+            else requestAnimationFrame(() => resolve());
+          });
+        const warmFooter = async () => {
+          // Allocate the footer's buffers during idle gaps before its first
+          // visible frame, rather than inside the branch/scroll handoff.
+          for (const target of [
+            backSurfaceTarget,
+            refractionTarget,
+            sceneTarget,
+            flareTarget,
+          ]) {
+            await idle();
+            if (disposed || !footerFraming || exposed) return;
+            renderer.initRenderTarget(target);
+          }
+          const target = new THREE.WebGLRenderTarget(1, 1, {
+            type: THREE.HalfFloatType,
+          });
+          const warmScene = new THREE.Scene();
+          try {
+            for (const { mesh } of footerWords) {
+              await idle();
+              if (disposed || !footerFraming || exposed) return;
+              const proxy = new THREE.Mesh(mesh.geometry, footerMaterial);
+              proxy.frustumCulled = false;
+              warmScene.add(proxy);
+              const previous = renderer.getRenderTarget();
+              renderer.setRenderTarget(target);
+              renderer.render(warmScene, camera);
+              renderer.setRenderTarget(previous);
+              warmScene.remove(proxy);
+            }
+          } finally {
+            target.dispose();
+          }
         };
         Promise.all([modelLoader, decoder])
           .then(([{ GLTFLoader }, { MeshoptDecoder }]) => {
@@ -956,7 +1059,7 @@ export default function GlassScene() {
                     });
                   }
                   element.dataset.footerGeometry = "glass-path";
-                  void paintReady();
+                  void paintReady().then(warmFooter);
                 })
                 .catch(() => {
                   footerHeading?.removeAttribute("data-glass-ready");
@@ -975,7 +1078,7 @@ export default function GlassScene() {
         document.fonts.ready.then(() => {
           if (!disposed) {
             resize();
-            resume();
+            paint();
           }
         });
         cleanup = () => {

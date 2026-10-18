@@ -60,6 +60,39 @@ test("the first screen only loads its lettering and scroll keeps connection geom
     "data-glass-ready",
     "true",
   );
+  // Measure steady footer scrolling after the initial arrival/layout settles.
+  await expect
+    .poll(() =>
+      page
+        .locator("[data-scroll-viewport]")
+        .evaluate(
+          (element) =>
+            element.scrollHeight - element.clientHeight - element.scrollTop,
+        ),
+    )
+    .toBeLessThan(1.5);
+  const textMeasurements = await page.evaluate(async () => {
+    const original = Range.prototype.getBoundingClientRect;
+    let count = 0;
+    Range.prototype.getBoundingClientRect = function () {
+      count++;
+      return original.call(this);
+    };
+    const viewport = document.querySelector<HTMLElement>(
+      "[data-scroll-viewport]",
+    )!;
+    const bottom = viewport.scrollHeight - viewport.clientHeight;
+    try {
+      for (let step = 0; step <= 12; step++) {
+        viewport.scrollTop = bottom - 120 + step * 10;
+        await new Promise(requestAnimationFrame);
+      }
+    } finally {
+      Range.prototype.getBoundingClientRect = original;
+    }
+    return count;
+  });
+  expect(textMeasurements).toBe(0);
 });
 
 test("detail defers all 3D work and reuses its canvas and models across navigation", async ({

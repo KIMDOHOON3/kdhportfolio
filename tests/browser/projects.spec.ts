@@ -123,8 +123,8 @@ test("one Lexus project retains renewal and operations details", async ({
   await expect(gallery.getByRole("heading", { level: 3 })).toHaveText([
     "LEXUS",
     "Kia Worldwide",
-    "Dog Atlas",
     "Aeppy",
+    "Dog Atlas",
   ]);
   const sectionOrder = await page
     .locator("main#top > section")
@@ -162,8 +162,8 @@ test("one Lexus project retains renewal and operations details", async ({
   ]);
   await filters.getByRole("button", { name: /개인/ }).click();
   await expect(gallery.getByRole("heading", { level: 3 })).toHaveText([
-    "Dog Atlas",
     "Aeppy",
+    "Dog Atlas",
   ]);
   await filters.getByRole("button", { name: /전체/ }).click();
   await gallery

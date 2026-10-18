@@ -521,6 +521,7 @@ $line: rgba(48, 71, 90, 0.17);
       transparent 100%
     );
     opacity: var(--connection-wash, 1);
+    will-change: opacity;
     pointer-events: none;
   }
 }
@@ -531,6 +532,8 @@ $line: rgba(48, 71, 90, 0.17);
   height: 100%;
   z-index: -1;
   pointer-events: none;
+  contain: paint;
+  transform: translateZ(0);
   path {
     fill: none;
     stroke: url(#journey-connection-ink);

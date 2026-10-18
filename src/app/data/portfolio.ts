@@ -172,37 +172,6 @@ export const portfolioProjects: PortfolioProject[] = [
     ],
   },
   {
-    id: 4,
-    title: "Dog Atlas",
-    subtitle: "376종의 강아지를 발견하고 이해하는 견종도감",
-    category: "개인 프로젝트",
-    year: "2026",
-    visual: "dog",
-    description:
-      "376종의 강아지를 발견하고 이해하는 견종도감. 수채화 카드와 검색, 견종별 이야기와 돌봄 가이드를 하나의 탐색 경험으로 만들었습니다.",
-    stack: ["Next.js", "TypeScript", "CSS Modules", "Zod"],
-    role: "개인 프로젝트 · 기획, 디자인, 프론트엔드 개발",
-    site: "https://dog-atlas-eosin.vercel.app/",
-    github: "https://github.com/KIMDOHOON3/dog-atlas",
-    highlights: [
-      {
-        title: "발견하는 즐거움",
-        description:
-          "양면 수채화 카드와 홀로그램 표현으로 견종을 탐색하고, 검색과 필터를 통해 관심 있는 견종을 찾는 흐름을 구성했습니다.",
-      },
-      {
-        title: "정보를 이해하는 구조",
-        description:
-          "견종의 역사와 역할, 행동 경향, 돌봄 정보를 연결하고 맞이 준비 가이드로 이어지는 콘텐츠 경험을 설계했습니다.",
-      },
-      {
-        title: "타입과 데이터 검증",
-        description:
-          "TypeScript와 Zod를 활용해 콘텐츠 데이터의 구조를 검증하고, 반복되는 화면과 데이터 처리 로직을 공통화했습니다.",
-      },
-    ],
-  },
-  {
     id: 5,
     title: "Aeppy",
     subtitle: "사진·일정·편지를 함께 기록하는 커플 웹앱",
@@ -231,6 +200,37 @@ export const portfolioProjects: PortfolioProject[] = [
         title: "웹을 일상 가까이",
         description:
           "실시간 데이터 동기화와 이미지 저장, PWA와 푸시 알림을 활용해 모바일에서도 가까이 사용할 수 있는 경험을 구성했습니다.",
+      },
+    ],
+  },
+  {
+    id: 4,
+    title: "Dog Atlas",
+    subtitle: "376종의 강아지를 발견하고 이해하는 견종도감",
+    category: "개인 프로젝트",
+    year: "2026",
+    visual: "dog",
+    description:
+      "376종의 강아지를 발견하고 이해하는 견종도감. 수채화 카드와 검색, 견종별 이야기와 돌봄 가이드를 하나의 탐색 경험으로 만들었습니다.",
+    stack: ["Next.js", "TypeScript", "CSS Modules", "Zod"],
+    role: "개인 프로젝트 · 기획, 디자인, 프론트엔드 개발",
+    site: "https://dog-atlas-eosin.vercel.app/",
+    github: "https://github.com/KIMDOHOON3/dog-atlas",
+    highlights: [
+      {
+        title: "발견하는 즐거움",
+        description:
+          "양면 수채화 카드와 홀로그램 표현으로 견종을 탐색하고, 검색과 필터를 통해 관심 있는 견종을 찾는 흐름을 구성했습니다.",
+      },
+      {
+        title: "정보를 이해하는 구조",
+        description:
+          "견종의 역사와 역할, 행동 경향, 돌봄 정보를 연결하고 맞이 준비 가이드로 이어지는 콘텐츠 경험을 설계했습니다.",
+      },
+      {
+        title: "타입과 데이터 검증",
+        description:
+          "TypeScript와 Zod를 활용해 콘텐츠 데이터의 구조를 검증하고, 반복되는 화면과 데이터 처리 로직을 공통화했습니다.",
       },
     ],
   },

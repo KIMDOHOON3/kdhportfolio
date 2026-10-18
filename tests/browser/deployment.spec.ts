@@ -62,10 +62,8 @@ test("detail pages reuse the home glass footer through client navigation", async
     path: info.outputPath("detail-shared-footer.png"),
     scale: "css",
   });
-  await page
-    .getByRole("link", { name: /다음 프로젝트 Dog Atlas/ })
-    .press("Enter");
-  await page.waitForURL("**/work/4");
+  await page.getByRole("link", { name: /다음 프로젝트 Aeppy/ }).press("Enter");
+  await page.waitForURL("**/work/5");
   await showFooter();
   expect(await footerStyles()).toEqual(homeStyles);
   await page.getByRole("link", { name: "맨 위로 ↑" }).click();
