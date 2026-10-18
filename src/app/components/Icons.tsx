@@ -14,6 +14,7 @@ import ReduxIcon from "/public/icons/redux.svg";
 import GithubIcon from "/public/icons/github.svg";
 import JqueryIcon from "/public/icons/jquery.svg";
 import ZustandIcon from "/public/icons/zustand.png";
+import EmotionIcon from "/public/icons/emotion.png";
 import PersonIcon from "/public/icons/person.png";
 import VercelIcon from "/public/icons/vercel.svg";
 import BlogIcon from "/public/icons/blogger.svg";
@@ -47,6 +48,7 @@ export const SkillIconMap: Record<string, IconType> = {
   "Next.js": { component: NextjsIcon, isPng: false },
   TypeScript: { component: TypeScriptIcon, isPng: false },
   "Styled-components": { component: StyledComponentsIcon, isPng: false },
+  Emotion: { component: null, isPng: true, src: EmotionIcon },
   Tailwind: { component: TailwindIcon, isPng: false },
   "React-query": { component: ReactQueryIcon, isPng: false },
   Redux: { component: ReduxIcon, isPng: false },

@@ -11,7 +11,7 @@ export default function BackgroundScreen() {
       subscribeScroll(({ height }) => {
         const heroBottom =
           document.querySelector("[data-hero]")?.getBoundingClientRect()
-            .bottom ?? height;
+            .bottom ?? 0;
         const footer = document
           .getElementById("contact")
           ?.getBoundingClientRect();

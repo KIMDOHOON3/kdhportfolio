@@ -19,15 +19,11 @@ function JourneyHeading({ preview = false }: { preview?: boolean }) {
     <div className={styles.heading}>
       <p className={styles.eyebrow}>EXPERIENCE & EDUCATION</p>
       <h2 id={preview ? undefined : "journey-title"}>
-        만들면서,
+        퍼블리싱에서 시작해
         <br />
-        넓혀온 영역.
+        프론트엔드로.
       </h2>
-      <p className={styles.intro}>
-        퍼블리싱에서 시작해 프론트엔드로.
-        <br />
-        화면과 기능을 함께 만들어온 과정입니다.
-      </p>
+      <p className={styles.intro}>화면과 기능을 함께 만들어온 과정입니다.</p>
     </div>
   );
 }
@@ -435,7 +431,7 @@ export default function ScrollStory() {
               <br />
               찾고 계신가요?
             </p>
-            <a href="#contact">언제든 연락주세요! ↗</a>
+            <a href="mailto:kingyska@nate.com">언제든 연락주세요! ↗</a>
           </div>
         </div>
       </div>

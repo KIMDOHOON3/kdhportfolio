@@ -25,7 +25,7 @@ test("rolling skills remain above the chronological career and anchors stay read
   const skills = content.locator("[data-journey-skills]");
   const track = skills.locator("[data-skills-track]");
   const list = skills.locator('ul:not([aria-hidden="true"])');
-  await expect(list.locator("li")).toHaveCount(14);
+  await expect(list.locator("li")).toHaveCount(15);
   for (const skill of [
     "HTML",
     "CSS",
@@ -34,6 +34,8 @@ test("rolling skills remain above the chronological career and anchors stay read
     "React",
     "Next.js",
     "TypeScript",
+    "Emotion",
+    "SCSS",
     "Zustand",
     "Vercel",
   ])

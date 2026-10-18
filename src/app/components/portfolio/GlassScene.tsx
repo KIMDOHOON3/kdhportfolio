@@ -626,7 +626,7 @@ export default function GlassScene() {
           viewportHeight = state.height;
           const heroBottom =
             document.querySelector("[data-hero]")?.getBoundingClientRect()
-              .bottom ?? viewportHeight;
+              .bottom ?? 0;
           const footerTop =
             document.getElementById("contact")?.getBoundingClientRect().top ??
             viewportHeight;

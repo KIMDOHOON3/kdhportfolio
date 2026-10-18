@@ -93,7 +93,19 @@ test("browser entry grows from the illustration, reverses and releases into the 
   await page
     .getByRole("link", { name: "언제든 연락주세요!" })
     .scrollIntoViewIfNeeded();
-  await page.getByRole("link", { name: "언제든 연락주세요!" }).click();
+  await expect(
+    page.getByRole("link", { name: "언제든 연락주세요!" }),
+  ).toHaveAttribute("href", "mailto:kingyska@nate.com");
+  const footerDestination = await page
+    .locator("#contact")
+    .evaluate((element) => {
+      const viewport = document.querySelector("[data-scroll-viewport]")!;
+      return Math.min(
+        element.getBoundingClientRect().top + viewport.scrollTop,
+        viewport.scrollHeight - viewport.clientHeight,
+      );
+    });
+  await wheelTo(page, Math.round(footerDestination));
   await expect(page.locator("#contact")).toBeInViewport();
   await expect(portal).toBeHidden();
   expect(await page.evaluate(() => window.scrollY)).toBe(0);

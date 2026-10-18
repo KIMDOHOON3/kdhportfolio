@@ -1,10 +1,10 @@
 $ink: #191b1e;
 $line: rgba(35, 56, 69, 0.17);
 $sans: "Pretendard-Regular", Arial, sans-serif;
-$heading: "Pretendard-Bold", Arial, sans-serif;
+$heading: "NewYork", "Pretendard-Bold", Arial, sans-serif;
 $display: "NewYork", "Pretendard-Bold", sans-serif;
-$intro: "Paperlogy-Regular", "Pretendard-Regular", sans-serif;
-$label: "Paperlogy-Medium", "Pretendard-Regular", sans-serif;
+$intro: "Pretendard-Regular", Arial, sans-serif;
+$label: "NewYork", "Pretendard-Regular", sans-serif;
 
 // Keep the browser illustration after its introduction on narrow screens.
 @media (max-width: 768px) {
@@ -149,24 +149,18 @@ $label: "Paperlogy-Medium", "Pretendard-Regular", sans-serif;
   font: 18px/1.9 $intro;
   letter-spacing: -0.015em;
   strong {
-    font-family: "Paperlogy-Bold", sans-serif;
+    font-family: "Pretendard-Bold", sans-serif;
   }
 }
-.explore {
-  grid-column: 4;
-  justify-self: end;
-  font: 14px/1.5 $sans;
-  display: flex;
-  align-items: center;
-  gap: 12px;
+@mixin button-fill {
   isolation: isolate;
   overflow: hidden;
   &::before {
     content: "";
     position: absolute;
     z-index: 0;
-    left: var(--explore-x, 50%);
-    top: var(--explore-y, 50%);
+    left: var(--button-x, 50%);
+    top: var(--button-y, 50%);
     width: 240%;
     aspect-ratio: 1;
     border-radius: 50%;
@@ -175,6 +169,15 @@ $label: "Paperlogy-Medium", "Pretendard-Regular", sans-serif;
     transition: transform 600ms cubic-bezier(0.22, 1, 0.36, 1);
     pointer-events: none;
   }
+}
+.explore {
+  @include button-fill;
+  grid-column: 4;
+  justify-self: end;
+  font: 14px/1.5 $sans;
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 .exploreLabel {
   position: relative;
@@ -304,6 +307,9 @@ $label: "Paperlogy-Medium", "Pretendard-Regular", sans-serif;
   width: fit-content;
   margin-top: 24px;
   button {
+    @include button-fill;
+    position: relative;
+    cursor: pointer;
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -315,11 +321,13 @@ $label: "Paperlogy-Medium", "Pretendard-Regular", sans-serif;
     padding: 10px 15px;
     color: #535751;
     font-size: 14px;
-    line-height: 1;
+    line-height: 1.5;
     transition:
       background 0.2s,
       color 0.2s;
-    span {
+    > [data-filter-count] {
+      position: relative;
+      z-index: 1;
       font: 12px/1 $label;
       margin: 0;
     }
@@ -332,6 +340,19 @@ $label: "Paperlogy-Medium", "Pretendard-Regular", sans-serif;
       border-color: $ink;
     }
   }
+}
+@mixin filter-active {
+  @include explore-active;
+  color: #fbfaf4;
+  border-color: #1461d4;
+}
+@media (hover: hover) and (pointer: fine) {
+  .filters button:hover { @include filter-active; }
+}
+.filters button:focus-visible { @include filter-active; }
+@media (hover: none) {
+  .filters button:active,
+  .filters button[data-pressed="true"] { @include filter-active; }
 }
 .projectGrid {
   display: grid;
@@ -385,9 +406,6 @@ $label: "Paperlogy-Medium", "Pretendard-Regular", sans-serif;
   &:hover .coverImage {
     transform: scale(1.035);
   }
-  &:hover .coverArrow {
-    transform: translate(2px, -2px);
-  }
   &:hover .dogDeck {
     transform: translateY(-9px) rotate(-2deg);
   }
@@ -431,6 +449,7 @@ $label: "Paperlogy-Medium", "Pretendard-Regular", sans-serif;
   right: 75px;
 }
 .coverArrow {
+  @include button-fill;
   position: absolute;
   bottom: 25px;
   right: 25px;
@@ -441,10 +460,15 @@ $label: "Paperlogy-Medium", "Pretendard-Regular", sans-serif;
   display: grid;
   place-items: center;
   color: #fff;
-  transition: transform 0.2s;
+  transition: color 350ms, border-color 350ms;
   .arrowIcon {
+    position: relative;
+    z-index: 1;
+    grid-area: 1 / 1;
     width: 16px;
     height: 16px;
+    transition: translate 450ms cubic-bezier(0.22, 1, 0.36, 1);
+    &:last-child { translate: -32px 32px; }
   }
 }
 .arrowIcon {
@@ -727,7 +751,7 @@ $label: "Paperlogy-Medium", "Pretendard-Regular", sans-serif;
     color: $ink;
     margin-bottom: 28px;
     strong {
-      font-family: "Pretendard-Bold";
+      font-family: "NewYork", "Pretendard-Bold";
     }
   }
 }
@@ -1557,8 +1581,6 @@ $label: "Paperlogy-Medium", "Pretendard-Regular", sans-serif;
 .footer {
   position: relative;
   z-index: 2;
-}
-:global([data-home="true"]) .footer {
   height: auto;
   min-height: 0;
   padding: 80px var(--page-inset) 24px;
@@ -1675,7 +1697,7 @@ $label: "Paperlogy-Medium", "Pretendard-Regular", sans-serif;
   .storyCaption {
     font-size: 12px;
   }
-  :global([data-home="true"]) .footer {
+  .footer {
     padding: 64px 24px 24px;
     .contactMain h2 {
       font-size: 42px;
@@ -1749,7 +1771,7 @@ $label: "Paperlogy-Medium", "Pretendard-Regular", sans-serif;
     margin-top: 16px;
     font-size: 12px;
   }
-  :global([data-home="true"]) .footer {
+  .footer {
     padding-block: 48px 20px;
     .sectionLabel {
       font-size: 12px;
@@ -1972,6 +1994,29 @@ $label: "Paperlogy-Medium", "Pretendard-Regular", sans-serif;
 .cover.lexus .coverArrow {
   color: #44515c;
   border-color: #44515c55;
+}
+@mixin cover-action-active {
+  .coverArrow {
+    color: #fbfaf4;
+    border-color: #1461d4;
+    &::before { transform: translate(-50%, -50%) scale(1); }
+    .arrowIcon:first-child { translate: 32px -32px; }
+    .arrowIcon:last-child { translate: 0 0; }
+  }
+}
+@media (hover: hover) and (pointer: fine) {
+  .projectLink:hover { @include cover-action-active; }
+}
+.projectLink:focus-visible { @include cover-action-active; }
+@media (hover: none) {
+  .projectLink:active { @include cover-action-active; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .filters button::before,
+  .filters .exploreLabel > span,
+  .coverArrow,
+  .coverArrow::before,
+  .coverArrow .arrowIcon { transition: none; }
 }
 .storySkills {
   display: flex;
@@ -2298,8 +2343,7 @@ $label: "Paperlogy-Medium", "Pretendard-Regular", sans-serif;
   text-align: center;
   gap: 0;
 }
-.footer .contactMain .thankYou,
-:global([data-home="true"]) .footer .contactMain .thankYou {
+.footer .contactMain .thankYou {
   display: flex;
   justify-content: center;
   gap: 0.22em;
@@ -2311,21 +2355,17 @@ $label: "Paperlogy-Medium", "Pretendard-Regular", sans-serif;
   font-feature-settings: "calt" 0;
   color: $ink;
 }
-:global([data-home="true"])
-  .footer
-  .contactMain
-  .thankYou[data-glass-ready="true"] {
+.footer .contactMain .thankYou[data-glass-ready="true"] {
   color: transparent;
 }
 .footer .contactLinks {
   justify-content: center;
 }
-:global([data-home="true"]) .footer .contactMain {
+.footer .contactMain {
   padding-block: 24px;
 }
 @media (max-width: 760px) and (min-height: 601px) {
-  .footer .contactMain .thankYou,
-  :global([data-home="true"]) .footer .contactMain .thankYou {
+  .footer .contactMain .thankYou {
     flex-direction: column;
     gap: 0;
     font-size: clamp(80px, 28vw, 164px);
@@ -2336,11 +2376,10 @@ $label: "Paperlogy-Medium", "Pretendard-Regular", sans-serif;
   }
 }
 @media (max-height: 600px) {
-  :global([data-home="true"]) .footer .contactMain {
+  .footer .contactMain {
     padding-block: 12px;
   }
-  .footer .contactMain .thankYou,
-  :global([data-home="true"]) .footer .contactMain .thankYou {
+  .footer .contactMain .thankYou {
     font-size: clamp(44px, 14vh, 76px);
   }
 }

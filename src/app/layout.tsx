@@ -3,6 +3,7 @@ import "@/app/styles/globals.scss";
 import {
   PortfolioHeader,
   PortfolioFooter,
+  PortfolioBackdrop,
 } from "./components/portfolio/Portfolio";
 import JsonLd from "@/app/components/JsonLd";
 import Script from "next/script";
@@ -67,6 +68,7 @@ export default function RootLayout({
         <JsonLd />
 
         <ScrollViewport>
+          <PortfolioBackdrop />
           <a className="skip-link" href="#main-content">
             본문으로 바로가기
           </a>

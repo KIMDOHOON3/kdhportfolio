@@ -5,8 +5,8 @@ import { portfolioProjects } from "../../data/portfolio";
 import ProjectCover from "../../components/portfolio/ProjectCover";
 import TechnologyIcon from "../../components/portfolio/TechnologyIcon";
 import ArrowIcon from "../../components/portfolio/ArrowIcon";
-import { LinkIcon, GithubIcon } from "../../components/Icons";
-import styles from "../../components/portfolio/Portfolio.module.scss";
+import DetailAction from "../../components/portfolio/DetailAction";
+import styles from "../../components/portfolio/ProjectDetail.module.scss";
 
 type Props = { params: Promise<{ id: string }> };
 
@@ -38,107 +38,123 @@ export default async function ProjectDetail({ params }: Props) {
   if (index < 0) notFound();
   const project = portfolioProjects[index];
   const next = portfolioProjects[(index + 1) % portfolioProjects.length];
+  const sections = project.phases ?? [
+    {
+      id: "implementation",
+      title: "주요 구현 내용",
+      year: project.year,
+      role: project.role,
+      stack: project.stack,
+      highlights: project.highlights,
+    },
+  ];
+  const responsibilities =
+    project.responsibilities ?? project.highlights.map((item) => item.title);
   return (
-    <main id="top" className={styles.detail}>
-      <Link href="/#work" scroll={false} className={styles.backLink}>
-        ← 프로젝트 목록으로
-      </Link>
-      <div className={styles.sectionLabel}>
-        <span>
-          {String(index + 1).padStart(2, "0")} {project.category}
+    <main id="top" className={styles.detail} data-project-detail={project.id}>
+      <div className={styles.topline}>
+        <Link href="/#work" scroll={false} className={styles.backLink}>
+          ← 프로젝트 목록으로
+        </Link>
+        <span className={styles.projectIndex}>
+          PROJECT {String(index + 1).padStart(2, "0")}
         </span>
-        <span>{project.year}</span>
       </div>
-      <div className={styles.detailHeading}>
-        <div>
-          <h1>{project.title}</h1>
-          <p>{project.subtitle}</p>
-        </div>
-        <div className={styles.stack}>
-          {project.stack.map((tech) => (
-            <span key={tech}>
-              <TechnologyIcon name={tech} />
-              {tech}
-            </span>
-          ))}
-        </div>
-      </div>
-      <div className={styles.detailVisual}>
-        <ProjectCover project={project} priority />
-      </div>
-      <div className={styles.detailInfo}>
-        <dl>
-          <dt>담당 역할</dt>
-          <dd>{project.role}</dd>
-          <dt>작업 연도</dt>
-          <dd>{project.year}</dd>
-          <dt>사용 기술</dt>
-          <dd>{project.stack.join(", ")}</dd>
-          <dt>작업 유형</dt>
-          <dd>
-            {project.category === "실무 프로젝트"
-              ? "실무 프로젝트 · 팀 작업"
-              : "개인 프로젝트"}
-          </dd>
-        </dl>
-        <div>
-          <p className={styles.detailDescription}>{project.description}</p>
-          <div className={styles.detailLinks}>
+      <section
+        id="overview"
+        className={styles.overview}
+        aria-labelledby="project-title"
+        data-project-overview
+      >
+        <header className={styles.identity}>
+          <p className={styles.category}>
+            {project.category} <span>{project.year}</span>
+          </p>
+          <h1
+            id="project-title"
+            className={project.title.length > 9 ? styles.longTitle : undefined}
+          >
+            {project.title}
+          </h1>
+          <p className={styles.subtitle}>{project.subtitle}</p>
+          <div className={styles.actions}>
             {project.site && (
-              <a href={project.site} target="_blank" rel="noreferrer">
-                <LinkIcon
-                  className={styles.actionIcon}
-                  fill="currentColor"
-                  aria-hidden="true"
-                />
-                사이트 바로가기
-              </a>
+              <DetailAction href={project.site} label="사이트 바로가기" />
             )}
             {project.github && (
-              <a href={project.github} target="_blank" rel="noreferrer">
-                <GithubIcon
-                  className={styles.actionIcon}
-                  fill="currentColor"
-                  aria-hidden="true"
-                />
-                GitHub 코드 보기
-              </a>
-            )}
-            {!project.site && !project.github && (
-              <span>개인 프로젝트 · 비공개 저장소</span>
+              <DetailAction
+                href={project.github}
+                label="GitHub 코드 보기"
+                secondary
+              />
             )}
           </div>
+        </header>
+        <div className={styles.brief}>
+          <p className={styles.eyebrow}>PROJECT OVERVIEW</p>
+          <p className={styles.description}>{project.description}</p>
+          <div className={styles.responsibilities}>
+            <h2>{project.responsibilities ? "담당 업무" : "구현한 기능"}</h2>
+            <ul>
+              {responsibilities.map((item) => (
+                <li key={item}>{item}</li>
+              ))}
+            </ul>
+          </div>
         </div>
+        <dl className={styles.facts}>
+          <div>
+            <dt>담당 역할</dt>
+            <dd>{project.role}</dd>
+          </div>
+          <div>
+            <dt>작업 연도</dt>
+            <dd>{project.year}</dd>
+          </div>
+          <div>
+            <dt>작업 유형</dt>
+            <dd>
+              {project.category === "실무 프로젝트"
+                ? "실무 프로젝트 · 팀 작업"
+                : "개인 프로젝트"}
+            </dd>
+          </div>
+        </dl>
+      </section>
+      <div className={styles.visual} data-project-visual>
+        <ProjectCover project={project} priority showAction={false} />
       </div>
-      {project.phases && (
-        <nav className={styles.detailPhaseNav} aria-label="렉서스 작업 구분">
-          {project.phases.map((phase) => (
-            <a href={`#${phase.id}`} key={phase.id}>
-              {phase.title} <ArrowIcon down />
-            </a>
-          ))}
-        </nav>
-      )}
-      {(
-        project.phases ?? [
-          {
-            id: "implementation",
-            title: "주요 구현 내용",
-            highlights: project.highlights,
-          },
-        ]
-      ).map((phase) => (
-        <section
-          id={phase.id}
-          className={styles.detailHighlights}
-          aria-labelledby={`${phase.id}-title`}
-          key={phase.id}
+      <div className={styles.reading}>
+        <nav
+          className={styles.contents}
+          aria-label={project.id === 1 ? "렉서스 작업 구분" : "프로젝트 목차"}
+          data-detail-contents
         >
-          {"stack" in phase ? (
-            <div className={styles.detailPhaseHeading}>
-              <span>{phase.year}</span>
+          <span>IN THIS PROJECT</span>
+          <div>
+            {sections.map((phase, sectionIndex) => (
+              <a href={`#${phase.id}`} key={phase.id}>
+                <span>{String(sectionIndex + 1).padStart(2, "0")}</span>{" "}
+                {phase.title} <ArrowIcon down />
+              </a>
+            ))}
+          </div>
+        </nav>
+        {sections.map((phase, sectionIndex) => (
+          <section
+            id={phase.id}
+            className={styles.workSection}
+            aria-labelledby={`${phase.id}-title`}
+            key={phase.id}
+            data-detail-section
+          >
+            <header className={styles.phaseHeading}>
+              <span className={styles.phaseNumber}>
+                {String(sectionIndex + 1).padStart(2, "0")}
+              </span>
+              <p className={styles.phaseYear}>{phase.year}</p>
               <h2 id={`${phase.id}-title`}>{phase.title}</h2>
-              <p>{phase.role}</p>
+              <p className={styles.phaseRole}>{phase.role}</p>
               <div className={styles.stack}>
                 {phase.stack.map((tech) => (
                   <span key={tech}>
@@ -147,29 +163,31 @@ export default async function ProjectDetail({ params }: Props) {
                   </span>
                 ))}
               </div>
+            </header>
+            <div className={styles.implementations}>
+              {phase.highlights.map((item, i) => (
+                <article key={item.title}>
+                  <span>0{i + 1}</span>
+                  <div>
+                    <h3>{item.title}</h3>
+                    <p>{item.description}</p>
+                  </div>
+                </article>
+              ))}
             </div>
-          ) : (
-            <h2 id={`${phase.id}-title`}>{phase.title}</h2>
-          )}
-          {phase.highlights.map((item, i) => (
-            <article key={item.title}>
-              <span>0{i + 1}</span>
-              <div>
-                <h3>{item.title}</h3>
-                <p>{item.description}</p>
-              </div>
-            </article>
-          ))}
-        </section>
-      ))}
+          </section>
+        ))}
+      </div>
       <Link
         className={styles.nextProject}
         href={`/work/${next.id}`}
         scroll={false}
+        aria-label={`다음 프로젝트 ${next.title}`}
       >
         <span>
           <small>다음 프로젝트</small>
-          {next.title}
+          <strong>{next.title}</strong>
+          <span className={styles.nextSubtitle}>{next.subtitle}</span>
         </span>
         <span aria-hidden="true">
           <ArrowIcon />

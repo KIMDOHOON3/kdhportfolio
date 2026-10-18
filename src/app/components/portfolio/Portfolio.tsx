@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, type PointerEvent } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import Navigation from "../Header/Navigation";
@@ -15,20 +15,19 @@ import ScrollStory from "./ScrollStory";
 import BackgroundScreen from "./BackgroundScreen";
 import { MailIcon, GithubIcon, DownloadIcon } from "../Icons";
 import styles from "./Portfolio.module.scss";
+import { buttonMotion } from "./buttonMotion";
 
 const projectCount = (count: number) => String(count).padStart(2, "0");
 
-const positionExploreFill = (event: PointerEvent<HTMLAnchorElement>) => {
-  if (event.pointerType !== "mouse" ||
-      !matchMedia("(hover: hover) and (pointer: fine)").matches ||
-      matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-  const rect = event.currentTarget.getBoundingClientRect();
-  event.currentTarget.style.setProperty("--explore-x", `${event.clientX - rect.left}px`);
-  event.currentTarget.style.setProperty("--explore-y", `${event.clientY - rect.top}px`);
-};
-const clearExplorePress = (event: PointerEvent<HTMLAnchorElement>) => {
-  delete event.currentTarget.dataset.pressed;
-};
+export function PortfolioBackdrop() {
+  const pathname = usePathname();
+  return (
+    <>
+      <GlassScene key={`glass-${pathname}`} />
+      <BackgroundScreen key={`screen-${pathname}`} />
+    </>
+  );
+}
 
 export function PortfolioHeader() {
   const [open, setOpen] = useState(false);
@@ -39,20 +38,26 @@ export function PortfolioHeader() {
     const escape = (event: KeyboardEvent) => {
       if (event.key === "Escape" && open) {
         setOpen(false);
-        header.current?.querySelector<HTMLButtonElement>("#navTrigger")
+        header.current
+          ?.querySelector<HTMLButtonElement>("#navTrigger")
           ?.focus({ preventScroll: true });
       }
     };
-    const keyboardTrigger = header.current?.querySelector("#navTrigger:focus-visible");
+    const keyboardTrigger = header.current?.querySelector(
+      "#navTrigger:focus-visible",
+    );
     if (open && keyboardTrigger)
-      header.current?.querySelector<HTMLAnchorElement>("nav a")
+      header.current
+        ?.querySelector<HTMLAnchorElement>("nav a")
         ?.focus({ preventScroll: true });
     window.addEventListener("keydown", escape);
     return () => window.removeEventListener("keydown", escape);
   }, [open]);
   useEffect(() => {
     const mobile = matchMedia("(max-width: 768px)");
-    const closeOnDesktop = () => { if (!mobile.matches) setOpen(false); };
+    const closeOnDesktop = () => {
+      if (!mobile.matches) setOpen(false);
+    };
     mobile.addEventListener("change", closeOnDesktop);
     return () => mobile.removeEventListener("change", closeOnDesktop);
   }, []);
@@ -149,15 +154,15 @@ export default function Portfolio() {
 
   return (
     <main ref={root} id="top" className={styles.portfolio}>
-      <GlassScene />
-      <BackgroundScreen />
       <section
         id="home"
         className={styles.hero}
         aria-labelledby="hero-title"
         data-hero
       >
-        <h1 id="hero-title" className={styles.visuallyHidden}>김도훈 포트폴리오</h1>
+        <h1 id="hero-title" className={styles.visuallyHidden}>
+          김도훈 포트폴리오
+        </h1>
         <div
           className={styles.heroLetteringFrame}
           data-hero-lettering-frame
@@ -171,22 +176,13 @@ export default function Portfolio() {
               <br />
               프론트엔드 개발자 김도훈입니다.
             </p>
-            <p className={styles.heroIntro}>
-              렉서스·기아 웹 프로젝트 참여
-            </p>
+            <p className={styles.heroIntro}>렉서스·기아 웹 프로젝트 참여</p>
           </div>
           <a
             href="#work"
             className={styles.explore}
             aria-label="프로젝트 살펴보기"
-            onPointerEnter={positionExploreFill}
-            onPointerMove={positionExploreFill}
-            onPointerDown={(event) => {
-              if (event.pointerType === "touch") event.currentTarget.dataset.pressed = "true";
-            }}
-            onPointerUp={clearExplorePress}
-            onPointerCancel={clearExplorePress}
-            onPointerLeave={clearExplorePress}
+            {...buttonMotion}
           >
             <span className={styles.exploreLabel} aria-hidden="true">
               <span>프로젝트 살펴보기</span>
@@ -207,43 +203,56 @@ export default function Portfolio() {
             role="group"
             aria-label="프로젝트 필터"
           >
-            {["전체", "실무 프로젝트", "개인 프로젝트"].map((value) => (
-              <button
-                key={value}
-                onClick={() => setFilter(value)}
-                aria-pressed={filter === value}
-              >
-                {value === "전체"
+            {["전체", "실무 프로젝트", "개인 프로젝트"].map((value) => {
+              const label =
+                value === "전체"
                   ? "전체"
                   : value === "실무 프로젝트"
                     ? "실무"
-                    : "개인"}
-                <span>
-                  {projectCount(
-                    portfolioProjects.filter(
-                      (project) =>
-                        value === "전체" || project.category === value,
-                    ).length,
-                  )}
-                </span>
-              </button>
-            ))}
+                    : "개인";
+              const count = projectCount(
+                portfolioProjects.filter(
+                  (project) => value === "전체" || project.category === value,
+                ).length,
+              );
+              return (
+                <button
+                  key={value}
+                  onClick={() => setFilter(value)}
+                  aria-pressed={filter === value}
+                  aria-label={`${label} ${count}`}
+                  {...buttonMotion}
+                >
+                  <span
+                    className={styles.exploreLabel}
+                    data-filter-label
+                    aria-hidden="true"
+                  >
+                    <span>{label}</span>
+                    <span>{label}</span>
+                  </span>
+                  <span data-filter-count aria-hidden="true">
+                    {count}
+                  </span>
+                </button>
+              );
+            })}
           </div>
         </div>
         <div className={styles.projectGrid}>
           {visibleProjects.map((project) => (
-            <article
-              data-paper
-              key={project.id}
-              className={styles.project}
-            >
+            <article data-paper key={project.id} className={styles.project}>
               <Link
                 href={`/work/${project.id}`}
                 scroll={false}
                 className={styles.projectLink}
                 data-paper-surface
                 aria-label={`${project.title} 프로젝트 보기`}
-                aria-describedby={project.responsibilities ? `project-tasks-${project.id}` : undefined}
+                aria-describedby={
+                  project.responsibilities
+                    ? `project-tasks-${project.id}`
+                    : undefined
+                }
               >
                 <div className={styles.projectMeta}>
                   <span>
@@ -254,15 +263,14 @@ export default function Portfolio() {
                 </div>
                 <div className={styles.projectTitle}>
                   <h3>{project.title}</h3>
-                  <span aria-hidden="true">
-                    <ArrowIcon />
-                  </span>
                 </div>
                 {project.responsibilities ? (
                   <div className={styles.projectTasks}>
                     <p>담당 업무</p>
                     <ul id={`project-tasks-${project.id}`}>
-                      {project.responsibilities.map((task) => <li key={task}>{task}</li>)}
+                      {project.responsibilities.map((task) => (
+                        <li key={task}>{task}</li>
+                      ))}
                     </ul>
                   </div>
                 ) : (

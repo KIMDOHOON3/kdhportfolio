@@ -5,13 +5,16 @@ import type { PortfolioProject } from "../../data/portfolio";
 import styles from "./Portfolio.module.scss";
 import ArrowIcon from "./ArrowIcon";
 import WorkCoverMockup from "./WorkCoverMockup";
+import { buttonMotion } from "./buttonMotion";
 
 export default function ProjectCover({
   project,
   priority = false,
+  showAction = true,
 }: {
   project: PortfolioProject;
   priority?: boolean;
+  showAction?: boolean;
 }) {
   return (
     <div
@@ -67,9 +70,17 @@ export default function ProjectCover({
           </>
         ) : null}
       </div>
-      <span className={styles.coverArrow} aria-hidden="true">
-        <ArrowIcon />
-      </span>
+      {showAction && (
+        <span
+          className={styles.coverArrow}
+          data-project-action
+          aria-hidden="true"
+          {...buttonMotion}
+        >
+          <ArrowIcon />
+          <ArrowIcon />
+        </span>
+      )}
     </div>
   );
 }

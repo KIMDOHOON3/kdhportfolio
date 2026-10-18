@@ -24,11 +24,12 @@ test("drawn interface, aligned filters, real Aeppy cover and journey", async ({
   const buttons = await filters.getByRole("button").evaluateAll((nodes) =>
     nodes.map((node) => {
       const rect = node.getBoundingClientRect();
-      const label = node.childNodes[0];
-      const range = document.createRange();
-      range.selectNode(label);
-      const labelRect = range.getBoundingClientRect();
-      const countRect = node.querySelector("span")!.getBoundingClientRect();
+      const labelRect = node
+        .querySelector("[data-filter-label]")!
+        .getBoundingClientRect();
+      const countRect = node
+        .querySelector("[data-filter-count]")!
+        .getBoundingClientRect();
       return {
         top: rect.top,
         height: rect.height,
@@ -73,7 +74,7 @@ test("drawn interface, aligned filters, real Aeppy cover and journey", async ({
     (e, top) => {
       e.scrollTop = top;
     },
-    geometry.start + size.height * .72,
+    geometry.start + size.height * 0.72,
   );
   await expect(story).toHaveAttribute("data-entered", "true");
   await expect(page.locator("[data-scroll-viewport]")).toHaveAttribute(

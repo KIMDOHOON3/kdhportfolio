@@ -1,5 +1,87 @@
 import { expect, test } from "@playwright/test";
 
+test("detail pages reuse the home glass footer through client navigation", async ({
+  page,
+}, info) => {
+  const errors: string[] = [];
+  page.on("pageerror", (error) => errors.push(error.message));
+  const footer = page.locator("#contact");
+  const scene = page.locator("[data-glass-scene]");
+  const showFooter = async () => {
+    const scale = await page.evaluate(() =>
+      navigator.maxTouchPoints > 0 ? devicePixelRatio : 1,
+    );
+    await page.mouse.move(100, 200);
+    await page.mouse.wheel(0, 100000 * scale);
+    await expect
+      .poll(() =>
+        footer.evaluate((element) =>
+          Math.abs(element.getBoundingClientRect().bottom - innerHeight),
+        ),
+      )
+      .toBeLessThan(1.5);
+    await expect(scene).toHaveAttribute("data-ready", "true");
+    await expect(scene).toHaveAttribute("data-scene", "thank-you");
+    await expect(footer.locator("[data-footer-thanks]")).toHaveAttribute(
+      "data-glass-ready",
+      "true",
+    );
+    await expect(footer.locator("[data-footer-thanks]")).toHaveCSS(
+      "color",
+      "rgba(0, 0, 0, 0)",
+    );
+    await expect(page.locator("[data-glass-scene] canvas")).toHaveCount(1);
+    await expect(footer).toHaveCount(1);
+  };
+  const footerStyles = () =>
+    footer.evaluate((element) => {
+      const style = getComputedStyle(element);
+      const heading = getComputedStyle(element.querySelector("h2")!);
+      return {
+        padding: style.padding,
+        background: style.background,
+        height: Math.round(element.getBoundingClientRect().height),
+        fontSize: heading.fontSize,
+        lineHeight: heading.lineHeight,
+        links: [...element.querySelectorAll("a")].map((a) => ({
+          text: a.textContent?.trim(),
+          href: a.getAttribute("href"),
+          download: a.hasAttribute("download"),
+        })),
+      };
+    });
+  await page.goto("/");
+  await page.evaluate(() => document.fonts.ready);
+  await showFooter();
+  const homeStyles = await footerStyles();
+  await page.goto("/work/3");
+  await page.evaluate(() => document.fonts.ready);
+  await showFooter();
+  expect(await footerStyles()).toEqual(homeStyles);
+  await page.screenshot({
+    path: info.outputPath("detail-shared-footer.png"),
+    scale: "css",
+  });
+  await page
+    .getByRole("link", { name: /다음 프로젝트 Dog Atlas/ })
+    .press("Enter");
+  await page.waitForURL("**/work/4");
+  await showFooter();
+  expect(await footerStyles()).toEqual(homeStyles);
+  await page.getByRole("link", { name: "맨 위로 ↑" }).click();
+  await expect
+    .poll(() =>
+      page.locator("[data-scroll-viewport]").evaluate((e) => e.scrollTop),
+    )
+    .toBe(0);
+  await page.getByRole("link", { name: "김도훈 포트폴리오 홈" }).click();
+  await page.waitForURL("**/#top");
+  await expect(scene).toHaveAttribute("data-ready", "true");
+  await expect(scene).toHaveAttribute("data-scene", "hello");
+  await expect(page.locator("[data-glass-scene] canvas")).toHaveCount(1);
+  expect(errors).toEqual([]);
+});
+
 test("deployment revision, illuminated glass and centered thank-you footer", async ({
   page,
 }, info) => {
@@ -76,7 +158,9 @@ test("deployment revision, illuminated glass and centered thank-you footer", asy
     .poll(() =>
       page
         .locator("#contact")
-        .evaluate((e) => Math.abs(e.getBoundingClientRect().bottom - innerHeight)),
+        .evaluate((e) =>
+          Math.abs(e.getBoundingClientRect().bottom - innerHeight),
+        ),
     )
     .toBeLessThan(1.5);
   await expect(page.locator("[data-glass-scene]")).toHaveAttribute(
@@ -117,7 +201,9 @@ test("deployment revision, illuminated glass and centered thank-you footer", asy
     ),
   ).toBeLessThan(1.5);
   expect(rectangles.footer.height).toBeLessThan(height);
-  expect(rectangles.footer.bottom - rectangles.footerContent.bottom).toBeLessThanOrEqual(48);
+  expect(
+    rectangles.footer.bottom - rectangles.footerContent.bottom,
+  ).toBeLessThanOrEqual(48);
   expect(rectangles.bodyScroll).toBe(0);
   expect(rectangles.overflow).toBe(0);
   for (const rect of [rectangles.heading, ...rectangles.links]) {
