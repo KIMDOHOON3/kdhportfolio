@@ -32,19 +32,13 @@ export function createStudioEnvironment(
   panel(0.65, 7, [5, 1, 4], "#b8e7ff", 4);
   panel(5, 0.35, [-1, -4, 5], "#fff9e9", 3.5);
   panel(3, 4, [-6, 0, -2], "#438df5", 0.9);
-  const target = new THREE.WebGLCubeRenderTarget(
-    (renderer.domElement.parentElement?.clientWidth ??
-      renderer.domElement.clientWidth) > 760
-      ? 512
-      : 256,
-    {
-      type: THREE.HalfFloatType,
-      minFilter: THREE.LinearFilter,
-      magFilter: THREE.LinearFilter,
-      generateMipmaps: false,
-      depthBuffer: true,
-    },
-  );
+  const target = new THREE.WebGLCubeRenderTarget(256, {
+    type: THREE.HalfFloatType,
+    minFilter: THREE.LinearFilter,
+    magFilter: THREE.LinearFilter,
+    generateMipmaps: false,
+    depthBuffer: true,
+  });
   const camera = new THREE.CubeCamera(0.1, 30, target);
   const previousTarget = renderer.getRenderTarget();
   camera.update(renderer, scene);

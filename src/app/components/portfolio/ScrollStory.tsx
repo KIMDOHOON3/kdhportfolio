@@ -1,7 +1,11 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { getScrollViewport, subscribeScroll } from "./ScrollViewport";
+import {
+  getScrollViewport,
+  readScroll,
+  subscribeScroll,
+} from "./ScrollViewport";
 import JourneySkills from "./JourneySkills";
 import { JOURNEY } from "@/app/data/journey";
 import { DownloadIcon } from "../Icons";
@@ -117,14 +121,109 @@ export default function ScrollStory() {
     const links = [
       ...section.querySelectorAll<HTMLAnchorElement>("[data-journey-nav] a"),
     ];
-    const update = ({ height }: { height: number }) => {
+    const dock = content.querySelector<HTMLElement>("[data-journey-skills]");
+    const line = section.querySelector<HTMLElement>("[data-journey-line]");
+    const outro = ending.current;
+    const drawing = connection.current;
+    const paths = [
+      ...(drawing?.querySelectorAll<SVGPathElement>("[data-connection-path]") ??
+        []),
+    ];
+    const viewport = getScrollViewport();
+    const data = (
+      element: HTMLElement | SVGElement,
+      key: string,
+      value: string,
+    ) => {
+      if (element.dataset[key] !== value) element.dataset[key] = value;
+    };
+    const style = (
+      element: HTMLElement | SVGElement,
+      key: string,
+      value: string,
+    ) => {
+      if (element.style.getPropertyValue(key) !== value)
+        element.style.setProperty(key, value);
+    };
+    let layout: {
+      top: number;
+      height: number;
+      width: number;
+      headerBottom: number;
+      source: { top: number; left: number; width: number; height: number };
+      contentBottom: number;
+      dockTop: number;
+      dockSticky: number;
+      dockHeight: number;
+      lineTop: number;
+      lineHeight: number;
+      endingHeight: number;
+      cardTops: number[];
+    };
+    const measure = () => {
+      const scroll = readScroll();
+      const rect = section.getBoundingClientRect();
+      const sketch = source.getBoundingClientRect();
+      const page = content.getBoundingClientRect();
+      const lineRect = line?.getBoundingClientRect();
+      const area = outro?.getBoundingClientRect();
+      const dockStyle = dock ? getComputedStyle(dock) : null;
+      layout = {
+        top: rect.top + scroll.top,
+        height: rect.height,
+        width: document.documentElement.clientWidth,
+        headerBottom:
+          document.querySelector("header")?.getBoundingClientRect().bottom ??
+          80,
+        source: {
+          top: sketch.top + scroll.top,
+          left: sketch.left,
+          width: sketch.width,
+          height: sketch.height,
+        },
+        contentBottom: page.bottom + scroll.top,
+        dockTop:
+          page.top +
+          scroll.top +
+          parseFloat(getComputedStyle(content).paddingTop),
+        dockSticky: parseFloat(dockStyle?.top ?? "0") || 0,
+        dockHeight: dock?.offsetHeight ?? 100,
+        lineTop: (lineRect?.top ?? 0) + scroll.top,
+        lineHeight: lineRect?.height ?? 1,
+        endingHeight: area?.height ?? 1,
+        cardTops: cards.map(
+          (card) => card.getBoundingClientRect().top + scroll.top,
+        ),
+      };
+      // Curves depend on layout, not scroll progress. Keep their geometry stable
+      // while only the dash offset animates.
+      if (area && lineRect) {
+        const origin = lineRect.left - area.left;
+        const center = area.width * 0.5;
+        const junction = Math.min(108, area.height * 0.2);
+        paths.forEach((path, index) => {
+          const target = area.width * (0.04 + index * 0.153333);
+          const bend = target < center ? -1 : 1;
+          const spread = Math.abs(index - 3) / 3;
+          path.setAttribute(
+            "d",
+            `M ${origin} 0 C ${origin} ${junction * 0.55}, ${center} ${junction * 0.35}, ${center} ${junction} C ${center} ${junction + 80}, ${center + bend * (area.width * 0.18 + spread * area.width * 0.12)} ${area.height * 0.42}, ${target} ${area.height + 10}`,
+          );
+        });
+      }
+    };
+    const update = ({
+      height,
+      top: scrollTop,
+    }: {
+      height: number;
+      top: number;
+    }) => {
       if (disposed) return;
-      const top = section.getBoundingClientRect().top;
-      const width = document.documentElement.clientWidth;
-      const rect = source.getBoundingClientRect();
-      const sourceOffset = rect.top - top;
-      const headerBottom =
-        document.querySelector("header")?.getBoundingClientRect().bottom ?? 80;
+      const top = layout.top - scrollTop;
+      const { width, headerBottom } = layout;
+      const rect = layout.source;
+      const sourceOffset = rect.top - layout.top;
       const entryStart = Math.max(
         height * 0.65,
         headerBottom + 40 - sourceOffset,
@@ -134,124 +233,124 @@ export default function ScrollStory() {
         : clamp((entryStart - top) / (entryStart + height * 0.7));
       const eased = smooth(progress);
       // Freeze the starting rectangle in viewport space while scrolling into it.
-      const sourceTop = rect.top + entryStart - top;
+      const sourceTop = sourceOffset + entryStart;
       const x = mix(rect.left, -1, eased);
       const y = mix(sourceTop, -40, eased);
       const w = mix(rect.width, width + 2, eased);
       const h = mix(rect.height, height + 42, eased);
-      browser.style.setProperty("--browser-x", `${x}px`);
-      browser.style.setProperty("--browser-y", `${y}px`);
-      browser.style.setProperty("--browser-width", `${w}px`);
-      browser.style.setProperty("--browser-height", `${h}px`);
-      browser.style.setProperty("--browser-radius", `${mix(12, 0, eased)}px`);
-      browser.style.setProperty("--preview-width", `${width}px`);
-      browser.style.setProperty("--preview-scale", String(w / width));
-      browser.style.setProperty(
-        "--cursor-opacity",
-        String(1 - smooth(progress / 0.28)),
+      style(browser, "--browser-x", `${x}px`);
+      style(browser, "--browser-y", `${y}px`);
+      style(browser, "--browser-width", `${w}px`);
+      style(browser, "--browser-height", `${h}px`);
+      style(browser, "--browser-radius", `${mix(12, 0, eased)}px`);
+      style(browser, "--preview-width", `${width}px`);
+      style(browser, "--preview-scale", String(w / width));
+      style(browser, "--cursor-opacity", String(1 - smooth(progress / 0.28)));
+      style(browser, "--browser-shadow", String((1 - eased) * 0.13));
+      style(browser, "--page-reveal", String(smooth((progress - 0.24) / 0.4)));
+      style(browser, "--diagram-opacity", String(1 - smooth(progress / 0.34)));
+      style(browser, "--click-scale", String(1 + progress * 16));
+      const hidden = motion.matches || progress <= 0 || progress >= 1;
+      if (browser.hidden !== hidden) browser.hidden = hidden;
+      style(
+        source,
+        "opacity",
+        progress > 0 && progress < 1 && !motion.matches ? "0" : "1",
       );
-      browser.style.setProperty("--browser-shadow", String((1 - eased) * 0.13));
-      browser.style.setProperty(
-        "--page-reveal",
-        String(smooth((progress - 0.24) / 0.4)),
+      data(section, "entered", String(progress >= 1));
+      data(
+        section,
+        "phase",
+        motion.matches
+          ? "static"
+          : progress <= 0
+            ? "before"
+            : progress < 1
+              ? "entering"
+              : "inside",
       );
-      browser.style.setProperty(
-        "--diagram-opacity",
-        String(1 - smooth(progress / 0.34)),
-      );
-      browser.style.setProperty("--click-scale", String(1 + progress * 16));
-      browser.hidden = motion.matches || progress <= 0 || progress >= 1;
-      source.style.opacity =
-        progress > 0 && progress < 1 && !motion.matches ? "0" : "1";
-      section.dataset.entered = String(progress >= 1);
-      section.dataset.phase = motion.matches
-        ? "static"
-        : progress <= 0
-          ? "before"
-          : progress < 1
-            ? "entering"
-            : "inside";
-      section.dataset.entryProgress = progress.toFixed(4);
-      section.dataset.enhanced = String(!motion.matches);
-      section.dataset.ready = "true";
-      const viewport = getScrollViewport();
+      data(section, "entryProgress", progress.toFixed(4));
+      data(section, "ready", "true");
       if (viewport)
-        viewport.dataset.journeyActive = String(
-          top < entryStart && top + section.offsetHeight > headerBottom,
+        data(
+          viewport,
+          "journeyActive",
+          String(top < entryStart && top + layout.height > headerBottom),
         );
-      const dock = content.querySelector<HTMLElement>("[data-journey-skills]");
-      const line = section.querySelector<HTMLElement>("[data-journey-line]");
-      const threshold = (dock?.getBoundingClientRect().bottom ?? 200) + 100;
+      const dockTop = Math.min(
+        Math.max(layout.dockTop - scrollTop, layout.dockSticky),
+        layout.contentBottom - scrollTop - layout.dockHeight,
+      );
+      const threshold = dockTop + layout.dockHeight + 100;
       let active = 0;
       cards.forEach((card, index) => {
-        const bounds = card.getBoundingClientRect();
-        if (bounds.top <= threshold) active = index;
-        card.dataset.revealed = String(
-          motion.matches || bounds.top < height * 0.94,
+        const cardTop = layout.cardTops[index] - scrollTop;
+        if (cardTop <= threshold) active = index;
+        data(
+          card,
+          "revealed",
+          String(motion.matches || cardTop < height * 0.94),
         );
       });
-      section.dataset.chapter = String(active);
-      cards.forEach(
-        (card, index) => (card.dataset.active = String(index === active)),
+      data(section, "chapter", String(active));
+      cards.forEach((card, index) =>
+        data(card, "active", String(index === active)),
       );
       links.forEach((link, index) => {
-        if (index === active) link.setAttribute("aria-current", "step");
-        else link.removeAttribute("aria-current");
+        if (index === active && !link.hasAttribute("aria-current"))
+          link.setAttribute("aria-current", "step");
+        else if (index !== active && link.hasAttribute("aria-current"))
+          link.removeAttribute("aria-current");
       });
       if (line) {
-        const bounds = line.getBoundingClientRect();
-        line.style.setProperty(
+        const lineTop = layout.lineTop - scrollTop;
+        const lineBottom = lineTop + layout.lineHeight;
+        style(
+          line,
           "--line-progress",
           String(
             motion.matches
               ? 1
-              : clamp((threshold - bounds.top) / Math.max(1, bounds.height)),
+              : clamp((threshold - lineTop) / Math.max(1, layout.lineHeight)),
           ),
         );
-        const outro = ending.current;
-        const drawing = connection.current;
         if (outro && drawing) {
-          const area = outro.getBoundingClientRect();
-          const origin = bounds.left - area.left;
-          const center = area.width * 0.5;
-          const junction = Math.min(108, area.height * 0.2);
           const travel = motion.matches
             ? 1
-            : clamp((threshold - bounds.bottom) / (area.height * 0.85));
-          drawing.style.visibility = travel > 0 ? "visible" : "hidden";
-          outro.style.setProperty("--connection-progress", String(travel));
-          outro.style.setProperty(
+            : clamp((threshold - lineBottom) / (layout.endingHeight * 0.85));
+          style(drawing, "visibility", travel > 0 ? "visible" : "hidden");
+          style(
+            outro,
             "--connection-wash",
             String(smooth((travel - 0.25) / 0.75)),
           );
-          outro.dataset.progress = travel.toFixed(4);
-          const paths = [
-            ...drawing.querySelectorAll<SVGPathElement>(
-              "[data-connection-path]",
-            ),
-          ];
+          data(outro, "progress", travel.toFixed(4));
           paths.forEach((path, index) => {
-            const target = area.width * (0.04 + index * 0.153333);
-            const bend = target < center ? -1 : 1;
-            const spread = Math.abs(index - 3) / 3;
-            const d = `M ${origin} 0 C ${origin} ${junction * 0.55}, ${center} ${junction * 0.35}, ${center} ${junction} C ${center} ${junction + 80}, ${center + bend * (area.width * 0.18 + spread * area.width * 0.12)} ${area.height * 0.42}, ${target} ${area.height + 10}`;
-            path.setAttribute("d", d);
-            path.style.strokeDashoffset = String(
-              1 - smooth(travel * 1.3 - index * 0.035),
+            style(
+              path,
+              "stroke-dashoffset",
+              String(1 - smooth(travel * 1.3 - index * 0.035)),
             );
           });
         }
       }
     };
+    section.dataset.enhanced = String(!motion.matches);
+    measure();
     const unsubscribe = subscribeScroll(update);
-    const resize = () =>
-      update({
-        height:
-          document.querySelector<HTMLElement>("[data-scroll-viewport]")
-            ?.clientHeight ?? innerHeight,
-      });
+    const resize = () => {
+      if (disposed) return;
+      section.dataset.enhanced = String(!motion.matches);
+      measure();
+      update(readScroll());
+    };
     const observer = new ResizeObserver(resize);
     observer.observe(source);
+    observer.observe(section);
+    observer.observe(content);
+    const scrollContent = document.querySelector("[data-scroll-content]");
+    if (scrollContent) observer.observe(scrollContent);
+    window.addEventListener("resize", resize);
     motion.addEventListener("change", resize);
     document.fonts.ready.then(() => {
       if (!disposed) resize();
@@ -260,6 +359,7 @@ export default function ScrollStory() {
       disposed = true;
       unsubscribe();
       observer.disconnect();
+      window.removeEventListener("resize", resize);
       motion.removeEventListener("change", resize);
       source.style.removeProperty("opacity");
       getScrollViewport()?.removeAttribute("data-journey-active");

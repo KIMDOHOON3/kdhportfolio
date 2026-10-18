@@ -46,9 +46,15 @@ export default function ScrollViewport({ children }: { children: ReactNode }) {
     if (!wrapper || !body) return;
     const motion = matchMedia("(prefers-reduced-motion: reduce)");
     let frame = 0;
+    let pending = false;
     const notify = () => {
+      pending = true;
+    };
+    const flush = () => {
+      pending = false;
       const snapshot = readScroll();
-      wrapper.dataset.storyDark = "false";
+      if (wrapper.dataset.storyDark !== "false")
+        wrapper.dataset.storyDark = "false";
       listeners.forEach((listener) => listener(snapshot));
     };
     const configure = () => {
@@ -69,6 +75,7 @@ export default function ScrollViewport({ children }: { children: ReactNode }) {
     };
     const raf = (time: number) => {
       engine?.raf(time);
+      if (pending) flush();
       frame = requestAnimationFrame(raf);
     };
     const anchor = (event: MouseEvent) => {
@@ -109,7 +116,11 @@ export default function ScrollViewport({ children }: { children: ReactNode }) {
         engine.scrollTo(Math.round(actualTop - margin));
       } else
         wrapper.scrollTo({
-          top: actualTop - (location.pathname !== "/" || target.id.startsWith("journey-") ? margin : 0),
+          top:
+            actualTop -
+            (location.pathname !== "/" || target.id.startsWith("journey-")
+              ? margin
+              : 0),
           behavior: "instant",
         });
     };

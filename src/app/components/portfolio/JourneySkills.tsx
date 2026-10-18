@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Icon } from "../Icons";
 import { JOURNEY_SKILLS } from "@/app/data/journey";
 import styles from "./Journey.module.scss";
@@ -11,8 +11,24 @@ export default function JourneySkills({
   decorative?: boolean;
 }) {
   const [paused, setPaused] = useState(false);
+  const dock = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const element = dock.current;
+    if (!element) return;
+    const observer = new IntersectionObserver(([entry]) => {
+      element.dataset.visible = String(entry.isIntersecting);
+    });
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, []);
   return (
-    <div className={styles.skillsDock} data-journey-skills data-paused={paused}>
+    <div
+      ref={dock}
+      className={styles.skillsDock}
+      data-journey-skills
+      data-paused={paused}
+      data-visible="false"
+    >
       <div className={styles.skillsHeading}>
         <h3>
           Skill<span>계속 배우고, 직접 사용합니다.</span>

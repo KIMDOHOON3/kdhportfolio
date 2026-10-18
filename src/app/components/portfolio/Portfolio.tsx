@@ -154,6 +154,12 @@ export default function Portfolio() {
 
   return (
     <main ref={root} id="top" className={styles.portfolio}>
+      <link
+        rel="preload"
+        href="/models/hello.glb"
+        as="fetch"
+        crossOrigin="anonymous"
+      />
       <section
         id="home"
         className={styles.hero}
