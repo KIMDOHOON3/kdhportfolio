@@ -16,15 +16,15 @@ import BackgroundScreen from "./BackgroundScreen";
 import { MailIcon, GithubIcon, DownloadIcon } from "../Icons";
 import styles from "./Portfolio.module.scss";
 import { buttonMotion } from "./buttonMotion";
+import { GLASS_ASSETS } from "../../data/glassAssets";
 
 const projectCount = (count: number) => String(count).padStart(2, "0");
 
 export function PortfolioBackdrop() {
-  const pathname = usePathname();
   return (
     <>
-      <GlassScene key={`glass-${pathname}`} />
-      <BackgroundScreen key={`screen-${pathname}`} />
+      <GlassScene />
+      <BackgroundScreen />
     </>
   );
 }
@@ -156,7 +156,7 @@ export default function Portfolio() {
     <main ref={root} id="top" className={styles.portfolio}>
       <link
         rel="preload"
-        href="/models/hello.glb"
+        href={GLASS_ASSETS.hello}
         as="fetch"
         crossOrigin="anonymous"
       />

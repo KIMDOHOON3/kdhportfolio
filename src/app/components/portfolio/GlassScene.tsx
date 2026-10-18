@@ -1,6 +1,8 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { usePathname } from "next/navigation";
+import { GLASS_ASSETS } from "../../data/glassAssets";
 import styles from "./Portfolio.module.scss";
 import {
   glassVertexShader,
@@ -23,15 +25,37 @@ import {
 } from "./ScrollViewport";
 
 export default function GlassScene() {
+  const pathname = usePathname();
   const host = useRef<HTMLDivElement>(null);
+  const routeUpdate = useRef<() => void>(() => {});
+  const [activated, setActivated] = useState(pathname === "/");
   const [ready, setReady] = useState(false);
   const [failed, setFailed] = useState(false);
+  useLayoutEffect(() => {
+    if (pathname === "/") setActivated(true);
+    routeUpdate.current();
+  }, [pathname]);
   useEffect(() => {
+    if (activated) return;
+    const footer = document.getElementById("contact");
+    if (!footer) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) setActivated(true);
+      },
+      { root: getScrollViewport(), rootMargin: "100% 0px" },
+    );
+    observer.observe(footer);
+    return () => observer.disconnect();
+  }, [activated, pathname]);
+  useEffect(() => {
+    if (!activated) return;
     const element = host.current;
     if (!element) return;
     let disposed = false;
     let cleanup = () => {};
     const modelLoader = import("three/addons/loaders/GLTFLoader.js");
+    const decoder = import("three/addons/libs/meshopt_decoder.module.js");
     import("three")
       .then((THREE) => {
         if (disposed) return;
@@ -282,11 +306,14 @@ export default function GlassScene() {
         const logoTextures: InstanceType<typeof THREE.Texture>[] = [];
         const logoMaterials: InstanceType<typeof THREE.ShaderMaterial>[] = [];
         const textureLoader = new THREE.TextureLoader();
-        const accents = [
-          { x: 0.17, y: 0.22, radius: 0.034, min: 26, max: 43, logo: "claude" },
-          { x: 0.88, y: 0.79, radius: 0.04, min: 30, max: 51, logo: "codex" },
-          { x: 0.73, y: 0.12, radius: 0.028, min: 24, max: 36, logo: "figma" },
-        ].map((layout) => {
+        const createAccent = (layout: {
+          x: number;
+          y: number;
+          radius: number;
+          min: number;
+          max: number;
+          logo: string;
+        }) => {
           let orbMaterial = accentMaterial;
           if (layout.logo) {
             orbMaterial = new THREE.ShaderMaterial({
@@ -322,7 +349,31 @@ export default function GlassScene() {
           const mesh = new THREE.Mesh(accentGeometry, orbMaterial);
           accentGroup.add(mesh);
           return { ...layout, mesh, origin: new THREE.Vector3() };
-        });
+        };
+        const accents: ReturnType<typeof createAccent>[] = [];
+        const loadAccents = () => {
+          if (accents.length) return;
+          const layouts = [
+            {
+              x: 0.17,
+              y: 0.22,
+              radius: 0.034,
+              min: 26,
+              max: 43,
+              logo: "claude",
+            },
+            { x: 0.88, y: 0.79, radius: 0.04, min: 30, max: 51, logo: "codex" },
+            {
+              x: 0.73,
+              y: 0.12,
+              radius: 0.028,
+              min: 24,
+              max: 36,
+              logo: "figma",
+            },
+          ];
+          accents.push(...layouts.map(createAccent));
+        };
         scene.add(accentGroup);
         // Circular 3D writing paths use the hero's glass and tint palette.
         // The hero can render before the footer geometry has finished loading.
@@ -336,6 +387,7 @@ export default function GlassScene() {
           baseline: number;
         }[] = [];
         let loadFooter: (() => void) | undefined;
+        let loadHero: (() => void) | undefined;
         footerGroup.visible = false;
         scene.add(footerGroup);
         const motion = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -362,8 +414,8 @@ export default function GlassScene() {
         let accentPixel = 1;
         let heroOffsetY = 0;
         const bounds = new THREE.Box3(
-          new THREE.Vector3(-5, -1.1, -0.2),
-          new THREE.Vector3(5, 2.1, 0.2),
+          new THREE.Vector3(...GLASS_ASSETS.helloBounds.min),
+          new THREE.Vector3(...GLASS_ASSETS.helloBounds.max),
         );
         const size = bounds.getSize(new THREE.Vector3());
         const center = bounds.getCenter(new THREE.Vector3());
@@ -711,6 +763,7 @@ export default function GlassScene() {
           const heroBottom =
             document.querySelector("[data-hero]")?.getBoundingClientRect()
               .bottom ?? 0;
+          if (document.querySelector("[data-hero]")) loadHero?.();
           const footerTop =
             document.getElementById("contact")?.getBoundingClientRect().top ??
             viewportHeight;
@@ -745,6 +798,18 @@ export default function GlassScene() {
         pointerSurface?.addEventListener("pointerleave", leave);
         document.addEventListener("visibilitychange", resume);
         const unsubscribe = subscribeScroll(scroll);
+        routeUpdate.current = () => {
+          previousPointer = null;
+          pointer.x = 0;
+          pointer.y = 0;
+          flowUntil = 0;
+          inputStrength = 0;
+          resize();
+          scroll();
+          cancelAnimationFrame(frame);
+          frame = 0;
+          render(performance.now());
+        };
         motion.addEventListener("change", resume);
         const lost = (event: Event) => {
           event.preventDefault();
@@ -792,67 +857,77 @@ export default function GlassScene() {
           renderer.setRenderTarget(previous);
           await Promise.all(pending);
         };
-        modelLoader
-          .then(({ GLTFLoader }) => {
+        const paintReady = async () => {
+          await prepareShaders();
+          if (disposed) return;
+          shadersReady = true;
+          cancelAnimationFrame(frame);
+          frame = 0;
+          resize();
+          render(performance.now());
+          setReady(true);
+        };
+        Promise.all([modelLoader, decoder])
+          .then(([{ GLTFLoader }, { MeshoptDecoder }]) => {
             if (disposed) return;
-            const loader = new GLTFLoader();
-            void loader
-              .loadAsync("/models/hello.glb")
-              .then((gltf) => {
-                let geometry: InstanceType<typeof THREE.BufferGeometry> | null =
-                  null;
-                gltf.scene.traverse((object) => {
-                  if (!(object instanceof THREE.Mesh)) return;
-                  const sourceMaterials = Array.isArray(object.material)
-                    ? object.material
-                    : [object.material];
-                  sourceMaterials.forEach((entry) => entry.dispose());
-                  if (disposed) object.geometry.dispose();
-                  else geometry = object.geometry;
+            const loader = new GLTFLoader().setMeshoptDecoder(MeshoptDecoder);
+            let heroRequested = false;
+            loadHero = () => {
+              if (heroRequested || disposed) return;
+              heroRequested = true;
+              loadAccents();
+              void loader
+                .loadAsync(GLASS_ASSETS.hello)
+                .then((gltf) => {
+                  let geometry: InstanceType<
+                    typeof THREE.BufferGeometry
+                  > | null = null;
+                  gltf.scene.traverse((object) => {
+                    if (!(object instanceof THREE.Mesh)) return;
+                    const sourceMaterials = Array.isArray(object.material)
+                      ? object.material
+                      : [object.material];
+                    sourceMaterials.forEach((entry) => entry.dispose());
+                    if (disposed) object.geometry.dispose();
+                    else geometry = object.geometry;
+                  });
+                  if (disposed || !geometry) return;
+                  const previous = new Set<
+                    InstanceType<typeof THREE.BufferGeometry>
+                  >();
+                  group.traverse((object) => {
+                    if (object instanceof THREE.Mesh)
+                      previous.add(object.geometry);
+                  });
+                  group.clear();
+                  previous.forEach((entry) => entry.dispose());
+                  group.add(new THREE.Mesh(geometry, material));
+                  const savedY = group.position.y;
+                  group.position.y = -0.4;
+                  group.updateMatrixWorld(true);
+                  bounds.setFromObject(group);
+                  bounds.getSize(size);
+                  bounds.getCenter(center);
+                  group.position.y = savedY;
+                  group.updateMatrixWorld(true);
+                  element.dataset.helloGeometry = "glass-mesh";
+                })
+                .catch(() => {
+                  // Keep a licensed HTML text fallback if geometry cannot load.
+                  element.dataset.helloGeometry = "unavailable";
+                  setFailed(true);
+                })
+                .finally(() => {
+                  if (!disposed) void paintReady();
                 });
-                if (disposed || !geometry) return;
-                const previous = new Set<
-                  InstanceType<typeof THREE.BufferGeometry>
-                >();
-                group.traverse((object) => {
-                  if (object instanceof THREE.Mesh)
-                    previous.add(object.geometry);
-                });
-                group.clear();
-                previous.forEach((entry) => entry.dispose());
-                group.add(new THREE.Mesh(geometry, material));
-                const savedY = group.position.y;
-                group.position.y = -0.4;
-                group.updateMatrixWorld(true);
-                bounds.setFromObject(group);
-                bounds.getSize(size);
-                bounds.getCenter(center);
-                group.position.y = savedY;
-                group.updateMatrixWorld(true);
-                element.dataset.helloGeometry = "glass-mesh";
-              })
-              .catch(() => {
-                // Keep a licensed HTML text fallback if geometry cannot load.
-                element.dataset.helloGeometry = "unavailable";
-                setFailed(true);
-              })
-              .finally(async () => {
-                if (disposed) return;
-                await prepareShaders();
-                if (disposed) return;
-                shadersReady = true;
-                cancelAnimationFrame(frame);
-                frame = 0;
-                resize();
-                render(performance.now());
-                setReady(true);
-              });
+            };
+            if (document.querySelector("[data-hero]")) loadHero();
             let footerRequested = false;
             loadFooter = () => {
               if (footerRequested || disposed) return;
               footerRequested = true;
               void loader
-                .loadAsync("/models/thank-you.glb")
+                .loadAsync(GLASS_ASSETS.footer)
                 .then((gltf) => {
                   gltf.scene.traverse((object) => {
                     if (!(object instanceof THREE.Mesh)) return;
@@ -881,8 +956,7 @@ export default function GlassScene() {
                     });
                   }
                   element.dataset.footerGeometry = "glass-path";
-                  placeFooter();
-                  resume();
+                  void paintReady();
                 })
                 .catch(() => {
                   footerHeading?.removeAttribute("data-glass-ready");
@@ -905,6 +979,7 @@ export default function GlassScene() {
           }
         });
         cleanup = () => {
+          routeUpdate.current = () => {};
           footerHeading?.removeAttribute("data-glass-ready");
           cancelAnimationFrame(frame);
           observer.disconnect();
@@ -959,7 +1034,7 @@ export default function GlassScene() {
       disposed = true;
       cleanup();
     };
-  }, []);
+  }, [activated]);
   return (
     <div
       className={styles.glassScene}

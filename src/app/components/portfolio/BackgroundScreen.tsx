@@ -1,11 +1,13 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { usePathname } from "next/navigation";
 import { subscribeScroll } from "./ScrollViewport";
 import styles from "./Portfolio.module.scss";
 
 export default function BackgroundScreen() {
   const ref = useRef<HTMLDivElement>(null);
+  const pathname = usePathname();
   useEffect(
     () =>
       subscribeScroll(({ height }) => {
@@ -50,7 +52,7 @@ export default function BackgroundScreen() {
           .querySelector<HTMLElement>("[data-glass-scene]")
           ?.style.setProperty("--fallback-opacity", heroBottom > 0 ? "1" : "0");
       }),
-    [],
+    [pathname],
   );
   return (
     <div

@@ -287,7 +287,6 @@ $line: rgba(48, 71, 90, 0.17);
   letter-spacing: 0.12em;
 }
 .eyebrow,
-.period,
 .chapterNumber,
 .organization,
 .endingCopy > span,
@@ -328,11 +327,12 @@ $line: rgba(48, 71, 90, 0.17);
     transition: color 180ms;
   }
   a > span:first-child {
-    width: 80px;
+    width: 84px;
     flex-shrink: 0;
+    white-space: nowrap;
     font:
-      400 14px/1.5 "NewYork",
-      serif;
+      400 14px/1.5 "Pretendard-Regular",
+      sans-serif;
   }
   a > span:last-child {
     line-height: 1.6;
@@ -457,12 +457,6 @@ $line: rgba(48, 71, 90, 0.17);
   margin-top: 12px;
   color: #8f9aa1;
   font-size: 11px;
-}
-.period {
-  margin-top: 14px;
-  color: #8a959c;
-  font-size: 11px;
-  letter-spacing: 0.01em;
 }
 .organization {
   color: #597282;
@@ -597,9 +591,6 @@ $line: rgba(48, 71, 90, 0.17);
   .chapterNav a {
     gap: 10px;
     font-size: 10px;
-  }
-  .chapterNav a > span:first-child {
-    width: 69px;
   }
   .heading h2 {
     font-size: 26px;
@@ -745,9 +736,6 @@ $line: rgba(48, 71, 90, 0.17);
   .organization {
     font-size: 12px;
   }
-  .period {
-    font-size: 10px;
-  }
   .details {
     margin-top: 21px;
     gap: 7px 12px;
@@ -769,7 +757,7 @@ $line: rgba(48, 71, 90, 0.17);
 }
 @media (max-height: 600px) and (min-width: 601px) {
   .skillsDock {
-    top: 78px;
+    top: 96px;
     padding-top: 6px;
     padding-bottom: 8px;
   }

@@ -86,7 +86,6 @@ function ChapterContent({
           {String(index + 1).padStart(2, "0")}
         </span>
       </div>
-      <p className={styles.period}>{chapter.period}</p>
       <h3>{chapter.title}</h3>
       <p className={styles.organization}>{chapter.organization}</p>
       <p className={styles.description}>{chapter.description}</p>

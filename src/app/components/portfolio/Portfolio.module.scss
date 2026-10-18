@@ -45,7 +45,7 @@ $label: "NewYork", "Pretendard-Regular", sans-serif;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 35px 35px 0;
+  padding: 24px 35px;
   color: $ink;
 }
 .logo {
@@ -63,7 +63,12 @@ $label: "NewYork", "Pretendard-Regular", sans-serif;
   margin-left: auto;
 }
 @media (max-width: 768px) {
-  .header { padding: 15px 15px 0; }
+  .header { padding: 10px 15px; min-height: 56px; }
+  .headerMenu :global(#navTrigger) {
+    position: relative;
+    inset: auto;
+    transition: none;
+  }
   .logo { font-size: 28px; }
 }
 .portfolio {
@@ -1318,16 +1323,17 @@ $label: "NewYork", "Pretendard-Regular", sans-serif;
 .header::before {
   content: "";
   position: absolute;
-  inset: -10px 0 -16px;
+  inset: 0;
   z-index: -1;
-  background: linear-gradient(#f9f8f3 80%, rgba(249, 248, 243, 0));
+  background: #faf9f5;
+  box-shadow: 0 6px 20px #243c4f0a;
   pointer-events: none;
   opacity: 0;
   transition: opacity 180ms;
 }
-:global([data-journey-active="true"]) .header::before { opacity: 1; }
-:global([data-home="false"]) .header {
-  background: #faf9f5;
+:global([data-scrolled="true"]) .header::before { opacity: 1; }
+@media (prefers-reduced-motion: reduce) {
+  .header::before { transition: none; }
 }
 .hero {
   top: auto;
@@ -1644,7 +1650,7 @@ $label: "NewYork", "Pretendard-Regular", sans-serif;
     .explore {
       font-size: 13px;
       gap: 12px;
-      align-self: flex-end;
+      align-self: flex-start;
     }
   }
   .about {

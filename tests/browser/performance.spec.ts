@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { GLASS_ASSETS } from "../../src/app/data/glassAssets";
 
 test("the first screen only loads its lettering and scroll keeps connection geometry stable", async ({
   page,
@@ -13,8 +14,8 @@ test("the first screen only loads its lettering and scroll keeps connection geom
   const scene = page.locator("[data-glass-scene]");
   await expect(scene).toHaveAttribute("data-ready", "true");
   await expect(scene).toHaveAttribute("data-hello-geometry", "glass-mesh");
-  expect(models.filter((path) => path === "/models/hello.glb")).toHaveLength(1);
-  expect(models).not.toContain("/models/thank-you.glb");
+  expect(models.filter((path) => path === GLASS_ASSETS.hello)).toHaveLength(1);
+  expect(models).not.toContain(GLASS_ASSETS.footer);
   const paths = page.locator("[data-connection-path]");
   const geometry = await paths.evaluateAll((elements) =>
     elements.map((element) => element.getAttribute("d")),
@@ -59,4 +60,79 @@ test("the first screen only loads its lettering and scroll keeps connection geom
     "data-glass-ready",
     "true",
   );
+});
+
+test("detail defers all 3D work and reuses its canvas and models across navigation", async ({
+  page,
+}) => {
+  const resources: string[] = [];
+  const errors: string[] = [];
+  page.on("request", (request) => {
+    const path = new URL(request.url()).pathname;
+    if (path.startsWith("/models/") || path.startsWith("/images/tools/"))
+      resources.push(path);
+  });
+  page.on("pageerror", (error) => errors.push(error.message));
+  await page.goto("/work/1");
+  await page.evaluate(() => document.fonts.ready);
+  await page.evaluate(
+    () =>
+      new Promise((resolve) =>
+        requestAnimationFrame(() => requestAnimationFrame(resolve)),
+      ),
+  );
+  const scene = page.locator("[data-glass-scene]");
+  await expect(scene.locator("canvas")).toHaveCount(0);
+  expect(resources).toEqual([]);
+  const footer = async () => {
+    const scale = await page.evaluate(() =>
+      navigator.maxTouchPoints > 0 ? devicePixelRatio : 1,
+    );
+    await page.mouse.move(100, 200);
+    await page.mouse.wheel(0, 100000 * scale);
+    await expect(scene).toHaveAttribute("data-ready", "true");
+    await expect(scene).toHaveAttribute("data-scene", "thank-you");
+    await expect(page.locator("[data-footer-thanks]")).toHaveAttribute(
+      "data-glass-ready",
+      "true",
+    );
+  };
+  await footer();
+  expect(resources).toEqual([GLASS_ASSETS.footer]);
+  const canvas = await scene.locator("canvas").elementHandle();
+  const sameCanvas = () =>
+    canvas!.evaluate(
+      (element) =>
+        element === document.querySelector("[data-glass-scene] canvas"),
+    );
+  await page.getByRole("link", { name: "김도훈 포트폴리오 홈" }).click();
+  await page.waitForURL("**/#top");
+  await expect(scene).toHaveAttribute("data-hello-geometry", "glass-mesh");
+  await expect(scene).toHaveAttribute("data-scene", "hello");
+  expect(await sameCanvas()).toBe(true);
+  await page
+    .getByRole("link", { name: "LEXUS 프로젝트 보기", exact: true })
+    .click();
+  await page.waitForURL("**/work/1");
+  expect(await sameCanvas()).toBe(true);
+  await footer();
+  await page
+    .getByRole("link", { name: /다음 프로젝트 Kia Worldwide/ })
+    .press("Enter");
+  await page.waitForURL("**/work/3");
+  await footer();
+  expect(await sameCanvas()).toBe(true);
+  expect(resources.filter((path) => path === GLASS_ASSETS.hello)).toHaveLength(
+    1,
+  );
+  expect(resources.filter((path) => path === GLASS_ASSETS.footer)).toHaveLength(
+    1,
+  );
+  for (const url of [GLASS_ASSETS.hello, GLASS_ASSETS.footer]) {
+    const response = await page.request.head(url);
+    expect(response.headers()["cache-control"]).toBe(
+      "public, max-age=31536000, immutable",
+    );
+  }
+  expect(errors).toEqual([]);
 });

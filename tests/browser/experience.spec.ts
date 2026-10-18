@@ -64,8 +64,8 @@ test("rolling skills remain above the chronological career and anchors stay read
     "렉서스·기아",
   ].entries())
     await expect(chapters.nth(index)).toContainText(title);
-  await expect(chapters.nth(2)).toContainText("2022.07 — 2023.10");
-  await expect(chapters.nth(3)).toContainText("2024.08 — 2025.02");
+  await expect(chapters.nth(2)).not.toContainText("2022.07 — 2023.10");
+  await expect(chapters.nth(3)).not.toContainText("2024.08 — 2025.02");
   const navigation = page.getByRole("navigation", {
     name: "성장 과정 바로가기",
   });

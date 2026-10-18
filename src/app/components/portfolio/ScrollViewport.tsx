@@ -53,6 +53,14 @@ export default function ScrollViewport({ children }: { children: ReactNode }) {
     const flush = () => {
       pending = false;
       const snapshot = readScroll();
+      const hero = body.querySelector<HTMLElement>("[data-hero]");
+      const scrolled = String(
+        snapshot.top > 12 &&
+          (!hero ||
+            hero.getBoundingClientRect().bottom <= snapshot.height * 0.2),
+      );
+      if (wrapper.dataset.scrolled !== scrolled)
+        wrapper.dataset.scrolled = scrolled;
       if (wrapper.dataset.storyDark !== "false")
         wrapper.dataset.storyDark = "false";
       listeners.forEach((listener) => listener(snapshot));
@@ -189,6 +197,7 @@ export default function ScrollViewport({ children }: { children: ReactNode }) {
       ref={viewport}
       className={styles.scrollViewport}
       data-scroll-viewport
+      data-scrolled="false"
       data-home={pathname === "/"}
       tabIndex={-1}
     >

@@ -14,9 +14,21 @@ $display: "NewYork", "Pretendard-Regular", serif;
   margin: 0 auto;
   padding: 128px var(--detail-inset) 72px;
   color: $ink;
-  background: $paper;
+  background: transparent;
   font: 16px/1.7 $sans;
   min-height: 80dvh;
+  &::before {
+    content: "";
+    position: absolute;
+    inset: 0 calc(50% - 50vw);
+    z-index: -1;
+    pointer-events: none;
+    background: linear-gradient(
+      to bottom,
+      $paper calc(100% - clamp(220px, 32vh, 340px)),
+      transparent 100%
+    );
+  }
 }
 .topline {
   display: flex;
