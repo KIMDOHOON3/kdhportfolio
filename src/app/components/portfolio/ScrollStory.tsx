@@ -159,7 +159,9 @@ export default function ScrollStory() {
       endingHeight: number;
       cardTops: number[];
     };
+    let outside: "before" | "after" | null = null;
     const measure = () => {
+      outside = null;
       const scroll = readScroll();
       const rect = section.getBoundingClientRect();
       const sketch = source.getBoundingClientRect();
@@ -227,6 +229,16 @@ export default function ScrollStory() {
         height * 0.65,
         headerBottom + 40 - sourceOffset,
       );
+      // Set the boundary state once, then leave the hidden story untouched
+      // while the user browses the hero, projects or the settled footer.
+      const nextOutside =
+        top > Math.max(height, entryStart)
+          ? "before"
+          : top + layout.height < headerBottom
+            ? "after"
+            : null;
+      if (nextOutside && nextOutside === outside) return;
+      outside = nextOutside;
       const progress = motion.matches
         ? 1
         : clamp((entryStart - top) / (entryStart + height * 0.7));

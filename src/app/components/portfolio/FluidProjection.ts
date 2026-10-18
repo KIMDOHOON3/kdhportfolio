@@ -95,6 +95,16 @@ export function createFluidProjection(
     renderer.render(scene, camera);
   };
   return {
+    prepare() {
+      // Link the pressure shaders while idle, not on the first pointer impulse.
+      return Promise.all(
+        materials.map((material) => {
+          const preview = new THREE.Scene();
+          preview.add(new THREE.Mesh(geometry, material));
+          return renderer.compileAsync(preview, camera);
+        }),
+      );
+    },
     resize(width: number, height: number) {
       for (const target of targets) target.setSize(width, height);
       for (const material of materials)

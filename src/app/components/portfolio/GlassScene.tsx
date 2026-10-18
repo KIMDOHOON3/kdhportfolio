@@ -63,7 +63,9 @@ export default function GlassScene() {
         try {
           renderer = new THREE.WebGLRenderer({
             alpha: true,
-            antialias: true,
+            // Geometry is antialiased in sceneTarget. The final full-screen
+            // composite has no edges that need another multisampled buffer.
+            antialias: false,
             powerPreference: "low-power",
           });
         } catch {
@@ -638,25 +640,29 @@ export default function GlassScene() {
             contextLost
           )
             return;
-          // Keep pointer/scroll response at display speed; quiet hero drift
-          // needs fewer frames, and a settled footer needs no continuous loop.
+          // High-refresh displays must not multiply the expensive glass passes.
+          // Keep scroll/pointer animation at 60 Hz and idle drift at 30 Hz.
           const interactive = time - lastInteraction < 1000;
-          if (
-            !motion.matches &&
-            !force &&
-            !interactive &&
-            time - lastPaint < 1000 / 30 - 1
-          ) {
+          const interval = 1000 / (interactive ? 60 : 30);
+          if (!motion.matches && !force && time - lastPaint < interval - 0.5) {
             frame = requestAnimationFrame(render);
             return;
           }
-          lastPaint = time;
+          // Preserve the cadence on 90/144/240 Hz displays without accumulating
+          // an ever-growing delay or trying to replay missed GPU frames.
+          lastPaint =
+            force || !Number.isFinite(lastPaint)
+              ? time
+              : lastPaint +
+                Math.floor((time - lastPaint + 0.5) / interval) * interval;
           const dt = Math.min(0.1, Math.max(0, (time - previousTime) / 1000));
           previousTime = time;
           inputStrength = motion.matches
             ? 0
             : inputStrength * Math.exp(-dt * 9.0);
-          element.dataset.pointerEnergy = inputStrength.toFixed(3);
+          const energy = inputStrength.toFixed(3);
+          if (element.dataset.pointerEnergy !== energy)
+            element.dataset.pointerEnergy = energy;
           const motionEnabled = motion.matches ? 0 : 1;
           const flowActive = motionEnabled && time < flowUntil;
           if (flowActive) {
@@ -694,6 +700,7 @@ export default function GlassScene() {
             1 - Math.exp(-8 * dt),
           );
           if (!motion.matches) {
+            const follow = 1 - Math.exp(-5 * dt);
             material.uniforms.uLight.value.lerp(
               lightTarget.set(
                 center.x + pointer.x * worldHeight * 0.75,
@@ -707,17 +714,19 @@ export default function GlassScene() {
                 Math.min(1, scrollTop / viewportHeight) * 1.64 +
                 pointer.x * 0.16 -
                 group.rotation.y) *
-              0.08;
-            group.rotation.x += (pointer.y * 0.12 - group.rotation.x) * 0.035;
+              follow;
+            group.rotation.x +=
+              (pointer.y * 0.12 - group.rotation.x) *
+              (1 - Math.exp(-2.14 * dt));
             group.position.y =
               -0.4 +
               heroOffsetY +
               (scrollTop / viewportHeight) * worldHeight * 0.72 +
               Math.sin(time * 0.00065) * 0.07;
             footerWords.forEach(({ mesh }) => {
-              mesh.rotation.x += (pointer.y * 0.12 - mesh.rotation.x) * 0.08;
+              mesh.rotation.x += (pointer.y * 0.12 - mesh.rotation.x) * follow;
               mesh.rotation.y +=
-                (0.07 + pointer.x * 0.2 - mesh.rotation.y) * 0.08;
+                (0.07 + pointer.x * 0.2 - mesh.rotation.y) * follow;
             });
           } else {
             pointer.x = 0;
@@ -767,7 +776,9 @@ export default function GlassScene() {
           group.visible = exposed && !contactVisible;
           accentGroup.visible = exposed && !contactVisible;
           footerGroup.visible = contactVisible;
-          element.dataset.scene = contactVisible ? "thank-you" : "hello";
+          const sceneName = contactVisible ? "thank-you" : "hello";
+          if (element.dataset.scene !== sceneName)
+            element.dataset.scene = sceneName;
           renderer.setRenderTarget(sceneTarget);
           renderer.render(scene, camera);
           renderer.setRenderTarget(flareTarget);
@@ -805,23 +816,21 @@ export default function GlassScene() {
           )
             frame = requestAnimationFrame(render);
         };
-        const scroll = () => {
-          const state = readScroll();
+        const scroll = (state = readScroll()) => {
           if (state.top !== scrollTop) lastInteraction = performance.now();
           scrollTop = state.top;
           viewportHeight = state.height;
-          const heroBottom =
-            document.querySelector("[data-hero]")?.getBoundingClientRect()
-              .bottom ?? 0;
-          if (document.querySelector("[data-hero]")) loadHero?.();
-          const footerTop =
-            document.getElementById("contact")?.getBoundingClientRect().top ??
-            viewportHeight;
+          const { heroBottom, footerTop, hasHero } = state;
+          if (hasHero) loadHero?.();
           const wasContactVisible = contactVisible;
           const wasFooterFraming = footerFraming;
           if (footerTop < viewportHeight * 3) loadFooter?.();
           contactVisible = footerTop < viewportHeight;
-          footerFraming = footerWords.length === 2 && heroBottom <= 0;
+          // Switch buffer sizes in the hidden gap, before reverse scrolling
+          // brings HELLO back into view, rather than on its first visible frame.
+          footerFraming =
+            footerWords.length === 2 &&
+            (!hasHero || heroBottom <= -viewportHeight * 0.5);
           exposed = heroBottom > 0 || contactVisible;
           if (
             wasContactVisible !== contactVisible ||
@@ -911,6 +920,8 @@ export default function GlassScene() {
           ];
           renderer.setRenderTarget(flareTarget);
           pending.push(renderer.compileAsync(flareScene, displayCamera));
+          renderer.setRenderTarget(flowRead);
+          pending.push(renderer.compileAsync(flowScene, displayCamera));
           renderer.setRenderTarget(null);
           pending.push(renderer.compileAsync(displayScene, displayCamera));
           renderer.setRenderTarget(previous);
@@ -920,15 +931,19 @@ export default function GlassScene() {
           if (!shadersReady) await prepareShaders();
           if (disposed) return;
           shadersReady = true;
+          const state = readScroll();
           footerFraming =
             footerWords.length === 2 &&
-            (document.querySelector("[data-hero]")?.getBoundingClientRect()
-              .bottom ?? 0) <= 0;
+            (!state.hasHero || state.heroBottom <= -state.height * 0.5);
           cancelAnimationFrame(frame);
           frame = 0;
           resize();
           paint();
           setReady(true);
+          void warmPointer().catch(() => {
+            // Optional warmup may be interrupted by a route/context change.
+            // The normal pointer pass can still initialize itself on demand.
+          });
         };
         const idle = () =>
           new Promise<void>((resolve) => {
@@ -936,6 +951,27 @@ export default function GlassScene() {
               window.requestIdleCallback(() => resolve(), { timeout: 200 });
             else requestAnimationFrame(() => resolve());
           });
+        let pointerPrepared = false;
+        const warmPointer = async () => {
+          if (
+            pointerPrepared ||
+            motion.matches ||
+            !matchMedia("(hover: hover) and (pointer: fine)").matches
+          )
+            return;
+          pointerPrepared = true;
+          await idle();
+          if (disposed || contextLost) return;
+          if (!flowProjection) {
+            flowProjection = createFluidProjection(THREE, renderer);
+            flowProjection.resize(flowRead.width, flowRead.height);
+          }
+          const previous = renderer.getRenderTarget();
+          renderer.setRenderTarget(flowRead);
+          const preparation = flowProjection.prepare();
+          renderer.setRenderTarget(previous);
+          await preparation;
+        };
         const warmFooter = async () => {
           // Allocate the footer's buffers during idle gaps before its first
           // visible frame, rather than inside the branch/scroll handoff.
