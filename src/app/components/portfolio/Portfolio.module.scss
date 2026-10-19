@@ -243,6 +243,7 @@ $label: "NewYork", "Pretendard-Regular", sans-serif;
     &:last-child { translate: 0 -32px; }
   }
 }
+.exploreLoop { @include explore-arrow-loop; }
 @media (hover: hover) and (pointer: fine) {
   .exploreLoop:hover { @include explore-arrow-loop; }
 }
@@ -259,6 +260,7 @@ $label: "NewYork", "Pretendard-Regular", sans-serif;
   .explore::before, .exploreLabel > span, .exploreIcon, .exploreIcon .arrowIcon {
     transition: none;
   }
+  .exploreLoop .exploreIcon .arrowIcon,
   .exploreLoop:is(:hover, :focus-visible) .exploreIcon .arrowIcon {
     animation: none;
   }

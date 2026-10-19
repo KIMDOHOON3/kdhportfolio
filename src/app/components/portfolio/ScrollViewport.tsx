@@ -78,6 +78,21 @@ export default function ScrollViewport({ children }: { children: ReactNode }) {
   const viewport = useRef<HTMLDivElement>(null);
   const content = useRef<HTMLDivElement>(null);
   const pathname = usePathname();
+  const initialized = useRef(false);
+  useLayoutEffect(() => {
+    if (initialized.current) return;
+    initialized.current = true;
+    const navigation = performance.getEntriesByType(
+      "navigation",
+    )[0] as PerformanceNavigationTiming | undefined;
+    // Reset a home-page refresh before the intro and anchor alignment run.
+    // Direct section links and subsequent client-side navigation still work.
+    if (pathname !== "/" || navigation?.type !== "reload") return;
+    history.scrollRestoration = "manual";
+    history.replaceState(history.state, "", location.pathname + location.search);
+    if (viewport.current) viewport.current.scrollTop = 0;
+    window.scrollTo(0, 0);
+  }, [pathname]);
   const intro = useHeroEntrance(viewport, pathname);
   useEffect(() => {
     const wrapper = viewport.current;

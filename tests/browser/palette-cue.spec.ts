@@ -48,13 +48,9 @@ test("the page and rendered hero share a cool white palette", async ({
   expect(color.blue - color.red).toBeLessThan(15);
 });
 
-test("the hero arrow keeps rolling while hovered or keyboard focused, and stops on exit or reduced motion", async ({
+test("the hero arrow rolls automatically on desktop and mobile and respects reduced motion", async ({
   page,
 }, info) => {
-  test.skip(
-    !!info.project.use.isMobile,
-    "Repeated hover cues belong to a fine pointer.",
-  );
   await page.goto("/");
   await expect(page.locator("[data-scroll-viewport]")).toHaveAttribute(
     "data-intro",
@@ -65,8 +61,6 @@ test("the hero arrow keeps rolling while hovered or keyboard focused, and stops 
     exact: true,
   });
   const arrow = button.locator("svg").first();
-  await expect(arrow).toHaveCSS("animation-name", "none");
-  await button.hover();
   await expect(arrow).toHaveCSS("animation-iteration-count", "infinite");
   await expect
     .poll(() =>
@@ -83,13 +77,17 @@ test("the hero arrow keeps rolling while hovered or keyboard focused, and stops 
   await expect
     .poll(() => arrow.evaluate((e) => getComputedStyle(e).transform))
     .not.toBe(position);
-  await page.mouse.move(2, 2);
-  await expect(arrow).toHaveCSS("animation-name", "none");
-  await button.focus();
-  await page.keyboard.press("Shift+Tab");
-  await page.keyboard.press("Tab");
-  await expect(button).toBeFocused();
-  await expect(arrow).toHaveCSS("animation-iteration-count", "infinite");
+  if (!info.project.use.isMobile) {
+    await button.hover();
+    await expect(arrow).toHaveCSS("animation-iteration-count", "infinite");
+    await page.mouse.move(2, 2);
+    await expect(arrow).toHaveCSS("animation-iteration-count", "infinite");
+    await button.focus();
+    await page.keyboard.press("Shift+Tab");
+    await page.keyboard.press("Tab");
+    await expect(button).toBeFocused();
+    await expect(arrow).toHaveCSS("animation-iteration-count", "infinite");
+  }
   await page.emulateMedia({ reducedMotion: "reduce" });
   await expect(arrow).toHaveCSS("animation-name", "none");
   await button.press("Enter");
