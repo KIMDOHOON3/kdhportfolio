@@ -62,6 +62,17 @@ test("the hero arrow rolls automatically on desktop and mobile and respects redu
   });
   const arrow = button.locator("svg").first();
   await expect(arrow).toHaveCSS("animation-iteration-count", "infinite");
+  const expectDownward = async () => {
+    await expect
+      .poll(() =>
+        arrow.evaluate((e) => {
+          const matrix = new DOMMatrixReadOnly(getComputedStyle(e).transform);
+          return [matrix.a, matrix.b, matrix.c, matrix.d].map(Math.round);
+        }),
+      )
+      .toEqual([0, 1, -1, 0]);
+  };
+  await expectDownward();
   await expect
     .poll(() =>
       arrow.evaluate(
@@ -80,6 +91,7 @@ test("the hero arrow rolls automatically on desktop and mobile and respects redu
   if (!info.project.use.isMobile) {
     await button.hover();
     await expect(arrow).toHaveCSS("animation-iteration-count", "infinite");
+    await expectDownward();
     await page.mouse.move(2, 2);
     await expect(arrow).toHaveCSS("animation-iteration-count", "infinite");
     await button.focus();

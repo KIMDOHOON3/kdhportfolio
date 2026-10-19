@@ -249,8 +249,8 @@ $label: "NewYork", "Pretendard-Regular", sans-serif;
 }
 .exploreLoop:focus-visible { @include explore-arrow-loop; }
 @keyframes exploreArrowDown {
-  from { transform: translateY(0); }
-  to { transform: translateY(32px); }
+  from { transform: translateY(0) rotate(90deg); }
+  to { transform: translateY(32px) rotate(90deg); }
 }
 @media (hover: none) {
   .heroBottom .explore:active,
