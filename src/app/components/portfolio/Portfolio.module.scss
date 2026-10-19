@@ -427,7 +427,8 @@ $label: "NewYork", "Pretendard-Regular", sans-serif;
   height: 100%;
   transform-origin: 50% 0;
   backface-visibility: hidden;
-  > .cover {
+  > .cover,
+  > [data-cover-entrance] {
     flex-shrink: 0;
     border-bottom: 1px solid $line;
   }
@@ -1486,7 +1487,8 @@ $label: "NewYork", "Pretendard-Regular", sans-serif;
 }
 .projectLink {
   transform: none;
-  > .cover {
+  > .cover,
+  > [data-cover-entrance] {
     border: 0;
     margin-top: 20px;
   }

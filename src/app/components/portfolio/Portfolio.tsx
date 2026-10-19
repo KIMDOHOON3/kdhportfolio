@@ -17,7 +17,7 @@ import { MailIcon, GithubIcon, DownloadIcon } from "../Icons";
 import styles from "./Portfolio.module.scss";
 import { buttonMotion } from "./buttonMotion";
 import { GLASS_ASSETS } from "../../data/glassAssets";
-import ContentReveal from "./ContentReveal";
+import ProjectCoverEntrance from "./ProjectCoverEntrance";
 
 const projectCount = (count: number) => String(count).padStart(2, "0");
 
@@ -187,14 +187,11 @@ export default function Portfolio() {
       </section>
       <section id="work" className={styles.work} aria-labelledby="work-title">
         <div className={styles.workHeading}>
-          <ContentReveal as="h2" id="work-title" data-reveal="work-heading">
-            프로젝트
-          </ContentReveal>
-          <ContentReveal
+          <h2 id="work-title">프로젝트</h2>
+          <div
             className={styles.filters}
             role="group"
             aria-label="프로젝트 필터"
-            data-reveal="work-filters"
           >
             {["전체", "실무 프로젝트", "개인 프로젝트"].map((value) => {
               const label =
@@ -230,23 +227,11 @@ export default function Portfolio() {
                 </button>
               );
             })}
-          </ContentReveal>
+          </div>
         </div>
         <div className={styles.projectGrid}>
           {visibleProjects.map((project, index) => (
-            <ContentReveal
-              as="article"
-              data-paper
-              key={project.id}
-              className={styles.project}
-              data-reveal={`project-${project.id}`}
-              data-reveal-follow={index % 2 === 1 ? "" : undefined}
-              delay={index % 2 === 1 ? 0.1 : 0}
-              skip={revealed.current.has(project.id)}
-              onStart={() => {
-                revealed.current.add(project.id);
-              }}
-            >
+            <article data-paper key={project.id} className={styles.project}>
               <Link
                 href={`/work/${project.id}`}
                 scroll={false}
@@ -281,7 +266,16 @@ export default function Portfolio() {
                 ) : (
                   <p className={styles.projectSubtitle}>{project.subtitle}</p>
                 )}
-                <ProjectCover project={project} />
+                <ProjectCoverEntrance
+                  projectId={project.id}
+                  seen={revealed.current.has(project.id)}
+                  follow={index % 2 === 1}
+                  onStart={() => {
+                    revealed.current.add(project.id);
+                  }}
+                >
+                  <ProjectCover project={project} showReflection />
+                </ProjectCoverEntrance>
                 <div className={styles.stack}>
                   {project.stack.slice(0, 3).map((tech) => (
                     <span key={tech}>
@@ -291,7 +285,7 @@ export default function Portfolio() {
                   ))}
                 </div>
               </Link>
-            </ContentReveal>
+            </article>
           ))}
         </div>
         {filter !== "전체" && (

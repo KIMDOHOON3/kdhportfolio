@@ -1,0 +1,96 @@
+.frame {
+  --entry-rise: 16px;
+  --entry-tilt-x: 4deg;
+  --entry-tilt-y: 6deg;
+  --entry-delay: 0ms;
+  position: relative;
+  min-width: 0;
+  width: 100%;
+  perspective: 1200px;
+  &[data-cover-follow] {
+    --entry-delay: 100ms;
+  }
+  > [data-paper-cover] {
+    transform-origin: 50% 60%;
+  }
+  &[data-cover-entrance="pending"] > [data-paper-cover] {
+    transform: translate3d(0, var(--entry-rise), 0) rotateX(var(--entry-tilt-x))
+      rotateY(calc(var(--entry-side) * var(--entry-tilt-y)));
+  }
+  &[data-cover-entrance="playing"] > [data-paper-cover] {
+    animation: panelSettle 920ms cubic-bezier(0.22, 1, 0.36, 1)
+      var(--entry-delay) both;
+    will-change: transform;
+  }
+  &[data-cover-entrance="playing"] .reflection {
+    animation: lightPass 720ms ease-in-out calc(var(--entry-delay) + 220ms) both;
+    will-change: transform, opacity;
+  }
+}
+.reflection {
+  position: absolute;
+  z-index: 1;
+  top: -35%;
+  left: -30%;
+  width: 26%;
+  height: 170%;
+  pointer-events: none;
+  opacity: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    #d6ecff0a 28%,
+    #ffffff30 46%,
+    #ffffff88 50%,
+    #ffffff26 54%,
+    transparent 100%
+  );
+  transform: translate3d(0, 0, 0) skewX(-18deg);
+}
+@keyframes panelSettle {
+  from {
+    transform: translate3d(0, var(--entry-rise), 0) rotateX(var(--entry-tilt-x))
+      rotateY(calc(var(--entry-side) * var(--entry-tilt-y)));
+  }
+  to {
+    transform: none;
+  }
+}
+@keyframes lightPass {
+  0% {
+    transform: translate3d(0, 0, 0) skewX(-18deg);
+    opacity: 0;
+  }
+  18% {
+    opacity: 0.45;
+  }
+  70% {
+    opacity: 0.45;
+  }
+  100% {
+    transform: translate3d(600%, 0, 0) skewX(-18deg);
+    opacity: 0;
+  }
+}
+@media (max-width: 760px) {
+  .frame {
+    --entry-rise: 12px;
+    --entry-tilt-x: 3deg;
+    --entry-tilt-y: 4deg;
+    &[data-cover-follow] {
+      --entry-delay: 0ms;
+    }
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .frame[data-cover-entrance] > [data-paper-cover] {
+    transform: none;
+    animation: none;
+    will-change: auto;
+  }
+  .frame[data-cover-entrance] .reflection {
+    display: none;
+    animation: none;
+    will-change: auto;
+  }
+}
