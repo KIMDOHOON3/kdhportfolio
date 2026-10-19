@@ -6,6 +6,7 @@ import { MeshoptDecoder } from "three/addons/libs/meshopt_decoder.module.js";
 import * as THREE from "three";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { format } from "prettier";
+import { withFooterStroke } from "./footer-stroke-progress.mjs";
 
 const root = new URL("../", import.meta.url);
 const output = new URL("public/models/optimized/", root);
@@ -15,7 +16,11 @@ const manifest = {};
 let helloBounds;
 
 for (const name of ["hello", "thank-you"]) {
-  const original = await readFile(new URL(`public/models/${name}.glb`, root));
+  const sourceModel = await readFile(
+    new URL(`public/models/${name}.glb`, root),
+  );
+  const original =
+    name === "thank-you" ? withFooterStroke(sourceModel) : sourceModel;
   const jsonLength = original.readUInt32LE(12);
   const json = JSON.parse(original.subarray(20, 20 + jsonLength).toString());
   const source = original.subarray(28 + jsonLength);

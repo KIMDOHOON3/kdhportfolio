@@ -23,6 +23,7 @@
 # local preview artifacts
 /output/
 /.playwright-cli/
+/.playwright-mcp/
 
 # local documents
 /docs/

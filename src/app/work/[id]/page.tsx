@@ -6,6 +6,10 @@ import ProjectCover from "../../components/portfolio/ProjectCover";
 import TechnologyIcon from "../../components/portfolio/TechnologyIcon";
 import ArrowIcon from "../../components/portfolio/ArrowIcon";
 import DetailAction from "../../components/portfolio/DetailAction";
+import {
+  ButtonLabel,
+  ButtonLight,
+} from "../../components/portfolio/ButtonEffect";
 import styles from "../../components/portfolio/ProjectDetail.module.scss";
 
 type Props = { params: Promise<{ id: string }> };
@@ -53,8 +57,14 @@ export default async function ProjectDetail({ params }: Props) {
   return (
     <main id="top" className={styles.detail} data-project-detail={project.id}>
       <div className={styles.topline}>
-        <Link href="/#work" scroll={false} className={styles.backLink}>
-          ← 프로젝트 목록으로
+        <Link
+          href="/#work"
+          scroll={false}
+          className={styles.backLink}
+          data-button-effect
+        >
+          <ButtonLight />
+          <ButtonLabel>← 프로젝트 목록으로</ButtonLabel>
         </Link>
         <span className={styles.projectIndex}>
           PROJECT {String(index + 1).padStart(2, "0")}
@@ -133,9 +143,10 @@ export default async function ProjectDetail({ params }: Props) {
           <span>IN THIS PROJECT</span>
           <div>
             {sections.map((phase, sectionIndex) => (
-              <a href={`#${phase.id}`} key={phase.id}>
+              <a href={`#${phase.id}`} key={phase.id} data-button-effect>
+                <ButtonLight />
                 <span>{String(sectionIndex + 1).padStart(2, "0")}</span>{" "}
-                {phase.title} <ArrowIcon down />
+                <ButtonLabel>{phase.title}</ButtonLabel> <ArrowIcon down />
               </a>
             ))}
           </div>
@@ -183,13 +194,21 @@ export default async function ProjectDetail({ params }: Props) {
         href={`/work/${next.id}`}
         scroll={false}
         aria-label={`다음 프로젝트 ${next.title}`}
+        data-button-effect
       >
         <span>
-          <small>다음 프로젝트</small>
-          <strong>{next.title}</strong>
-          <span className={styles.nextSubtitle}>{next.subtitle}</span>
+          <small>
+            <ButtonLabel>다음 프로젝트</ButtonLabel>
+          </small>
+          <strong>
+            <ButtonLabel>{next.title}</ButtonLabel>
+          </strong>
+          <span className={styles.nextSubtitle}>
+            <ButtonLabel wrap>{next.subtitle}</ButtonLabel>
+          </span>
         </span>
         <span aria-hidden="true">
+          <ButtonLight />
           <ArrowIcon />
         </span>
       </Link>

@@ -1,69 +1,55 @@
 import { expect, test } from "@playwright/test";
 
-test("project controls share the hero fill motion without changing filter selection", async ({
+test("project controls roll down, retain selection and stop offscreen", async ({
   page,
 }, info) => {
   test.skip(
     info.project.use.isMobile === true,
-    "Hover is limited to a fine pointer.",
+    "Hover requires a fine pointer.",
   );
   await page.goto("/#work");
   await page.evaluate(() => document.fonts.ready);
   const filters = page.getByRole("group", { name: "프로젝트 필터" });
   const work = filters.getByRole("button", { name: "실무 02" });
-  await work.hover({ position: { x: 14, y: 12 } });
-  await expect(work).toHaveCSS("color", "rgb(244, 247, 250)");
+  await work.hover();
   await expect(work).toHaveAttribute("aria-pressed", "false");
   await expect(
     filters.getByRole("button", { name: "전체 04" }),
   ).toHaveAttribute("aria-pressed", "true");
-  const fillX = await work.evaluate((e) =>
-    parseFloat(e.style.getPropertyValue("--button-x")),
-  );
-  expect(Math.abs(fillX - 14)).toBeLessThanOrEqual(2);
+  const letters = work.locator("[data-button-label] [aria-hidden] > span");
   await expect
-    .poll(() => work.evaluate((e) => getComputedStyle(e, "::before").transform))
-    .toMatch(/^matrix\(1, 0, 0, 1,/);
-  const hovered = info.outputPath("project-filter-hover.png");
-  await page.screenshot({ path: hovered, scale: "css" });
-  await info.attach("project-filter-hover", {
-    path: hovered,
-    contentType: "image/png",
-  });
-  await page.mouse.move(2, 400);
-  await work.focus();
-  await page.keyboard.press("Tab");
-  await page.keyboard.press("Shift+Tab");
-  await expect(work).toBeFocused();
-  await expect(work).toHaveCSS("color", "rgb(244, 247, 250)");
-  await work.press("Enter");
+    .poll(() =>
+      letters
+        .first()
+        .evaluate((e) => new DOMMatrix(getComputedStyle(e).transform).m42),
+    )
+    .toBeGreaterThan(10);
+  await expect(work.locator("[data-button-light]")).toHaveAttribute(
+    "data-visible",
+    "true",
+  );
+  const bounds = await work.boundingBox();
+  await work.click();
   await expect(work).toHaveAttribute("aria-pressed", "true");
-  const lexus = page.getByRole("link", {
+  expect((await work.boundingBox())!.width).toBeCloseTo(bounds!.width, 0);
+  const card = page.getByRole("link", {
     name: "LEXUS 프로젝트 보기",
     exact: true,
   });
-  await lexus.locator("[data-project-action]").hover();
-  const action = lexus.locator("[data-project-action]");
-  await expect(action).toHaveCSS("color", "rgb(244, 247, 250)");
-  await expect
-    .poll(() =>
-      action.evaluate((e) => getComputedStyle(e, "::before").transform),
-    )
-    .toMatch(/^matrix\(1, 0, 0, 1,/);
+  const action = card.locator("[data-project-action]");
+  await action.hover();
   await expect(action.locator("svg")).toHaveCount(2);
-  const cover = info.outputPath("project-cover-action-hover.png");
-  await page.screenshot({ path: cover, scale: "css" });
-  await info.attach("project-cover-action-hover", {
-    path: cover,
-    contentType: "image/png",
+  await page.screenshot({
+    path: info.outputPath("button-hover.png"),
+    scale: "css",
   });
   await page.emulateMedia({ reducedMotion: "reduce" });
-  await expect(action).toHaveCSS("transition-duration", "0s");
   expect(
-    await action.evaluate(
-      (e) => getComputedStyle(e, "::before").transitionDuration,
-    ),
-  ).toBe("0s");
+    await action
+      .locator("[data-button-light]")
+      .evaluate((e) => getComputedStyle(e, "::before").animationName),
+  ).toBe("none");
+  await expect(letters.first()).toHaveCSS("transform", "none");
 });
 
 test("one Lexus project retains renewal and operations details", async ({

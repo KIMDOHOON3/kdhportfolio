@@ -8,6 +8,23 @@ export default function InterfaceSketch() {
   useEffect(() => {
     const svg = ref.current;
     if (!svg) return;
+    const frame = svg.closest<HTMLElement>("[data-element-draw]");
+    const draw = () => {
+      if (
+        frame?.dataset.elementState === "playing" ||
+        frame?.dataset.elementState === "done"
+      )
+        svg.dataset.drawn = "true";
+    };
+    // Drawing and copy share the area's entrance; visibility only controls
+    // the repeating cursor animation, never a separate entrance threshold.
+    const entrance = new MutationObserver(draw);
+    if (frame)
+      entrance.observe(frame, {
+        attributes: true,
+        attributeFilter: ["data-element-state"],
+      });
+    draw();
     let inView = false;
     const updatePlayback = () => {
       svg.dataset.active = String(inView && !document.hidden);
@@ -15,9 +32,6 @@ export default function InterfaceSketch() {
     const observer = new IntersectionObserver(
       ([entry]) => {
         inView = entry.isIntersecting;
-        if (entry.isIntersecting) {
-          svg.dataset.drawn = "true";
-        }
         updatePlayback();
       },
       { threshold: 0.3 },
@@ -26,6 +40,7 @@ export default function InterfaceSketch() {
     document.addEventListener("visibilitychange", updatePlayback);
     return () => {
       observer.disconnect();
+      entrance.disconnect();
       document.removeEventListener("visibilitychange", updatePlayback);
     };
   }, []);

@@ -1,3 +1,6 @@
+@use "./entranceMotion" as motion;
+@include motion.keyframes;
+
 .scope [data-intro-label] {
   display: block;
 }
@@ -23,13 +26,13 @@
       both;
   }
   :global(#navTrigger) svg {
-    animation: inkWipe 650ms ease 550ms both;
+    animation: buttonPop 480ms motion.$ease 550ms both;
   }
   [data-intro-summary] {
-    animation: inkLift 550ms cubic-bezier(0.22, 0.61, 0.36, 1) 2450ms both;
+    animation: contentLift motion.$duration motion.$ease 2450ms both;
   }
   [data-intro-cta] {
-    animation: inkLift 550ms cubic-bezier(0.22, 0.61, 0.36, 1) 2570ms both;
+    animation: buttonPop 480ms motion.$ease 2570ms both;
   }
   // Without JavaScript the timed CSS above still reveals readable content.
   // With WebGL, release these animations only when every orb has appeared.
@@ -38,7 +41,12 @@
     [data-intro-cta] {
       animation: none;
       opacity: 0;
-      transform: translateY(6px);
+    }
+    [data-intro-cta] {
+      scale: 0;
+    }
+    [data-intro-summary] {
+      translate: 0 6px;
     }
   }
   &[data-intro-copy="ready"] {

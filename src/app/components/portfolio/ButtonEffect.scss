@@ -1,0 +1,7 @@
+[data-button-effect] {
+  isolation: isolate;
+  -webkit-tap-highlight-color: transparent;
+  &:not([data-button-positioned]) {
+    position: relative;
+  }
+}

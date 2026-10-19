@@ -1,3 +1,5 @@
+@use "./entranceMotion" as motion;
+@include motion.keyframes;
 .copy {
   position: relative;
   display: block;
@@ -5,6 +7,7 @@
 }
 .source {
   display: block;
+  white-space: pre-line;
 }
 .copy[data-copy-inline] {
   display: inline-block;
@@ -12,51 +15,19 @@
   max-width: 100%;
   vertical-align: bottom;
 }
-.overlay {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-}
-.line {
-  display: block;
-  overflow: clip;
-}
-.mover {
-  display: block;
-  white-space: pre;
+.copy[data-copy-entrance="pending"] {
+  opacity: 0;
+  clip-path: inset(0 0 100% 0);
 }
 .copy[data-copy-entrance="playing"] {
-  .source {
-    opacity: 0;
-  }
-  .mover {
-    animation: enterLine 620ms cubic-bezier(0.22, 1, 0.36, 1) var(--line-delay)
-      both;
-    will-change: transform;
-  }
-}
-.copy[data-copy-entrance="pending"] .source {
-  opacity: 0;
-}
-@keyframes enterLine {
-  from {
-    transform: translateY(105%);
-  }
-  to {
-    transform: none;
-  }
+  animation: contentLift motion.$duration motion.$ease
+    var(--entrance-delay, 0ms) both;
 }
 @media (prefers-reduced-motion: reduce) {
   .copy[data-copy-entrance] {
-    .source {
-      opacity: 1;
-    }
-    .overlay {
-      display: none;
-    }
-    .mover {
-      animation: none;
-      will-change: auto;
-    }
+    opacity: 1;
+    clip-path: none;
+    translate: none;
+    animation: none;
   }
 }

@@ -1,13 +1,13 @@
 import { expect, test } from "@playwright/test";
 
-test("all main content after the hero is covered without animating the portal preview twice", async ({
+test("selected content reveals while skills and career remain static", async ({
   page,
 }) => {
   await page.goto("/");
   const uncovered = await page.evaluate(() => {
     const copy = [
       ...document.querySelectorAll(
-        "#work h2, #work h3, #work p, #about p, [data-journey-page] h2, [data-journey-page] h3, [data-journey-page] p, #contact a",
+        "#work h2, #work h3, #work p, #about p, [data-journey-ending] p, #contact a",
       ),
     ];
     return copy
@@ -28,7 +28,12 @@ test("all main content after the hero is covered without animating the portal pr
     page.locator(
       "[data-journey-page] [data-journey-chapter] h3 [data-copy-reveal]",
     ),
-  ).toHaveCount(5);
+  ).toHaveCount(0);
+  await expect(
+    page.locator(
+      "[data-journey-skills] [data-copy-reveal], [data-journey-skills] [data-element-reveal], [data-journey-page] aside [data-copy-reveal], [data-journey-page] aside [data-element-reveal], [data-journey-chapter] [data-element-reveal]",
+    ),
+  ).toHaveCount(0);
   await expect(
     page.locator(
       "[data-browser-entry] [data-copy-reveal], [data-browser-entry] [data-element-reveal]",
@@ -36,7 +41,7 @@ test("all main content after the hero is covered without animating the portal pr
   ).toHaveCount(0);
 });
 
-test("journey copy waits until the browser entry completes and all lower sections reveal once", async ({
+test("career is immediately readable after browser entry and lower sections still reveal", async ({
   page,
 }, info) => {
   await page.goto("/");
@@ -58,9 +63,9 @@ test("journey copy waits until the browser entry completes and all lower section
   );
   await expect(story).toHaveAttribute("data-phase", "entering");
   const skill = page
-    .locator("[data-journey-page] [data-journey-skills] h3 [data-copy-reveal]")
+    .locator("[data-journey-page] [data-journey-skills] h3")
     .first();
-  await expect(skill).toHaveAttribute("data-copy-entrance", "pending");
+  await expect(skill).toHaveCSS("animation-name", "none");
   await viewport.evaluate(
     (element, top) => {
       element.scrollTop = top;
@@ -68,39 +73,51 @@ test("journey copy waits until the browser entry completes and all lower section
     start + height * 0.74,
   );
   await expect(story).toHaveAttribute("data-entered", "true");
-  await expect(skill).toHaveAttribute("data-copy-entrance", "done");
-  const font = await skill.evaluate((element) => ({
-    parent: getComputedStyle(element.parentElement!).fontSize,
-    text: getComputedStyle(element).fontSize,
-  }));
-  expect(font.text).toBe(font.parent);
+  await expect(skill).toBeVisible();
   for (const chapter of await page
     .locator("[data-journey-page] [data-journey-chapter]")
     .all()) {
-    const title = chapter.locator("h3 [data-copy-reveal]");
-    await title.scrollIntoViewIfNeeded();
-    await expect(title).toHaveAttribute("data-copy-entrance", "done");
-    const text = chapter.locator("p").last().locator("[data-copy-reveal]");
-    await text.scrollIntoViewIfNeeded();
-    await expect(text).toHaveAttribute("data-copy-entrance", "done");
+    const title = chapter.locator("h3");
+    await title.evaluate((element) =>
+      element.scrollIntoView({ block: "center" }),
+    );
+    await expect(title).toHaveCSS("animation-name", "none");
+    const text = chapter.locator("p").last();
+    await text.evaluate((element) =>
+      element.scrollIntoView({ block: "center" }),
+    );
+    await expect(text).toHaveCSS("opacity", "1");
+    await expect(text).toHaveCSS("clip-path", "none");
   }
   const ending = page
     .locator("[data-journey-ending] p [data-copy-reveal]")
     .last();
-  await ending.scrollIntoViewIfNeeded();
+  await ending.evaluate((element) =>
+    element.scrollIntoView({ block: "center" }),
+  );
   await expect(ending).toHaveAttribute("data-copy-entrance", "done");
   await page.screenshot({
     path: info.outputPath("ending-complete.png"),
     scale: "css",
   });
   const footerLink = page.locator('#contact a[href^="mailto:"]');
-  await footerLink.scrollIntoViewIfNeeded();
+  await footerLink.evaluate((element) =>
+    element.scrollIntoView({ block: "center" }),
+  );
   await expect(footerLink).toHaveAttribute("data-element-state", "done");
-  await expect(footerLink.locator("[data-copy-reveal]")).toHaveAttribute(
+  await expect(footerLink).toHaveAttribute("data-element-reveal", "button");
+  await expect(footerLink).toHaveAttribute("href", "mailto:kingyska@nate.com");
+  await viewport.evaluate((element) => {
+    element.scrollTop = element.scrollHeight;
+  });
+  await expect(page.locator('#contact a[href="#top"]')).toHaveAttribute(
+    "data-element-state",
+    "done",
+  );
+  await expect(page.locator("#contact [data-copy-reveal]")).toHaveAttribute(
     "data-copy-entrance",
     "done",
   );
-  await expect(footerLink).toHaveAttribute("href", "mailto:kingyska@nate.com");
   await page.screenshot({
     path: info.outputPath("footer-complete.png"),
     scale: "css",
@@ -108,7 +125,7 @@ test("journey copy waits until the browser entry completes and all lower section
   await viewport.evaluate((element) => {
     element.scrollTop = 0;
   });
-  await expect(skill).toHaveAttribute("data-copy-entrance", "done");
+  await expect(skill).toHaveCSS("animation-name", "none");
 });
 
 test("reduced motion keeps every added element visible and controls remain usable", async ({
@@ -130,27 +147,21 @@ test("reduced motion keeps every added element visible and controls remain usabl
   ).toBeVisible();
 });
 
-test("mixed Korean and Latin text stays within its original line boxes during entry", async ({
+test("mixed Korean and Latin career copy stays readable without entrance wrappers", async ({
   page,
 }) => {
-  await page.addInitScript(() => {
-    document.addEventListener("animationstart", (event) => {
-      const target = event.target as HTMLElement;
-      const paragraph = target.closest("#journey-2021 p");
-      if (paragraph?.textContent?.includes("SBS"))
-        target.getAnimations().forEach((animation) => animation.pause());
-    });
-  });
   await page.goto("/#journey-2021");
   const organization = page
     .locator("#journey-2021 p")
-    .filter({ hasText: "SBS아카데미컴퓨터아트학원" })
-    .locator("[data-copy-reveal]");
-  await organization.scrollIntoViewIfNeeded();
-  await expect(organization).toHaveAttribute("data-copy-entrance", "playing");
+    .filter({ hasText: "SBS아카데미컴퓨터아트학원" });
+  await organization.evaluate((element) =>
+    element.scrollIntoView({ block: "center" }),
+  );
+  await expect(organization).toHaveCSS("animation-name", "none");
+  await expect(organization.locator("[data-copy-reveal]")).toHaveCount(0);
   const bounds = await organization.evaluate((element) => ({
-    source: element.firstElementChild!.getBoundingClientRect().height,
-    animated: element.querySelector('[aria-hidden="true"]')!.scrollHeight,
+    available: element.clientWidth,
+    content: element.scrollWidth,
   }));
-  expect(bounds.animated).toBeLessThanOrEqual(bounds.source + 1);
+  expect(bounds.content).toBeLessThanOrEqual(bounds.available + 1);
 });

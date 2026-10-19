@@ -1,0 +1,24 @@
+.section {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  padding: clamp(96px, 9vw, 128px) var(--page-inset) clamp(112px, 11vw, 152px);
+  scroll-margin-top: 30px;
+}
+.illustration {
+  width: calc(100% / 3 - 16px);
+}
+@media (max-width: 768px) {
+  .section {
+    padding: 80px 24px 96px;
+  }
+  .illustration {
+    width: min(100%, 360px);
+  }
+}
+@media (max-width: 600px) {
+  .illustration {
+    max-width: 340px;
+  }
+}

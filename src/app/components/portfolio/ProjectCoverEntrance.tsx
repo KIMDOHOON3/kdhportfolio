@@ -1,20 +1,18 @@
 "use client";
 
 import { useLayoutEffect, useRef, type ReactNode } from "react";
-import { getScrollViewport } from "./ScrollViewport";
+import { observeEntrance } from "./entranceObserver";
 import styles from "./ProjectCoverEntrance.module.scss";
 
 export default function ProjectCoverEntrance({
   children,
   projectId,
   seen,
-  follow = false,
   onStart,
 }: {
   children: ReactNode;
   projectId: number;
   seen: boolean;
-  follow?: boolean;
   onStart: () => void;
 }) {
   const root = useRef<HTMLDivElement>(null);
@@ -24,12 +22,12 @@ export default function ProjectCoverEntrance({
     const element = root.current;
     if (!element) return;
     const motion = matchMedia("(prefers-reduced-motion: reduce)");
-    let observer: IntersectionObserver | undefined;
+    let unsubscribe = () => {};
     let inView = false;
     const images = [...element.querySelectorAll("img")];
     const finish = () => {
       element.dataset.coverEntrance = "done";
-      observer?.disconnect();
+      unsubscribe();
       started.current();
     };
     const start = () => {
@@ -40,33 +38,28 @@ export default function ProjectCoverEntrance({
       )
         return;
       element.dataset.coverEntrance = "playing";
-      observer?.disconnect();
+      const planned = Number(element.dataset.entranceAt ?? performance.now());
+      element.style.setProperty(
+        "--entrance-delay",
+        `${Math.max(0, planned - performance.now())}ms`,
+      );
+      unsubscribe();
       started.current();
     };
     if (seen || motion.matches) finish();
     else {
       element.dataset.coverEntrance = "pending";
-      observer = new IntersectionObserver(
-        (entries) => {
-          inView = entries.some(
-            (entry) => entry.isIntersecting && entry.intersectionRatio >= 0.16,
-          );
-          start();
-        },
-        {
-          root: getScrollViewport(),
-          rootMargin: "0px 0px -24px 0px",
-          threshold: 0.16,
-        },
-      );
-      observer.observe(element);
+      unsubscribe = observeEntrance(element, () => {
+        inView = true;
+        start();
+      });
     }
     images.forEach((image) => {
       image.addEventListener("load", start);
       image.addEventListener("error", start);
     });
     const complete = (event: AnimationEvent) => {
-      if ((event.target as HTMLElement).hasAttribute("data-cover-surface"))
+      if ((event.target as HTMLElement).hasAttribute("data-paper-cover"))
         finish();
     };
     const reduce = () => {
@@ -77,7 +70,7 @@ export default function ProjectCoverEntrance({
     element.addEventListener("animationend", complete);
     motion.addEventListener("change", reduce);
     return () => {
-      observer?.disconnect();
+      unsubscribe();
       images.forEach((image) => {
         image.removeEventListener("load", start);
         image.removeEventListener("error", start);
@@ -93,7 +86,6 @@ export default function ProjectCoverEntrance({
       className={styles.frame}
       data-cover-entrance="static"
       data-cover-project={projectId}
-      data-cover-follow={follow ? "" : undefined}
     >
       {children}
     </div>

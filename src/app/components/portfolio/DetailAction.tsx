@@ -2,6 +2,7 @@
 
 import ArrowIcon from "./ArrowIcon";
 import { buttonMotion } from "./buttonMotion";
+import { ButtonLabel, ButtonLight } from "./ButtonEffect";
 import motion from "./Portfolio.module.scss";
 import styles from "./ProjectDetail.module.scss";
 
@@ -23,10 +24,8 @@ export default function DetailAction({
       className={`${motion.explore} ${styles.action} ${secondary ? styles.secondary : ""}`}
       {...buttonMotion}
     >
-      <span className={motion.exploreLabel} aria-hidden="true">
-        <span>{label}</span>
-        <span>{label}</span>
-      </span>
+      <ButtonLight />
+      <ButtonLabel>{label}</ButtonLabel>
       <span className={motion.exploreIcon} aria-hidden="true">
         <ArrowIcon />
         <ArrowIcon />

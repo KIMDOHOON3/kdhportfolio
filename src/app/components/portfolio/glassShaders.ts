@@ -4,11 +4,14 @@ export const glassVertexShader = `
   varying vec3 vWorldPosition;
   varying vec3 vNormal;
   varying float vLocalHeight;
+  varying float vStroke;
+  attribute float aStrokeProgress;
   void main() {
     vec4 world = modelMatrix * vec4(position, 1.0);
     vWorldPosition = world.xyz;
     vNormal = normalize(mat3(modelMatrix) * normal);
     vLocalHeight = position.y;
+    vStroke = aStrokeProgress;
     gl_Position = projectionMatrix * viewMatrix * world;
   }
 `;
@@ -19,12 +22,15 @@ export const glassBackVertexShader = `
   uniform float uDepthOrigin;
   varying vec3 vBackNormal;
   varying float vBackDepth;
+  attribute float aStrokeProgress;
+  varying float vBackStroke;
   void main() {
     vec4 positionView = modelViewMatrix * vec4(position, 1.0);
     vBackNormal = normalize(normalMatrix * normal);
     // Store depth near zero. Absolute camera depth in half floats creates
     // visible contour bands, especially with distant portrait framing.
     vBackDepth = -positionView.z - uDepthOrigin;
+    vBackStroke = aStrokeProgress;
     gl_Position = projectionMatrix * positionView;
   }
 `;
@@ -32,7 +38,10 @@ export const glassBackVertexShader = `
 export const glassBackFragmentShader = `
   varying vec3 vBackNormal;
   varying float vBackDepth;
+  varying float vBackStroke;
+  uniform float uStrokeReveal;
   void main() {
+    if (uStrokeReveal < 1.0 && vBackStroke > uStrokeReveal) discard;
     gl_FragColor = vec4(normalize(vBackNormal) * 0.5 + 0.5, vBackDepth);
   }
 `;
@@ -52,9 +61,11 @@ export const glassFragmentShader = `
   uniform sampler2D uFlow;
   uniform float uMotion;
   uniform float uReveal;
+  uniform float uStrokeReveal;
   varying vec3 vWorldPosition;
   varying vec3 vNormal;
   varying float vLocalHeight;
+  varying float vStroke;
 
   vec2 projectUv(vec3 point) {
     vec4 clip = uProjection * vec4(point, 1.0);
@@ -111,6 +122,7 @@ export const glassFragmentShader = `
   }
 
   void main() {
+    if (uStrokeReveal < 1.0 && vStroke > uStrokeReveal) discard;
     vec2 screenUv = gl_FragCoord.xy / uResolution;
     vec2 flow = texture2D(uFlow, screenUv).xy * uMotion;
     vec3 normal = normalize(vNormal + vec3(flow * 0.06, 0.0));
@@ -170,9 +182,18 @@ export const glassFragmentShader = `
     // Avoid stacking opaque white shoulders over every curved face.
     color = color * (1.0 - fresnel) + reflectedLight * fresnel;
     color += vec3(1.0, 0.98, 0.93) * specular;
-    // A one-time entrance blends into the same linear backdrop. The uniform
-    // branch skips this sample entirely after the lettering has appeared.
-    if (uReveal < 1.0) color = mix(texture2D(uScene, screenUv).rgb, color, uReveal);
+    float surfaceReveal = uReveal;
+    if (uStrokeReveal < 1.0) {
+      // V follows the asset's original tube path, including the loops that
+      // travel back to the left. A short luminous front leaves solid glass.
+      float behind = max(0.0, uStrokeReveal - vStroke);
+      float tip = (1.0 - smoothstep(0.0, 0.025, behind))
+                * (1.0 - smoothstep(0.965, 1.0, uStrokeReveal));
+      color += vec3(0.65, 1.9, 3.6) * tip * 1.15;
+      surfaceReveal *= smoothstep(0.0, 0.006, behind);
+    }
+    // Both uniform branches are skipped once the one-time drawing completes.
+    if (surfaceReveal < 1.0) color = mix(texture2D(uScene, screenUv).rgb, color, surfaceReveal);
     gl_FragColor = vec4(color, 1.0);
     #include <colorspace_fragment>
   }

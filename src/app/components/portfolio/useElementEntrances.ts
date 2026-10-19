@@ -42,12 +42,13 @@ export default function useElementEntrances(
         });
       }
       element.addEventListener("animationend", complete);
-      element.addEventListener("focusin", finish);
+      const control = element.closest("a, button") ?? element;
+      control.addEventListener("focusin", finish);
       motion.addEventListener("change", reduce);
       return () => {
         unsubscribe();
         element.removeEventListener("animationend", complete);
-        element.removeEventListener("focusin", finish);
+        control.removeEventListener("focusin", finish);
         motion.removeEventListener("change", reduce);
       };
     });

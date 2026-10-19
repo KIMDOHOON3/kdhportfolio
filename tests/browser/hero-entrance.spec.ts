@@ -53,7 +53,31 @@ test("navigation appears first, and copy waits for the complete glass entrance e
   const scene = page.locator("[data-glass-scene]");
   await expect(scene).toHaveAttribute("data-hero-entrance", "revealing");
   await expect(page.locator("[data-intro-summary]")).toHaveCSS("opacity", "0");
+  await page.waitForFunction(() => {
+    const scene = document.querySelector<HTMLElement>("[data-glass-scene]")!;
+    return Number(scene.dataset.helloStroke) > 0.75;
+  });
+  // The orbs wait for the completed writing, then pop left to right.
+  for (const name of ["claude", "figma", "codex"])
+    await expect(scene).toHaveAttribute(`data-orb-${name}`, "0.0000");
+  for (const [name, next] of [
+    ["claude", "figma"],
+    ["figma", "codex"],
+  ]) {
+    await page.waitForFunction((name) => {
+      const scene = document.querySelector<HTMLElement>("[data-glass-scene]")!;
+      return Number(scene.getAttribute(`data-orb-${name}`)) > 0.2;
+    }, name);
+    await expect(scene).toHaveAttribute("data-hello-stroke", "1.0000");
+    await expect(scene).toHaveAttribute(`data-orb-${next}`, "0.0000");
+    await expect(page.locator("[data-intro-summary]")).toHaveCSS(
+      "opacity",
+      "0",
+    );
+  }
   await expect(scene).toHaveAttribute("data-hero-entrance", "done");
+  for (const name of ["claude", "figma", "codex"])
+    await expect(scene).toHaveAttribute(`data-orb-${name}`, "1.0000");
   await expect(page.locator("[data-scroll-viewport]")).toHaveAttribute(
     "data-intro-copy",
     "ready",

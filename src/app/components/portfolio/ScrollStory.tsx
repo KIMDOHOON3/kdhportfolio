@@ -6,31 +6,12 @@ import {
   readScroll,
   subscribeScroll,
 } from "./ScrollViewport";
-import JourneySkills from "./JourneySkills";
+import JourneySkills, { syncJourneySkillsClock } from "./JourneySkills";
 import { JOURNEY } from "@/app/data/journey";
 import { DownloadIcon } from "../Icons";
 import styles from "./Journey.module.scss";
 import CopyReveal from "./CopyReveal";
-
-function JourneyCopy({
-  children,
-  preview = false,
-  inline = false,
-  delay = 0,
-}: {
-  children: string;
-  preview?: boolean;
-  inline?: boolean;
-  delay?: number;
-}) {
-  return preview ? (
-    <>{children}</>
-  ) : (
-    <CopyReveal inline={inline} delay={delay}>
-      {children}
-    </CopyReveal>
-  );
-}
+import { ButtonLabel, ButtonLight } from "./ButtonEffect";
 
 const clamp = (value: number) => Math.max(0, Math.min(1, value));
 const smooth = (value: number) => {
@@ -42,23 +23,11 @@ const mix = (a: number, b: number, t: number) => a + (b - a) * t;
 function JourneyHeading({ preview = false }: { preview?: boolean }) {
   return (
     <div className={styles.heading}>
-      <p className={styles.eyebrow}>
-        <JourneyCopy preview={preview}>EXPERIENCE & EDUCATION</JourneyCopy>
-      </p>
+      <p className={styles.eyebrow}>EXPERIENCE & EDUCATION</p>
       <h2 id={preview ? undefined : "journey-title"}>
-        <JourneyCopy preview={preview} inline>
-          퍼블리싱에서 시작해
-        </JourneyCopy>
-        <br />
-        <JourneyCopy preview={preview} inline delay={45}>
-          프론트엔드로.
-        </JourneyCopy>
+        {"퍼블리싱에서 시작해\n프론트엔드로."}
       </h2>
-      <p className={styles.intro}>
-        <JourneyCopy preview={preview} delay={70}>
-          화면과 기능을 함께 만들어온 과정입니다.
-        </JourneyCopy>
-      </p>
+      <p className={styles.intro}>화면과 기능을 함께 만들어온 과정입니다.</p>
     </div>
   );
 }
@@ -78,7 +47,6 @@ function JourneyAside({ preview = false }: { preview?: boolean }) {
             href={`#journey-${chapter.id}`}
             tabIndex={preview ? -1 : undefined}
             aria-current={index === 0 ? "step" : undefined}
-            data-element-reveal={preview ? undefined : "item"}
           >
             <span>{chapter.year}</span>
             <span>{chapter.label}</span>
@@ -90,9 +58,10 @@ function JourneyAside({ preview = false }: { preview?: boolean }) {
         download
         tabIndex={preview ? -1 : undefined}
         className={styles.resume}
-        data-element-reveal={preview ? undefined : "item"}
+        data-button-effect
       >
-        이력서 내려받기{" "}
+        <ButtonLight />
+        <ButtonLabel>이력서 내려받기</ButtonLabel>
         <DownloadIcon
           width={17}
           height={17}
@@ -107,47 +76,39 @@ function JourneyAside({ preview = false }: { preview?: boolean }) {
 function ChapterContent({
   chapter,
   index,
-  preview = false,
 }: {
   chapter: (typeof JOURNEY)[number];
   index: number;
-  preview?: boolean;
 }) {
   return (
     <>
       <div className={styles.chapterTop}>
-        <p className={styles.year}>
-          <JourneyCopy preview={preview} inline>
-            {chapter.year}
-          </JourneyCopy>
-        </p>
+        <p className={styles.year}>{chapter.year}</p>
         <span className={styles.chapterNumber}>
-          <JourneyCopy preview={preview} inline>
-            {String(index + 1).padStart(2, "0")}
-          </JourneyCopy>
+          {String(index + 1).padStart(2, "0")}
         </span>
       </div>
-      <h3>
-        <JourneyCopy preview={preview}>{chapter.title}</JourneyCopy>
-      </h3>
-      <p className={styles.organization}>
-        <JourneyCopy preview={preview} delay={45}>
-          {chapter.organization}
-        </JourneyCopy>
-      </p>
-      <p className={styles.description}>
-        <JourneyCopy preview={preview} delay={70}>
-          {chapter.description}
-        </JourneyCopy>
-      </p>
+      <h3>{chapter.title}</h3>
+      <p className={styles.organization}>{chapter.organization}</p>
+      <p className={styles.description}>{chapter.description}</p>
       <ul className={styles.details}>
         {chapter.details.map((detail) => (
-          <li key={detail} data-element-reveal={preview ? undefined : "item"}>
-            {detail}
-          </li>
+          <li key={detail}>{detail}</li>
         ))}
       </ul>
     </>
+  );
+}
+
+function JourneyMilestone() {
+  return (
+    <span
+      className={styles.milestone}
+      data-journey-milestone
+      aria-hidden="true"
+    >
+      <span />
+    </span>
   );
 }
 
@@ -175,6 +136,9 @@ export default function ScrollStory() {
     ];
     const dock = content.querySelector<HTMLElement>("[data-journey-skills]");
     const line = section.querySelector<HTMLElement>("[data-journey-line]");
+    const previewLine = browser.querySelector<HTMLElement>(
+      "[data-journey-preview-line]",
+    );
     const outro = ending.current;
     const drawing = connection.current;
     const paths = [
@@ -204,6 +168,9 @@ export default function ScrollStory() {
       headerBottom: number;
       source: { top: number; left: number; width: number; height: number };
       contentBottom: number;
+      contentTop: number;
+      asideTop: number;
+      asideSticky: number;
       dockTop: number;
       dockSticky: number;
       dockHeight: number;
@@ -222,6 +189,9 @@ export default function ScrollStory() {
       const lineRect = line?.getBoundingClientRect();
       const area = outro?.getBoundingClientRect();
       const dockStyle = dock ? getComputedStyle(dock) : null;
+      const columns = content.querySelector<HTMLElement>(`.${styles.layout}`)!;
+      const aside = columns.querySelector<HTMLElement>("aside")!;
+      const asideStyle = getComputedStyle(aside);
       layout = {
         top: rect.top + scroll.top,
         height: rect.height,
@@ -236,6 +206,15 @@ export default function ScrollStory() {
           height: sketch.height,
         },
         contentBottom: page.bottom + scroll.top,
+        contentTop: page.top + scroll.top,
+        asideTop:
+          columns.getBoundingClientRect().top +
+          scroll.top +
+          parseFloat(getComputedStyle(columns).paddingTop),
+        asideSticky:
+          asideStyle.position === "sticky"
+            ? parseFloat(asideStyle.top) || 0
+            : -Infinity,
         dockTop:
           page.top +
           scroll.top +
@@ -302,20 +281,39 @@ export default function ScrollStory() {
       const y = mix(sourceTop, -40, eased);
       const w = mix(rect.width, width + 2, eased);
       const h = mix(rect.height, height + 42, eased);
+      const previewScale = Math.max(1, w - 2) / width;
       style(browser, "--browser-x", `${x}px`);
       style(browser, "--browser-y", `${y}px`);
       style(browser, "--browser-width", `${w}px`);
       style(browser, "--browser-height", `${h}px`);
       style(browser, "--browser-radius", `${mix(12, 0, eased)}px`);
       style(browser, "--preview-width", `${width}px`);
-      style(browser, "--preview-scale", String(w / width));
+      style(browser, "--preview-scale", String(previewScale));
+      // The preview and the real page must share coordinates at the handoff.
+      // Otherwise short wheel ticks reveal a second, slightly displaced button.
+      const handoff = smooth((progress - 0.82) / 0.18);
+      style(
+        browser,
+        "--preview-shift-y",
+        `${((layout.contentTop - scrollTop - (y + 41)) / previewScale) * handoff}px`,
+      );
+      style(
+        browser,
+        "--preview-aside-shift",
+        `${Math.max(0, layout.asideSticky - (layout.asideTop - scrollTop)) * handoff}px`,
+      );
       style(browser, "--cursor-opacity", String(1 - smooth(progress / 0.28)));
       style(browser, "--browser-shadow", String((1 - eased) * 0.13));
       style(browser, "--page-reveal", String(smooth((progress - 0.24) / 0.4)));
       style(browser, "--diagram-opacity", String(1 - smooth(progress / 0.34)));
       style(browser, "--click-scale", String(1 + progress * 16));
       const hidden = motion.matches || progress <= 0 || progress >= 1;
-      if (browser.hidden !== hidden) browser.hidden = hidden;
+      if (browser.hidden !== hidden) {
+        browser.hidden = hidden;
+        // display:none recreates the preview animation. Align its first frame
+        // synchronously, before IntersectionObserver resumes normal visibility.
+        syncJourneySkillsClock(hidden ? content : browser);
+      }
       style(
         source,
         "opacity",
@@ -369,15 +367,13 @@ export default function ScrollStory() {
       if (line) {
         const lineTop = layout.lineTop - scrollTop;
         const lineBottom = lineTop + layout.lineHeight;
-        style(
-          line,
-          "--line-progress",
-          String(
-            motion.matches
-              ? 1
-              : clamp((threshold - lineTop) / Math.max(1, layout.lineHeight)),
-          ),
+        const lineProgress = String(
+          motion.matches
+            ? 1
+            : clamp((threshold - lineTop) / Math.max(1, layout.lineHeight)),
         );
+        style(line, "--line-progress", lineProgress);
+        if (previewLine) style(previewLine, "--line-progress", lineProgress);
         if (outro && drawing) {
           const travel = motion.matches
             ? 1
@@ -523,10 +519,17 @@ export default function ScrollStory() {
             <JourneySkills decorative />
             <div className={styles.previewLayout}>
               <JourneyAside preview />
-              <div className={styles.timeline}>
-                <div className={styles.chapter}>
-                  <ChapterContent chapter={JOURNEY[0]} index={0} preview />
-                </div>
+              <div className={styles.timeline} data-journey-preview-line>
+                {JOURNEY.map((chapter, index) => (
+                  <div
+                    className={styles.chapter}
+                    key={chapter.id}
+                    data-active={index === 0}
+                  >
+                    <JourneyMilestone />
+                    <ChapterContent chapter={chapter} index={index} />
+                  </div>
+                ))}
               </div>
             </div>
           </div>
@@ -556,9 +559,7 @@ export default function ScrollStory() {
                 data-revealed="true"
                 data-active={index === 0}
               >
-                <span className={styles.milestone} aria-hidden="true">
-                  <span />
-                </span>
+                <JourneyMilestone />
                 <ChapterContent chapter={chapter} index={index} />
               </li>
             ))}
@@ -588,19 +589,23 @@ export default function ScrollStory() {
               <path key={index} data-connection-path pathLength="1" />
             ))}
           </svg>
-          <div className={styles.endingCopy}>
+          <div className={styles.endingCopy} data-entrance-area="연락 안내">
             <span>
               <CopyReveal inline>Contact me</CopyReveal>
             </span>
             <p>
-              <CopyReveal inline>함께 일하고 싶은 프론트엔드 개발자</CopyReveal>
-              <br />
-              <CopyReveal inline delay={45}>
-                찾고 계신가요?
+              <CopyReveal>
+                {"함께 일하고 싶은 프론트엔드 개발자\n찾고 계신가요?"}
               </CopyReveal>
             </p>
-            <a href="mailto:kingyska@nate.com" data-element-reveal="item">
-              언제든 연락주세요! ↗
+            <a
+              href="mailto:kingyska@nate.com"
+              className={styles.resume}
+              data-element-reveal="button"
+              data-button-effect
+            >
+              <ButtonLight />
+              <ButtonLabel>언제든 연락주세요! ↗</ButtonLabel>
             </a>
           </div>
         </div>

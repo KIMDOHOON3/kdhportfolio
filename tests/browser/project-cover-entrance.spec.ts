@@ -26,9 +26,9 @@ test("copy and image entrances keep layout stable and do not replay after scroll
   const panel = first.locator("[data-paper-cover]");
   const surface = first.locator("[data-cover-surface]");
   await expect(first).toHaveAttribute("data-cover-entrance", "pending");
-  await expect(panel).toHaveCSS("clip-path", "inset(100% 0px 0px)");
+  await expect(panel).toHaveCSS("clip-path", /inset\(0px 0px 100%/);
   await expect(panel).toHaveCSS("filter", "none");
-  await expect(panel).toHaveCSS("opacity", "1");
+  await expect(panel).toHaveCSS("opacity", "0");
   const geometry = () =>
     page.locator("#work article").evaluateAll((elements) => {
       const top = document.querySelector("[data-scroll-viewport]")!.scrollTop;
@@ -60,16 +60,17 @@ test("copy and image entrances keep layout stable and do not replay after scroll
   await first.evaluate((element) => {
     for (const animation of element.getAnimations({ subtree: true })) {
       animation.pause();
-      animation.currentTime = 300;
+      animation.currentTime = Number(animation.effect!.getTiming().delay) + 250;
     }
   });
   await expect(panel).toHaveCSS("transform", "none");
-  await expect(surface).not.toHaveCSS("transform", "none");
+  await expect(surface).toHaveCSS("transform", "none");
+  await expect(panel).not.toHaveCSS("translate", "none");
   const clip = await panel.evaluate(
     (element) => getComputedStyle(element).clipPath,
   );
   expect(clip).not.toBe("none");
-  expect(clip).not.toBe("inset(100% 0px 0px)");
+  expect(clip).not.toContain("100%");
   await expect(page.locator("[data-cover-reflection]")).toHaveCount(0);
   await expect(
     page
@@ -205,33 +206,34 @@ test("no JavaScript keeps content readable and detail covers keep their normal a
   ).toHaveCount(0);
 });
 
-test("copy uses real wrapped lines and restores responsive text on resize", async ({
+test("copy moves as one reading unit and wraps naturally during resize", async ({
   page,
 }, info) => {
-  await page.goto("/#about");
-  const copy = page.locator("#about [data-copy-reveal]").first();
+  await page.goto("/#work");
+  const copy = page.locator("#work article h3 [data-copy-reveal]").first();
   await expect(copy).toHaveAttribute("data-copy-entrance", "playing");
-  await copy.evaluate((element) => {
-    element.getAnimations({ subtree: true }).forEach((animation) => {
+  await copy.evaluate((element) =>
+    element.getAnimations().forEach((animation) => {
       animation.pause();
-      animation.currentTime = 250;
-    });
-  });
-  const lines = copy.locator('[aria-hidden="true"] > span');
-  expect(await lines.count()).toBeGreaterThan(1);
-  const width = await copy.evaluate((element) => element.clientWidth);
-  for (const line of await lines.all())
-    expect(
-      await line.evaluate((element) => element.scrollWidth),
-    ).toBeLessThanOrEqual(width + 1);
+      animation.currentTime = Number(animation.effect!.getTiming().delay) + 250;
+    }),
+  );
+  await expect(copy.locator(":scope > span")).toHaveCount(1);
+  await expect(copy.locator('[aria-hidden="true"]')).toHaveCount(0);
   await expect(copy).toHaveCSS("filter", "none");
-  await page.screenshot({
-    path: info.outputPath("about-lines.png"),
-    scale: "css",
-  });
   const size = page.viewportSize()!;
   await page.setViewportSize({ width: size.width - 30, height: size.height });
+  const overflow = await copy.evaluate(
+    (element) => element.scrollWidth - element.clientWidth,
+  );
+  expect(overflow).toBeLessThanOrEqual(1);
+  await page.screenshot({
+    path: info.outputPath("copy-group.png"),
+    scale: "css",
+  });
+  await copy.evaluate((element) =>
+    element.getAnimations().forEach((animation) => animation.play()),
+  );
   await expect(copy).toHaveAttribute("data-copy-entrance", "done");
-  await expect(copy.locator(":scope > span").first()).toHaveCSS("opacity", "1");
-  await expect(copy.locator('[aria-hidden="true"]')).toHaveCount(0);
+  await expect(copy).toHaveCSS("translate", "none");
 });

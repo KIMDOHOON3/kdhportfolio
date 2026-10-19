@@ -18,6 +18,12 @@ import { flowFragmentShader } from "./flowShader";
 import { createStudioEnvironment } from "./studioEnvironment";
 import { createFluidProjection } from "./FluidProjection";
 import { glassFlareShader } from "./glassFlareShader";
+const HELLO_DRAW_MS = 2200;
+const ORB_START_MS = HELLO_DRAW_MS + 120;
+const ORB_STAGGER_MS = 220;
+const ORB_POP_MS = 520;
+const HERO_ENTRANCE_MS = ORB_START_MS + ORB_STAGGER_MS * 2 + ORB_POP_MS;
+const FOOTER_DRAW_MS = 2600;
 import {
   readScroll,
   subscribeScroll,
@@ -31,6 +37,12 @@ export default function GlassScene() {
   const [activated, setActivated] = useState(pathname === "/");
   const [ready, setReady] = useState(false);
   const [failed, setFailed] = useState(false);
+  useEffect(() => {
+    if (failed) {
+      const footer = document.getElementById("contact");
+      if (footer) footer.dataset.footerEntrance = "done";
+    }
+  }, [failed]);
   useLayoutEffect(() => {
     if (pathname === "/") setActivated(true);
     routeUpdate.current();
@@ -102,12 +114,20 @@ export default function GlassScene() {
           magFilter: THREE.NearestFilter,
           depthBuffer: true,
         });
+        const strokeReveal = { value: entranceEligible ? 0 : 1 };
         const backSurfaceMaterial = new THREE.ShaderMaterial({
           toneMapped: false,
           side: THREE.BackSide,
-          uniforms: { uDepthOrigin: { value: camera.position.z } },
+          uniforms: {
+            uDepthOrigin: { value: camera.position.z },
+            uStrokeReveal: { value: 1 },
+          },
           vertexShader: glassBackVertexShader,
           fragmentShader: glassBackFragmentShader,
+        });
+        // Decoration keeps its complete back surface during either drawing.
+        Object.assign(backSurfaceMaterial.defaultAttributeValues, {
+          aStrokeProgress: [-1],
         });
         const sceneTarget = new THREE.WebGLRenderTarget(1, 1, {
           type: THREE.HalfFloatType,
@@ -186,6 +206,9 @@ export default function GlassScene() {
             uSky: { value: new THREE.Color("#f4f7fa") },
             uBase: { value: new THREE.Color("#f4f7fa") },
             uCool: { value: new THREE.Color("#e3e8ed") },
+            uHeroBlue: { value: location.pathname === "/" ? 1 : 0 },
+            uHeroSky: { value: new THREE.Color("#b7d3f8") },
+            uHeroGlow: { value: new THREE.Color("#93bbee") },
             uResolution: { value: new THREE.Vector2() },
             uFlow: { value: flowRead.texture },
             uFlowTexel: { value: flowMaterial.uniforms.uTexel.value },
@@ -204,6 +227,9 @@ export default function GlassScene() {
             uniform vec3 uSky;
             uniform vec3 uBase;
             uniform vec3 uCool;
+            uniform float uHeroBlue;
+            uniform vec3 uHeroSky;
+            uniform vec3 uHeroGlow;
             uniform vec2 uResolution;
             ${backdropRefractionShader}
             void main() {
@@ -216,9 +242,14 @@ export default function GlassScene() {
                          * smoothstep(0.0, 0.16, uv.y) * smoothstep(0.0, 0.16, 1.0 - uv.y);
               float glow = exp(-dot((uv - vec2(0.55, 0.42)) * vec2(uAspect, 1.0),
                                    (uv - vec2(0.55, 0.42)) * vec2(uAspect, 1.0)) * 6.0);
-              // Keep the ice-white page continuous, with silver illumination
-              // localized around the lettering rather than a full-page wash.
               vec3 color = mix(uBase, uCool, glow * 0.58 * edge);
+              // The hero's blue sky is part of the sampled surface, so the
+              // glass refracts the same gradient that is visible behind it.
+              vec2 skyPoint = (uv - vec2(0.5, 0.66)) * vec2(0.95, 0.8);
+              float skyGlow = exp(-dot(skyPoint, skyPoint) * 4.2) * smoothstep(0.0, 0.25, uv.y);
+              vec3 heroColor = mix(uBase, uHeroSky, smoothstep(0.12, 0.95, uv.y) * 0.82);
+              heroColor = mix(heroColor, uHeroGlow, skyGlow * 0.28);
+              color = mix(color, heroColor, uHeroBlue);
               color = mix(color, uSky, clamp(beams * 0.38 * edge * glow, 0.0, 0.5));
               // The backdrop contains only procedural color and light bands.
               gl_FragColor = vec4(color, 1.0);
@@ -252,6 +283,7 @@ export default function GlassScene() {
             uFlow: { value: flowRead.texture },
             uMotion: { value: 1 },
             uReveal: { value: entranceEligible ? 0 : 1 },
+            uStrokeReveal: strokeReveal,
           },
         });
         const footerMaterial = new THREE.ShaderMaterial({
@@ -261,6 +293,7 @@ export default function GlassScene() {
           uniforms: {
             ...material.uniforms,
             uReveal: { value: 1 },
+            uStrokeReveal: { value: -0.001 },
             uTintRange: { value: new THREE.Vector2(-0.5, 0.5) },
           },
         });
@@ -273,11 +306,16 @@ export default function GlassScene() {
           uniforms: {
             ...material.uniforms,
             uReveal: { value: 1 },
+            uStrokeReveal: { value: 1 },
             uTintTop: { value: new THREE.Color("#6aa5e9") },
             uTintBottom: { value: new THREE.Color("#d1e9fa") },
             uTintRange: { value: new THREE.Vector2(-1, 1) },
           },
         });
+        for (const shader of [material, footerMaterial, accentMaterial])
+          Object.assign(shader.defaultAttributeValues, {
+            aStrokeProgress: [-1],
+          });
         const accentGeometry = new THREE.SphereGeometry(1, 40, 24);
         // Trace into a central plane inside each sphere. The mark receives the
         // same absorption and reflections as the glass, rather than a decal.
@@ -288,6 +326,18 @@ export default function GlassScene() {
             "vLocalHeight = position.y; vOrbPosition = position;",
           );
         const orbFragmentShader = glassFragmentShader
+          .replace(
+            "float surfaceReveal = uReveal;",
+            `
+            // Match the writing tip's blue light as each glass sphere forms.
+            if (uReveal < 1.0) {
+              float pulse = sin(uReveal * 3.14159265);
+              float rim = pow(1.0 - facing, 2.5);
+              color += vec3(0.65, 1.9, 3.6) * pulse * (0.10 + rim * 0.85);
+            }
+            float surfaceReveal = uReveal;
+          `,
+          )
           .replace(
             "uniform sampler2D uScene;",
             `
@@ -355,8 +405,15 @@ export default function GlassScene() {
             logoMaterials.push(logoMaterial);
           }
           const mesh = new THREE.Mesh(accentGeometry, orbMaterial);
+          mesh.visible = !entranceEligible;
           accentGroup.add(mesh);
-          return { ...layout, mesh, origin: new THREE.Vector3() };
+          return {
+            ...layout,
+            mesh,
+            origin: new THREE.Vector3(),
+            worldRadius: 1,
+            pop: entranceEligible ? 0 : 1,
+          };
         };
         const accents: ReturnType<typeof createAccent>[] = [];
         const loadAccents = () => {
@@ -388,6 +445,16 @@ export default function GlassScene() {
         const footerHeading = document.querySelector<HTMLElement>(
           "[data-footer-thanks]",
         );
+        const footerRoot = footerHeading?.closest<HTMLElement>("footer");
+        let footerElapsed = 0;
+        let footerLastPaint: number | null = null;
+        let footerFinished = footerRoot?.dataset.footerEntrance === "done";
+        const finishFooter = () => {
+          footerFinished = true;
+          footerMaterial.uniforms.uStrokeReveal.value = 1;
+          if (footerRoot) footerRoot.dataset.footerEntrance = "done";
+        };
+        if (footerFinished) finishFooter();
         const footerGroup = new THREE.Group();
         const footerWords: {
           mesh: InstanceType<typeof THREE.Mesh>;
@@ -599,7 +666,10 @@ export default function GlassScene() {
               accent.min,
               accent.max,
             );
-            accent.mesh.scale.setScalar(radius * accentPixel);
+            accent.worldRadius = radius * accentPixel;
+            accent.mesh.scale.setScalar(
+              accent.worldRadius * Math.max(0.001, accent.pop),
+            );
           });
           backdrop.position.x = center.x;
           backdrop.position.y = center.y;
@@ -656,7 +726,9 @@ export default function GlassScene() {
           // High-refresh displays must not multiply the expensive glass passes.
           // Keep scroll/pointer animation at 60 Hz and idle drift at 30 Hz.
           const interactive =
-            time - lastInteraction < 1000 || !entranceFinished;
+            time - lastInteraction < 1000 ||
+            !entranceFinished ||
+            (contactVisible && !footerFinished);
           const interval = 1000 / (interactive ? 60 : 30);
           if (!motion.matches && !force && time - lastPaint < interval - 0.5) {
             frame = requestAnimationFrame(render);
@@ -723,15 +795,45 @@ export default function GlassScene() {
               entranceStart === null ? -Infinity : time - entranceStart;
             material.uniforms.uReveal.value = skip
               ? 1
-              : entranceEase(elapsed / 950);
-            accents.forEach(({ mesh }, index) => {
+              : entranceEase(elapsed / 180);
+            strokeReveal.value = skip
+              ? 1
+              : elapsed < 0
+                ? -0.001
+                : entranceEase(elapsed / HELLO_DRAW_MS);
+            element.dataset.helloStroke = Math.max(
+              0,
+              strokeReveal.value,
+            ).toFixed(4);
+            accents.forEach((accent, index) => {
+              const { mesh } = accent;
               // Claude -> Figma -> Codex follows their positions from left to right.
               const order = index === 0 ? 0 : index === 2 ? 1 : 2;
+              const progress = skip
+                ? 1
+                : Math.max(
+                    0,
+                    Math.min(
+                      1,
+                      (elapsed - ORB_START_MS - order * ORB_STAGGER_MS) /
+                        ORB_POP_MS,
+                    ),
+                  );
+              // A small overshoot settles back to the existing sphere size.
+              const t = progress - 1;
+              accent.pop = 1 + 2.2 * t * t * t + 1.2 * t * t;
+              mesh.visible = progress > 0;
+              mesh.scale.setScalar(
+                accent.worldRadius * Math.max(0.001, accent.pop),
+              );
               mesh.material.uniforms.uReveal.value = skip
                 ? 1
-                : entranceEase((elapsed - 500 - order * 120) / 650);
+                : entranceEase(progress);
+              element.dataset[
+                `orb${accent.logo[0].toUpperCase()}${accent.logo.slice(1)}`
+              ] = progress.toFixed(4);
             });
-            if (skip || elapsed >= 1390) {
+            if (skip || elapsed >= HERO_ENTRANCE_MS) {
               entranceFinished = true;
               element.dataset.heroEntrance = "done";
             } else if (
@@ -740,6 +842,27 @@ export default function GlassScene() {
             )
               element.dataset.heroEntrance = "revealing";
           }
+          if (!footerFinished && contactVisible && footerWords.length === 2) {
+            const headingTop =
+              (footerLayout?.words[0]?.top ?? Infinity) - scrollTop;
+            if (motion.matches || footerRoot?.dataset.footerEntrance === "done")
+              finishFooter();
+            else if (footerElapsed > 0 || headingTop <= viewportSize.y * 0.8) {
+              if (footerLastPaint !== null)
+                footerElapsed += Math.min(100, time - footerLastPaint);
+              footerLastPaint = time;
+              footerMaterial.uniforms.uStrokeReveal.value = entranceEase(
+                footerElapsed / FOOTER_DRAW_MS,
+              );
+              if (footerRoot && footerRoot.dataset.footerEntrance !== "drawing")
+                footerRoot.dataset.footerEntrance = "drawing";
+              if (footerElapsed >= FOOTER_DRAW_MS) finishFooter();
+            }
+          } else footerLastPaint = null;
+          const footerStroke =
+            footerMaterial.uniforms.uStrokeReveal.value.toFixed(4);
+          if (element.dataset.footerStroke !== footerStroke)
+            element.dataset.footerStroke = footerStroke;
           if (!motion.matches) {
             const follow = 1 - Math.exp(-5 * dt);
             material.uniforms.uLight.value.lerp(
@@ -750,30 +873,6 @@ export default function GlassScene() {
               ),
               1 - Math.exp(-8 * dt),
             );
-            if (
-              !entranceFinished &&
-              entranceStart !== null &&
-              time >= entranceStart
-            ) {
-              // Sweep the existing light, without an extra full-screen pass.
-              const sweep = entranceEase((time - entranceStart) / 1150);
-              material.uniforms.uLight.value.x =
-                center.x + (sweep - 0.5) * worldHeight * camera.aspect;
-            }
-            group.rotation.y +=
-              (0.07 +
-                Math.min(1, scrollTop / viewportHeight) * 1.64 +
-                pointer.x * 0.16 -
-                group.rotation.y) *
-              follow;
-            group.rotation.x +=
-              (pointer.y * 0.12 - group.rotation.x) *
-              (1 - Math.exp(-2.14 * dt));
-            group.position.y =
-              -0.4 +
-              heroOffsetY +
-              (scrollTop / viewportHeight) * worldHeight * 0.72 +
-              Math.sin(time * 0.00065) * 0.07;
             footerWords.forEach(({ mesh }) => {
               mesh.rotation.x += (pointer.y * 0.12 - mesh.rotation.x) * follow;
               mesh.rotation.y +=
@@ -783,13 +882,12 @@ export default function GlassScene() {
             pointer.x = 0;
             pointer.y = 0;
             material.uniforms.uLight.value.set(4, 9, 5);
-            group.position.y =
-              -0.4 +
-              heroOffsetY +
-              (scrollTop / viewportHeight) * worldHeight * 0.72;
           }
-          accentGroup.position.y =
-            (scrollTop / viewportHeight) * worldHeight * 0.72;
+          // Keep the lettering's orientation fixed. All hero glass leaves
+          // together using the same translation in either scroll direction.
+          const heroRise = (scrollTop / viewportHeight) * worldHeight * 0.72;
+          group.position.y = -0.4 + heroOffsetY + heroRise;
+          accentGroup.position.y = heroRise;
           accents.forEach(({ mesh, origin }, index) => {
             const drift = motion.matches
               ? 0
@@ -808,6 +906,9 @@ export default function GlassScene() {
           accentGroup.visible = exposed && !contactVisible;
           footerGroup.visible = contactVisible;
           backdrop.visible = false;
+          backSurfaceMaterial.uniforms.uStrokeReveal.value = contactVisible
+            ? footerMaterial.uniforms.uStrokeReveal.value
+            : strokeReveal.value;
           scene.overrideMaterial = backSurfaceMaterial;
           renderer.setClearColor(0x000000, 0);
           renderer.setRenderTarget(backSurfaceTarget);
@@ -872,6 +973,11 @@ export default function GlassScene() {
           scrollTop = state.top;
           viewportHeight = state.height;
           const { heroBottom, footerTop, hasHero } = state;
+          const heroBlue = hasHero && heroBottom > 0 ? 1 : 0;
+          if (backdropMaterial.uniforms.uHeroBlue.value !== heroBlue) {
+            backdropMaterial.uniforms.uHeroBlue.value = heroBlue;
+            backdropDirty = true;
+          }
           if (hasHero) loadHero?.();
           const wasContactVisible = contactVisible;
           const wasFooterFraming = footerFraming;
@@ -965,6 +1071,13 @@ export default function GlassScene() {
           backScene.add(new THREE.Mesh(accentGeometry, backSurfaceMaterial));
           const glassScene = new THREE.Scene();
           glassScene.add(new THREE.Mesh(accentGeometry, material));
+          // Orbs stay hidden until HELLO finishes. Prepare their programs and
+          // shared vertex buffer now, so the first pop/early scroll is cheap.
+          for (const shader of logoMaterials) {
+            const proxy = new THREE.Mesh(accentGeometry, shader);
+            proxy.frustumCulled = false;
+            glassScene.add(proxy);
+          }
           renderer.setRenderTarget(sceneTarget);
           const pending = [
             renderer.compileAsync(scene, camera),
@@ -979,6 +1092,13 @@ export default function GlassScene() {
           pending.push(renderer.compileAsync(displayScene, displayCamera));
           renderer.setRenderTarget(previous);
           await Promise.all(pending);
+          if (disposed) return;
+          if (logoMaterials.length) {
+            const target = renderer.getRenderTarget();
+            renderer.setRenderTarget(sceneTarget);
+            renderer.render(glassScene, camera);
+            renderer.setRenderTarget(target);
+          }
         };
         const paintReady = async () => {
           if (!shadersReady) await prepareShaders();
@@ -1081,9 +1201,7 @@ export default function GlassScene() {
               void loader
                 .loadAsync(GLASS_ASSETS.hello)
                 .then((gltf) => {
-                  let geometry: InstanceType<
-                    typeof THREE.BufferGeometry
-                  > | null = null;
+                  const geometries: import("three").BufferGeometry[] = [];
                   gltf.scene.traverse((object) => {
                     if (!(object instanceof THREE.Mesh)) return;
                     const sourceMaterials = Array.isArray(object.material)
@@ -1091,9 +1209,20 @@ export default function GlassScene() {
                       : [object.material];
                     sourceMaterials.forEach((entry) => entry.dispose());
                     if (disposed) object.geometry.dispose();
-                    else geometry = object.geometry;
+                    else geometries.push(object.geometry);
                   });
+                  const geometry = geometries.at(-1);
                   if (disposed || !geometry) return;
+                  // UV.y is the original curve parameter, not an X-axis wipe.
+                  // Upload the matching rear-surface mask once with the model.
+                  const uv = geometry.getAttribute("uv");
+                  const progress = new Float32Array(uv.count);
+                  for (let i = 0; i < uv.count; i++) progress[i] = uv.getY(i);
+                  geometry.setAttribute(
+                    "aStrokeProgress",
+                    new THREE.BufferAttribute(progress, 1),
+                  );
+                  element.dataset.helloReveal = "curve";
                   const previous = new Set<
                     InstanceType<typeof THREE.BufferGeometry>
                   >();
@@ -1145,6 +1274,12 @@ export default function GlassScene() {
                     if (!(mesh instanceof THREE.Mesh))
                       throw new Error("Missing footer lettering mesh");
                     mesh.material = footerMaterial;
+                    const progress =
+                      mesh.geometry.getAttribute("_stroke_progress");
+                    if (!progress)
+                      throw new Error("Missing footer stroke progress");
+                    mesh.geometry.setAttribute("aStrokeProgress", progress);
+                    mesh.geometry.deleteAttribute("_stroke_progress");
                     mesh.geometry.computeBoundingBox();
                     const extent = mesh.geometry.boundingBox!.getSize(
                       new THREE.Vector3(),
@@ -1162,6 +1297,7 @@ export default function GlassScene() {
                 })
                 .catch(() => {
                   footerHeading?.removeAttribute("data-glass-ready");
+                  finishFooter();
                 });
             };
             if (
@@ -1173,6 +1309,7 @@ export default function GlassScene() {
           .catch(() => {
             // The semantic heading stays readable if the model cannot load.
             footerHeading?.removeAttribute("data-glass-ready");
+            finishFooter();
           });
         document.fonts.ready.then(() => {
           if (!disposed) {

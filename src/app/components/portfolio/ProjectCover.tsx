@@ -6,6 +6,7 @@ import styles from "./Portfolio.module.scss";
 import ArrowIcon from "./ArrowIcon";
 import WorkCoverMockup from "./WorkCoverMockup";
 import { buttonMotion } from "./buttonMotion";
+import { ButtonLight } from "./ButtonEffect";
 
 export default function ProjectCover({
   project,
@@ -74,9 +75,12 @@ export default function ProjectCover({
         <span
           className={styles.coverArrow}
           data-project-action
+          data-button-positioned
+          data-element-reveal="button"
           aria-hidden="true"
           {...buttonMotion}
         >
+          <ButtonLight />
           <ArrowIcon />
           <ArrowIcon />
         </span>

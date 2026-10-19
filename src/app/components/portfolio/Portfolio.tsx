@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import Navigation from "../Header/Navigation";
@@ -16,6 +16,7 @@ import BackgroundScreen from "./BackgroundScreen";
 import { MailIcon, GithubIcon, DownloadIcon } from "../Icons";
 import styles from "./Portfolio.module.scss";
 import { buttonMotion } from "./buttonMotion";
+import { ButtonLabel, ButtonLight } from "./ButtonEffect";
 import { GLASS_ASSETS } from "../../data/glassAssets";
 import ProjectCoverEntrance from "./ProjectCoverEntrance";
 import CopyReveal from "./CopyReveal";
@@ -86,6 +87,14 @@ export function PortfolioHeader() {
 
 export function PortfolioFooter() {
   const root = useRef<HTMLElement>(null);
+  useLayoutEffect(() => {
+    if (root.current && !root.current.dataset.footerEntrance)
+      root.current.dataset.footerEntrance = matchMedia(
+        "(prefers-reduced-motion: reduce)",
+      ).matches
+        ? "done"
+        : "waiting";
+  }, []);
   useElementEntrances(root);
   return (
     <footer ref={root} className={styles.footer} id="contact">
@@ -94,45 +103,59 @@ export function PortfolioFooter() {
           <span>THANK</span> <span>YOU</span>
         </h2>
       </div>
-      <div className={styles.contactLinks}>
-        <a href="mailto:kingyska@nate.com" data-element-reveal="frame">
+      <div className={styles.contactLinks} data-entrance-area="푸터 연락처">
+        <a
+          href="mailto:kingyska@nate.com"
+          data-element-reveal="button"
+          data-button-effect
+        >
+          <ButtonLight />
           <MailIcon
             className={styles.actionIcon}
             fill="currentColor"
             aria-hidden="true"
           />
-          <CopyReveal inline>kingyska@nate.com</CopyReveal>
+          <ButtonLabel>kingyska@nate.com</ButtonLabel>
         </a>
         <a
           href="https://github.com/KIMDOHOON3"
           target="_blank"
           rel="noreferrer"
-          data-element-reveal="frame"
+          data-element-reveal="button"
+          data-button-effect
         >
+          <ButtonLight />
           <GithubIcon
             className={styles.actionIcon}
             fill="currentColor"
             aria-hidden="true"
           />
-          <CopyReveal inline>GitHub</CopyReveal>
+          <ButtonLabel>GitHub</ButtonLabel>
         </a>
-        <a href="/resume/김도훈-이력서.pdf" download data-element-reveal="frame">
+        <a
+          href="/resume/김도훈-이력서.pdf"
+          download
+          data-element-reveal="button"
+          data-button-effect
+        >
+          <ButtonLight />
           <DownloadIcon
             className={styles.actionIcon}
             fill="currentColor"
             aria-hidden="true"
           />
-          <CopyReveal inline>이력서 다운로드</CopyReveal>
+          <ButtonLabel>이력서 다운로드</ButtonLabel>
         </a>
       </div>
-      <div className={styles.footerBottom}>
+      <div className={styles.footerBottom} data-entrance-area="푸터 하단">
         <span>
           <CopyReveal
             inline
           >{`© ${new Date().getFullYear()} 김도훈`}</CopyReveal>
         </span>
-        <a href="#top">
-          <CopyReveal inline>맨 위로 ↑</CopyReveal>
+        <a href="#top" data-element-reveal="button" data-button-effect>
+          <ButtonLight />
+          <ButtonLabel>맨 위로 ↑</ButtonLabel>
         </a>
       </div>
     </footer>
@@ -187,10 +210,8 @@ export default function Portfolio() {
             data-intro-cta
             {...buttonMotion}
           >
-            <span className={styles.exploreLabel} aria-hidden="true">
-              <span>프로젝트 살펴보기</span>
-              <span>프로젝트 살펴보기</span>
-            </span>
+            <ButtonLight />
+            <ButtonLabel>프로젝트 살펴보기</ButtonLabel>
             <span className={styles.exploreIcon} aria-hidden="true">
               <ArrowIcon down />
               <ArrowIcon down />
@@ -199,7 +220,10 @@ export default function Portfolio() {
         </div>
       </section>
       <section id="work" className={styles.work} aria-labelledby="work-title">
-        <div className={styles.workHeading}>
+        <div
+          className={styles.workHeading}
+          data-entrance-area="프로젝트 제목·필터"
+        >
           <h2 id="work-title">
             <CopyReveal>프로젝트</CopyReveal>
           </h2>
@@ -226,16 +250,12 @@ export default function Portfolio() {
                   onClick={() => setFilter(value)}
                   aria-pressed={filter === value}
                   aria-label={`${label} ${count}`}
-                  data-element-reveal="item"
+                  data-element-reveal="button"
                   {...buttonMotion}
                 >
-                  <span
-                    className={styles.exploreLabel}
-                    data-filter-label
-                    aria-hidden="true"
-                  >
-                    <span>{label}</span>
-                    <span>{label}</span>
+                  <ButtonLight />
+                  <span data-filter-label>
+                    <ButtonLabel>{label}</ButtonLabel>
                   </span>
                   <span data-filter-count aria-hidden="true">
                     {count}
@@ -246,13 +266,19 @@ export default function Portfolio() {
           </div>
         </div>
         <div className={styles.projectGrid}>
-          {visibleProjects.map((project, index) => (
-            <article data-paper key={project.id} className={styles.project}>
+          {visibleProjects.map((project) => (
+            <article
+              data-paper
+              key={project.id}
+              className={styles.project}
+              data-entrance-area={project.title}
+            >
               <Link
                 href={`/work/${project.id}`}
                 scroll={false}
                 className={styles.projectLink}
                 data-paper-surface
+                data-button-effect
                 aria-label={`${project.title} 프로젝트 보기`}
                 aria-describedby={
                   project.responsibilities
@@ -283,20 +309,14 @@ export default function Portfolio() {
                 {project.responsibilities ? (
                   <div className={styles.projectTasks}>
                     <p>
-                      <CopyReveal
-                        seen={revealed.current.has(project.id)}
-                        delay={40}
-                      >
+                      <CopyReveal seen={revealed.current.has(project.id)}>
                         담당 업무
                       </CopyReveal>
                     </p>
                     <ul id={`project-tasks-${project.id}`}>
-                      {project.responsibilities.map((task, taskIndex) => (
+                      {project.responsibilities.map((task) => (
                         <li key={task}>
-                          <CopyReveal
-                            seen={revealed.current.has(project.id)}
-                            delay={70 + taskIndex * 35}
-                          >
+                          <CopyReveal seen={revealed.current.has(project.id)}>
                             {task}
                           </CopyReveal>
                         </li>
@@ -305,10 +325,7 @@ export default function Portfolio() {
                   </div>
                 ) : (
                   <p className={styles.projectSubtitle}>
-                    <CopyReveal
-                      seen={revealed.current.has(project.id)}
-                      delay={70}
-                    >
+                    <CopyReveal seen={revealed.current.has(project.id)}>
                       {project.subtitle}
                     </CopyReveal>
                   </p>
@@ -316,14 +333,13 @@ export default function Portfolio() {
                 <ProjectCoverEntrance
                   projectId={project.id}
                   seen={revealed.current.has(project.id)}
-                  follow={index % 2 === 1}
                   onStart={() => {
                     revealed.current.add(project.id);
                   }}
                 >
                   <ProjectCover project={project} />
                 </ProjectCoverEntrance>
-                <div className={styles.stack}>
+                <div className={styles.stack} data-entrance-after-cover>
                   {project.stack.slice(0, 3).map((tech) => (
                     <span
                       key={tech}
@@ -342,7 +358,11 @@ export default function Portfolio() {
           ))}
         </div>
         {filter !== "전체" && (
-          <p className={styles.filterResult} aria-live="polite">
+          <p
+            className={styles.filterResult}
+            aria-live="polite"
+            data-entrance-area="프로젝트 필터 결과"
+          >
             <CopyReveal>{`${visibleProjects.length}개의 프로젝트를 보고 있습니다.`}</CopyReveal>
           </p>
         )}
