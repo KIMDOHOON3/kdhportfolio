@@ -12,7 +12,7 @@ test("project controls share the hero fill motion without changing filter select
   const filters = page.getByRole("group", { name: "프로젝트 필터" });
   const work = filters.getByRole("button", { name: "실무 02" });
   await work.hover({ position: { x: 14, y: 12 } });
-  await expect(work).toHaveCSS("color", "rgb(251, 250, 244)");
+  await expect(work).toHaveCSS("color", "rgb(244, 247, 250)");
   await expect(work).toHaveAttribute("aria-pressed", "false");
   await expect(
     filters.getByRole("button", { name: "전체 04" }),
@@ -35,7 +35,7 @@ test("project controls share the hero fill motion without changing filter select
   await page.keyboard.press("Tab");
   await page.keyboard.press("Shift+Tab");
   await expect(work).toBeFocused();
-  await expect(work).toHaveCSS("color", "rgb(251, 250, 244)");
+  await expect(work).toHaveCSS("color", "rgb(244, 247, 250)");
   await work.press("Enter");
   await expect(work).toHaveAttribute("aria-pressed", "true");
   const lexus = page.getByRole("link", {
@@ -44,7 +44,7 @@ test("project controls share the hero fill motion without changing filter select
   });
   await lexus.locator("[data-project-action]").hover();
   const action = lexus.locator("[data-project-action]");
-  await expect(action).toHaveCSS("color", "rgb(251, 250, 244)");
+  await expect(action).toHaveCSS("color", "rgb(244, 247, 250)");
   await expect
     .poll(() =>
       action.evaluate((e) => getComputedStyle(e, "::before").transform),

@@ -79,7 +79,7 @@ export default function GlassScene() {
         renderer.outputColorSpace = THREE.SRGBColorSpace;
         renderer.toneMapping = THREE.ACESFilmicToneMapping;
         renderer.toneMappingExposure = 1.1;
-        renderer.setClearColor("#beddeb", 1);
+        renderer.setClearColor("#f4f7fa", 1);
         element.appendChild(renderer.domElement);
         let studio = createStudioEnvironment(THREE, renderer);
         const scene = new THREE.Scene();
@@ -183,9 +183,9 @@ export default function GlassScene() {
           depthWrite: false,
           uniforms: {
             uAspect: { value: 1 },
-            uSky: { value: new THREE.Color("#beddeb") },
-            uWarm: { value: new THREE.Color("#fffaf1") },
-            uCool: { value: new THREE.Color("#8fbde9") },
+            uSky: { value: new THREE.Color("#f4f7fa") },
+            uBase: { value: new THREE.Color("#f4f7fa") },
+            uCool: { value: new THREE.Color("#e3e8ed") },
             uResolution: { value: new THREE.Vector2() },
             uFlow: { value: flowRead.texture },
             uFlowTexel: { value: flowMaterial.uniforms.uTexel.value },
@@ -202,7 +202,7 @@ export default function GlassScene() {
             varying vec2 vUv;
             uniform float uAspect;
             uniform vec3 uSky;
-            uniform vec3 uWarm;
+            uniform vec3 uBase;
             uniform vec3 uCool;
             uniform vec2 uResolution;
             ${backdropRefractionShader}
@@ -216,10 +216,10 @@ export default function GlassScene() {
                          * smoothstep(0.0, 0.16, uv.y) * smoothstep(0.0, 0.16, 1.0 - uv.y);
               float glow = exp(-dot((uv - vec2(0.55, 0.42)) * vec2(uAspect, 1.0),
                                    (uv - vec2(0.55, 0.42)) * vec2(uAspect, 1.0)) * 6.0);
-              float warmBase = smoothstep(0.38, 0.98, 1.0 - uv.y);
-              vec3 color = mix(uSky, uWarm, warmBase * 0.92);
-              color = mix(color, uCool, 0.05 * edge * (1.0 - warmBase));
-              color = mix(color, uWarm, clamp((beams*0.48 + glow*0.04)*edge,0.0,0.52));
+              // Keep the ice-white page continuous, with silver illumination
+              // localized around the lettering rather than a full-page wash.
+              vec3 color = mix(uBase, uCool, glow * 0.58 * edge);
+              color = mix(color, uSky, clamp(beams * 0.38 * edge * glow, 0.0, 0.5));
               // The backdrop contains only procedural color and light bands.
               gl_FragColor = vec4(color, 1.0);
               #include <colorspace_fragment>
@@ -547,7 +547,7 @@ export default function GlassScene() {
           }
           flowDirty = false;
           renderer.setRenderTarget(null);
-          renderer.setClearColor("#beddeb", 1);
+          renderer.setClearColor("#f4f7fa", 1);
           backdropDirty = true;
           backdropMaterial.uniforms.uResolution.value.copy(
             material.uniforms.uResolution.value,
@@ -700,7 +700,7 @@ export default function GlassScene() {
               renderer.clear();
             }
             renderer.setRenderTarget(null);
-            renderer.setClearColor("#beddeb", 1);
+            renderer.setClearColor("#f4f7fa", 1);
             flowDirty = false;
             backdropDirty = true;
             inputStrength = 0;
@@ -814,7 +814,7 @@ export default function GlassScene() {
           renderer.render(scene, camera);
           scene.overrideMaterial = null;
           backdrop.visible = true;
-          renderer.setClearColor("#beddeb", 1);
+          renderer.setClearColor("#f4f7fa", 1);
           // Render the backdrop first, excluding the glass from its own texture.
           group.visible = false;
           accentGroup.visible = false;

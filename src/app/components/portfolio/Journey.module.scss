@@ -1,5 +1,5 @@
-$paper: #f9f8f3;
-$ink: #202a32;
+$paper: #f4f7fa;
+$ink: #20262d;
 $blue: #3978b7;
 $line: rgba(48, 71, 90, 0.17);
 
@@ -32,7 +32,7 @@ $line: rgba(48, 71, 90, 0.17);
     180deg,
     $paper 0%,
     $paper calc(100% - 220px),
-    rgba(249, 248, 243, 0) 100%
+    rgba(244, 247, 250, 0) 100%
   );
 }
 .journey[data-enhanced="true"] {
@@ -70,7 +70,7 @@ $line: rgba(48, 71, 90, 0.17);
   gap: 7px;
   padding: 0 15px;
   border-bottom: 1px solid $line;
-  background: #f5f5f0;
+  background: #e3e8ed;
   i {
     width: 5px;
     height: 5px;
@@ -144,7 +144,7 @@ $line: rgba(48, 71, 90, 0.17);
   z-index: 6;
   padding: 12px var(--journey-inset) 18px;
   border-bottom: 1px solid $line;
-  background: rgba(249, 248, 243, 0.96);
+  background: rgba(244, 247, 250, 0.96);
   backdrop-filter: blur(18px);
   &::before {
     content: "";
@@ -555,8 +555,8 @@ $line: rgba(48, 71, 90, 0.17);
     z-index: -1;
     background: radial-gradient(
       ellipse,
-      #f6f7f0 10%,
-      #f6f7f0cc 40%,
+      #f4f7fa 10%,
+      #f4f7facc 40%,
       transparent 72%
     );
     pointer-events: none;

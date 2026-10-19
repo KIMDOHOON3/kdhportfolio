@@ -193,7 +193,7 @@ export default function InterfaceSketch() {
         className={`${styles.sketchCursor} ${styles.sketchLoop}`}
         d="M0 0L6 33L14 22L28 20Z"
         fill="#4b74b1"
-        stroke="#fbfaf4"
+        stroke="#f4f7fa"
         strokeWidth="2"
         strokeLinejoin="round"
       />

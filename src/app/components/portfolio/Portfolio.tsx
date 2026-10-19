@@ -187,7 +187,7 @@ export default function Portfolio() {
           </div>
           <a
             href="#work"
-            className={styles.explore}
+            className={`${styles.explore} ${styles.exploreLoop}`}
             aria-label="프로젝트 살펴보기"
             data-intro-cta
             {...buttonMotion}

@@ -449,7 +449,7 @@ export default function ScrollStory() {
               width="129"
               height="90"
               rx="6"
-              fill="#f9f8f3"
+              fill="#f4f7fa"
               stroke="#425463"
               strokeWidth="1.8"
             />
