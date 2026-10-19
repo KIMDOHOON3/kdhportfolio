@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import Navigation from "../Header/Navigation";
@@ -17,7 +17,7 @@ import { MailIcon, GithubIcon, DownloadIcon } from "../Icons";
 import styles from "./Portfolio.module.scss";
 import { buttonMotion } from "./buttonMotion";
 import { GLASS_ASSETS } from "../../data/glassAssets";
-import { getScrollViewport } from "./ScrollViewport";
+import ContentReveal from "./ContentReveal";
 
 const projectCount = (count: number) => String(count).padStart(2, "0");
 
@@ -130,61 +130,13 @@ export function PortfolioFooter() {
 
 export default function Portfolio() {
   const [filter, setFilter] = useState("전체");
-  const root = useRef<HTMLElement>(null);
-  const revealed = useRef(new Set<string>());
-  useLayoutEffect(() => {
-    const element = root.current;
-    if (!element) return;
-    const motion = matchMedia("(prefers-reduced-motion: reduce)");
-    const targets = [...element.querySelectorAll<HTMLElement>("[data-reveal]")];
-    const show = (target: HTMLElement) => {
-      revealed.current.add(target.dataset.reveal!);
-      target.classList.add(styles.isVisible);
-      observer.unobserve(target);
-    };
-    const observer = new IntersectionObserver(
-      (entries) =>
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) show(entry.target as HTMLElement);
-        }),
-      {
-        root: getScrollViewport(),
-        rootMargin: "0px 0px -32px 0px",
-        threshold: 0.08,
-      },
-    );
-    const revealAll = () => {
-      if (!motion.matches) return;
-      targets.forEach(show);
-    };
-    // Preserve revealed project IDs across filtering, without replaying cards
-    // that React removes and later inserts. HTML remains visible without JS.
-    targets.forEach((target) => {
-      if (motion.matches || revealed.current.has(target.dataset.reveal!))
-        show(target);
-      else observer.observe(target);
-    });
-    element.classList.add(styles.motionReady);
-    const focus = (event: FocusEvent) => {
-      const target = (event.target as HTMLElement).closest<HTMLElement>(
-        "[data-reveal]",
-      );
-      if (target) show(target);
-    };
-    element.addEventListener("focusin", focus);
-    motion.addEventListener("change", revealAll);
-    return () => {
-      observer.disconnect();
-      element.removeEventListener("focusin", focus);
-      motion.removeEventListener("change", revealAll);
-    };
-  }, [filter]);
+  const revealed = useRef(new Set<number>());
   const visibleProjects = portfolioProjects.filter(
     (project) => filter === "전체" || project.category === filter,
   );
 
   return (
-    <main ref={root} id="top" className={styles.portfolio}>
+    <main id="top" className={styles.portfolio}>
       <link
         rel="preload"
         href={GLASS_ASSETS.hello}
@@ -235,10 +187,10 @@ export default function Portfolio() {
       </section>
       <section id="work" className={styles.work} aria-labelledby="work-title">
         <div className={styles.workHeading}>
-          <h2 id="work-title" data-reveal="work-heading">
+          <ContentReveal as="h2" id="work-title" data-reveal="work-heading">
             프로젝트
-          </h2>
-          <div
+          </ContentReveal>
+          <ContentReveal
             className={styles.filters}
             role="group"
             aria-label="프로젝트 필터"
@@ -278,16 +230,22 @@ export default function Portfolio() {
                 </button>
               );
             })}
-          </div>
+          </ContentReveal>
         </div>
         <div className={styles.projectGrid}>
           {visibleProjects.map((project, index) => (
-            <article
+            <ContentReveal
+              as="article"
               data-paper
               key={project.id}
               className={styles.project}
               data-reveal={`project-${project.id}`}
               data-reveal-follow={index % 2 === 1 ? "" : undefined}
+              delay={index % 2 === 1 ? 0.1 : 0}
+              skip={revealed.current.has(project.id)}
+              onStart={() => {
+                revealed.current.add(project.id);
+              }}
             >
               <Link
                 href={`/work/${project.id}`}
@@ -333,7 +291,7 @@ export default function Portfolio() {
                   ))}
                 </div>
               </Link>
-            </article>
+            </ContentReveal>
           ))}
         </div>
         {filter !== "전체" && (

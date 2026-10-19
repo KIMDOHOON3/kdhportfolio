@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-test("projects fade in once with a small row stagger and keep their layout", async ({
+test("projects use the original Mist mask, settle cleanly and do not replay", async ({
   page,
 }, info) => {
   await page.addInitScript(() => {
@@ -8,10 +8,16 @@ test("projects fade in once with a small row stagger and keep their layout", asy
     (
       window as typeof window & { contentTransitions: string[] }
     ).contentTransitions = transitions;
-    document.addEventListener("transitionrun", (event) => {
-      const target = event.target as HTMLElement;
-      if (target.dataset.reveal && event.propertyName === "opacity")
-        transitions.push(target.dataset.reveal);
+    new MutationObserver((records) => {
+      for (const record of records) {
+        const target = record.target as HTMLElement;
+        if (target.dataset.reveal && target.dataset.revealState === "revealing")
+          transitions.push(target.dataset.reveal);
+      }
+    }).observe(document, {
+      subtree: true,
+      attributes: true,
+      attributeFilter: ["data-reveal-state"],
     });
   });
   await page.goto("/");
@@ -20,7 +26,10 @@ test("projects fade in once with a small row stagger and keep their layout", asy
   const cards = page.locator("#work article");
   const first = cards.nth(0);
   const second = cards.nth(1);
-  await expect(first).toHaveCSS("opacity", "0");
+  await expect(first).toHaveAttribute("data-reveal-state", "pending");
+  await expect(first).toHaveAttribute("data-reveal-effect", "mist");
+  const surface = first.locator(":scope > a");
+  await expect(surface).toHaveCSS("filter", /fade-content-mask.*blur\(10px\)/);
   const geometry = () =>
     cards.evaluateAll((elements) => {
       const top = document.querySelector("[data-scroll-viewport]")!.scrollTop;
@@ -39,29 +48,34 @@ test("projects fade in once with a small row stagger and keep their layout", asy
     .getByRole("link", { name: "프로젝트 살펴보기", exact: true })
     .click();
   await expect(page).toHaveURL(/#work$/);
-  await expect(page.locator('[data-reveal="work-heading"]')).toHaveCSS(
-    "opacity",
-    "1",
-  );
-  await expect(page.locator('[data-reveal="work-filters"]')).toHaveCSS(
-    "opacity",
-    "1",
-  );
-  await expect(first).toHaveCSS("opacity", "1");
-  await expect(first).toHaveCSS("transition-property", "opacity");
-  await expect(first).toHaveCSS("transition-duration", "0.6s");
-  await expect(first).toHaveCSS("filter", "none");
-  await expect(first).toHaveCSS("transform", "none");
+  await expect(first).toHaveAttribute("data-reveal-state", "revealing");
+  await expect(surface).toHaveCSS("filter", /fade-content-mask.*blur\(/);
+  const mask = await surface.evaluate((element) => {
+    const id = (element as HTMLElement).style.filter.match(/#([^"\)]+)/)?.[1];
+    const filter = id ? document.getElementById(id) : null;
+    return {
+      octaves: filter
+        ?.querySelector("feTurbulence")
+        ?.getAttribute("numOctaves"),
+      hasCurve: !!filter?.querySelector("feFuncA"),
+    };
+  });
+  expect(mask).toEqual({ octaves: "3", hasCurve: true });
+  await page.waitForTimeout(350);
+  await page.screenshot({
+    path: info.outputPath("projects-mist-revealing.png"),
+    scale: "css",
+  });
+  await expect(first).toHaveAttribute("data-reveal-state", "done");
+  await expect(surface).toHaveCSS("filter", "none");
+  await expect(surface).toHaveCSS("transform", "none");
   // Finish the CTA's smooth anchor navigation before a separate native
   // scrollIntoView; otherwise the still-running anchor can overwrite it.
   await expect(viewport).not.toHaveClass(/lenis-scrolling/);
   if (info.project.use.isMobile) {
     await second.scrollIntoViewIfNeeded();
-    await expect(second).toHaveCSS("transition-delay", "0.1s");
-  } else {
-    await expect(second).toHaveCSS("transition-delay", "0.2s");
   }
-  await expect(second).toHaveCSS("opacity", "1");
+  await expect(second).toHaveAttribute("data-reveal-state", "done");
   expect(await geometry()).toEqual(before);
   const transitions = () =>
     page.evaluate(() =>
@@ -74,19 +88,19 @@ test("projects fade in once with a small row stagger and keep their layout", asy
   await viewport.evaluate((element) => {
     element.scrollTop = 0;
   });
-  await expect(first).toHaveCSS("opacity", "1");
+  await expect(first).toHaveAttribute("data-reveal-state", "done");
   await first.scrollIntoViewIfNeeded();
-  await expect(first).toHaveCSS("opacity", "1");
+  await expect(first).toHaveAttribute("data-reveal-state", "done");
   const filters = page.getByRole("group", { name: "프로젝트 필터" });
   await filters.getByRole("button", { name: "개인 02", exact: true }).click();
   await filters.getByRole("button", { name: "전체 04", exact: true }).click();
-  await expect(first).toHaveCSS("opacity", "1");
+  await expect(first).toHaveAttribute("data-reveal-state", "done");
   expect(
     (await transitions()).filter((key) => key === "project-1"),
   ).toHaveLength(1);
   const intro = page.locator('[data-reveal="about-lead"]');
   await intro.scrollIntoViewIfNeeded();
-  await expect(intro).toHaveCSS("opacity", "1");
+  await expect(intro).toHaveAttribute("data-reveal-state", "done");
   await expect(page.locator('[data-reveal="about-description"]')).toHaveCount(
     1,
   );
@@ -95,10 +109,10 @@ test("projects fade in once with a small row stagger and keep their layout", asy
       "[data-journey] [data-reveal], #contact [data-reveal], #home [data-reveal]",
     ),
   ).toHaveCount(0);
-  const path = info.outputPath("projects-fade-complete.png");
+  const path = info.outputPath("projects-mist-complete.png");
   await first.scrollIntoViewIfNeeded();
   await page.screenshot({ path, scale: "css" });
-  await info.attach("projects-fade-complete", {
+  await info.attach("projects-mist-complete", {
     path,
     contentType: "image/png",
   });
@@ -110,8 +124,8 @@ test("reduced motion and keyboard focus reveal content immediately", async ({
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.goto("/");
   for (const target of await page.locator("[data-reveal]").all()) {
+    await expect(target).toHaveAttribute("data-reveal-state", "done");
     await expect(target).toHaveCSS("opacity", "1");
-    await expect(target).toHaveCSS("transition-duration", "0s");
   }
   await page.emulateMedia({ reducedMotion: "no-preference" });
   await page.goto("/");
@@ -125,13 +139,16 @@ test("reduced motion and keyboard focus reveal content immediately", async ({
     "opacity",
     "1",
   );
-  await expect(page.locator('[data-reveal="project-5"]')).toHaveCSS(
-    "transition-duration",
-    "0s",
+  await expect(page.locator('[data-reveal="project-5"]')).toHaveAttribute(
+    "data-reveal-state",
+    "done",
   );
+  await expect(link).toHaveCSS("filter", "none");
   await page.emulateMedia({ reducedMotion: "reduce" });
-  for (const target of await page.locator("[data-reveal]").all())
+  for (const target of await page.locator("[data-reveal]").all()) {
     await expect(target).toHaveCSS("opacity", "1");
+    await expect(target).toHaveAttribute("data-reveal-state", "done");
+  }
 });
 
 test("project and introduction content stays readable without JavaScript", async ({
