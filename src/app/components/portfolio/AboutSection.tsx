@@ -1,4 +1,5 @@
 import InterfaceSketch from "./InterfaceSketch";
+import CopyReveal from "./CopyReveal";
 import styles from "./Portfolio.module.scss";
 
 export default function AboutSection() {
@@ -12,14 +13,18 @@ export default function AboutSection() {
       </div>
       <div className={styles.aboutText}>
         <p>
-          퍼블리싱으로 시작해 프론트엔드 개발로 영역을 넓혀왔습니다. 렉서스와
-          기아의 브랜드 경험부터 개인 서비스까지, 화면의 디테일과 데이터의
-          흐름을 함께 고민합니다.
+          <CopyReveal>
+            퍼블리싱으로 시작해 프론트엔드 개발로 영역을 넓혀왔습니다. 렉서스와
+            기아의 브랜드 경험부터 개인 서비스까지, 화면의 디테일과 데이터의
+            흐름을 함께 고민합니다.
+          </CopyReveal>
         </p>
         <p>
-          AI를 개발 과정에 활용하고, 새로운 기술도 직접 써보며 익힙니다. 개인
-          프로젝트에서는 기획부터 디자인, 개발까지 맡아 배운 것을 서비스로
-          연결하고 있습니다.
+          <CopyReveal delay={80}>
+            AI를 개발 과정에 활용하고, 새로운 기술도 직접 써보며 익힙니다. 개인
+            프로젝트에서는 기획부터 디자인, 개발까지 맡아 배운 것을 서비스로
+            연결하고 있습니다.
+          </CopyReveal>
         </p>
       </div>
     </section>

@@ -1,11 +1,6 @@
 "use client";
 
-import {
-  useLayoutEffect,
-  useRef,
-  type CSSProperties,
-  type ReactNode,
-} from "react";
+import { useLayoutEffect, useRef, type ReactNode } from "react";
 import { getScrollViewport } from "./ScrollViewport";
 import styles from "./ProjectCoverEntrance.module.scss";
 
@@ -71,7 +66,7 @@ export default function ProjectCoverEntrance({
       image.addEventListener("error", start);
     });
     const complete = (event: AnimationEvent) => {
-      if ((event.target as HTMLElement).hasAttribute("data-cover-reflection"))
+      if ((event.target as HTMLElement).hasAttribute("data-cover-surface"))
         finish();
     };
     const reduce = () => {
@@ -99,11 +94,6 @@ export default function ProjectCoverEntrance({
       data-cover-entrance="static"
       data-cover-project={projectId}
       data-cover-follow={follow ? "" : undefined}
-      style={
-        {
-          "--entry-side": follow ? 1 : -1,
-        } as CSSProperties
-      }
     >
       {children}
     </div>

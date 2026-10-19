@@ -18,6 +18,7 @@ import styles from "./Portfolio.module.scss";
 import { buttonMotion } from "./buttonMotion";
 import { GLASS_ASSETS } from "../../data/glassAssets";
 import ProjectCoverEntrance from "./ProjectCoverEntrance";
+import CopyReveal from "./CopyReveal";
 
 const projectCount = (count: number) => String(count).padStart(2, "0");
 
@@ -187,7 +188,9 @@ export default function Portfolio() {
       </section>
       <section id="work" className={styles.work} aria-labelledby="work-title">
         <div className={styles.workHeading}>
-          <h2 id="work-title">프로젝트</h2>
+          <h2 id="work-title">
+            <CopyReveal>프로젝트</CopyReveal>
+          </h2>
           <div
             className={styles.filters}
             role="group"
@@ -252,19 +255,44 @@ export default function Portfolio() {
                   <span>{project.year}</span>
                 </div>
                 <div className={styles.projectTitle}>
-                  <h3>{project.title}</h3>
+                  <h3>
+                    <CopyReveal seen={revealed.current.has(project.id)}>
+                      {project.title}
+                    </CopyReveal>
+                  </h3>
                 </div>
                 {project.responsibilities ? (
                   <div className={styles.projectTasks}>
-                    <p>담당 업무</p>
+                    <p>
+                      <CopyReveal
+                        seen={revealed.current.has(project.id)}
+                        delay={40}
+                      >
+                        담당 업무
+                      </CopyReveal>
+                    </p>
                     <ul id={`project-tasks-${project.id}`}>
-                      {project.responsibilities.map((task) => (
-                        <li key={task}>{task}</li>
+                      {project.responsibilities.map((task, taskIndex) => (
+                        <li key={task}>
+                          <CopyReveal
+                            seen={revealed.current.has(project.id)}
+                            delay={70 + taskIndex * 35}
+                          >
+                            {task}
+                          </CopyReveal>
+                        </li>
                       ))}
                     </ul>
                   </div>
                 ) : (
-                  <p className={styles.projectSubtitle}>{project.subtitle}</p>
+                  <p className={styles.projectSubtitle}>
+                    <CopyReveal
+                      seen={revealed.current.has(project.id)}
+                      delay={70}
+                    >
+                      {project.subtitle}
+                    </CopyReveal>
+                  </p>
                 )}
                 <ProjectCoverEntrance
                   projectId={project.id}
@@ -274,7 +302,7 @@ export default function Portfolio() {
                     revealed.current.add(project.id);
                   }}
                 >
-                  <ProjectCover project={project} showReflection />
+                  <ProjectCover project={project} />
                 </ProjectCoverEntrance>
                 <div className={styles.stack}>
                   {project.stack.slice(0, 3).map((tech) => (

@@ -6,18 +6,15 @@ import styles from "./Portfolio.module.scss";
 import ArrowIcon from "./ArrowIcon";
 import WorkCoverMockup from "./WorkCoverMockup";
 import { buttonMotion } from "./buttonMotion";
-import entranceStyles from "./ProjectCoverEntrance.module.scss";
 
 export default function ProjectCover({
   project,
   priority = false,
   showAction = true,
-  showReflection = false,
 }: {
   project: PortfolioProject;
   priority?: boolean;
   showAction?: boolean;
-  showReflection?: boolean;
 }) {
   return (
     <div
@@ -73,13 +70,6 @@ export default function ProjectCover({
           </>
         ) : null}
       </div>
-      {showReflection && (
-        <span
-          className={entranceStyles.reflection}
-          data-cover-reflection
-          aria-hidden="true"
-        />
-      )}
       {showAction && (
         <span
           className={styles.coverArrow}
