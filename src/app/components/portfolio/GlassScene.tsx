@@ -52,6 +52,8 @@ export default function GlassScene() {
     if (!activated) return;
     const element = host.current;
     if (!element) return;
+    const entranceViewport = getScrollViewport();
+    const entranceEligible = entranceViewport?.dataset.intro === "playing";
     let disposed = false;
     let cleanup = () => {};
     const modelLoader = import("three/addons/loaders/GLTFLoader.js");
@@ -249,6 +251,7 @@ export default function GlassScene() {
             uPointer: { value: new THREE.Vector2() },
             uFlow: { value: flowRead.texture },
             uMotion: { value: 1 },
+            uReveal: { value: entranceEligible ? 0 : 1 },
           },
         });
         const footerMaterial = new THREE.ShaderMaterial({
@@ -257,6 +260,7 @@ export default function GlassScene() {
           fragmentShader: glassFragmentShader,
           uniforms: {
             ...material.uniforms,
+            uReveal: { value: 1 },
             uTintRange: { value: new THREE.Vector2(-0.5, 0.5) },
           },
         });
@@ -268,6 +272,7 @@ export default function GlassScene() {
           fragmentShader: glassFragmentShader,
           uniforms: {
             ...material.uniforms,
+            uReveal: { value: 1 },
             uTintTop: { value: new THREE.Color("#6aa5e9") },
             uTintBottom: { value: new THREE.Color("#d1e9fa") },
             uTintRange: { value: new THREE.Vector2(-1, 1) },
@@ -324,6 +329,7 @@ export default function GlassScene() {
               fragmentShader: orbFragmentShader,
               uniforms: {
                 ...accentMaterial.uniforms,
+                uReveal: { value: entranceEligible ? 0 : 1 },
                 uLogo: { value: null },
                 uLogoStrength: { value: 0 },
               },
@@ -393,6 +399,13 @@ export default function GlassScene() {
         footerGroup.visible = false;
         scene.add(footerGroup);
         const motion = window.matchMedia("(prefers-reduced-motion: reduce)");
+        let entranceStart: number | null = null;
+        let entranceFinished = !entranceEligible;
+        const entranceEase = (value: number) => {
+          const t = Math.max(0, Math.min(1, value));
+          return t * t * (3 - 2 * t);
+        };
+        element.dataset.heroEntrance = entranceFinished ? "done" : "waiting";
         const pointer = { x: 0, y: 0 };
         const pointerTarget = new THREE.Vector2();
         const lightTarget = new THREE.Vector3();
@@ -642,7 +655,8 @@ export default function GlassScene() {
             return;
           // High-refresh displays must not multiply the expensive glass passes.
           // Keep scroll/pointer animation at 60 Hz and idle drift at 30 Hz.
-          const interactive = time - lastInteraction < 1000;
+          const interactive =
+            time - lastInteraction < 1000 || !entranceFinished;
           const interval = 1000 / (interactive ? 60 : 30);
           if (!motion.matches && !force && time - lastPaint < interval - 0.5) {
             frame = requestAnimationFrame(render);
@@ -699,6 +713,33 @@ export default function GlassScene() {
             pointerTarget.set(pointer.x, pointer.y),
             1 - Math.exp(-8 * dt),
           );
+          if (!entranceFinished) {
+            const skip =
+              motion.matches ||
+              scrollTop > 8 ||
+              location.pathname !== "/" ||
+              entranceViewport?.dataset.introCancelled === "true";
+            const elapsed =
+              entranceStart === null ? -Infinity : time - entranceStart;
+            material.uniforms.uReveal.value = skip
+              ? 1
+              : entranceEase(elapsed / 600);
+            accents.forEach(({ mesh }, index) => {
+              // Claude -> Figma -> Codex follows their positions from left to right.
+              const order = index === 0 ? 0 : index === 2 ? 1 : 2;
+              mesh.material.uniforms.uReveal.value = skip
+                ? 1
+                : entranceEase((elapsed - 300 - order * 70) / 400);
+            });
+            if (skip || elapsed >= 840) {
+              entranceFinished = true;
+              element.dataset.heroEntrance = "done";
+            } else if (
+              elapsed >= 0 &&
+              element.dataset.heroEntrance !== "revealing"
+            )
+              element.dataset.heroEntrance = "revealing";
+          }
           if (!motion.matches) {
             const follow = 1 - Math.exp(-5 * dt);
             material.uniforms.uLight.value.lerp(
@@ -709,6 +750,16 @@ export default function GlassScene() {
               ),
               1 - Math.exp(-8 * dt),
             );
+            if (
+              !entranceFinished &&
+              entranceStart !== null &&
+              time >= entranceStart
+            ) {
+              // Sweep the existing light, without an extra full-screen pass.
+              const sweep = entranceEase((time - entranceStart) / 750);
+              material.uniforms.uLight.value.x =
+                center.x + (sweep - 0.5) * worldHeight * camera.aspect;
+            }
             group.rotation.y +=
               (0.07 +
                 Math.min(1, scrollTop / viewportHeight) * 1.64 +
@@ -931,6 +982,16 @@ export default function GlassScene() {
           if (!shadersReady) await prepareShaders();
           if (disposed) return;
           shadersReady = true;
+          if (
+            !entranceFinished &&
+            entranceStart === null &&
+            element.dataset.helloGeometry === "glass-mesh"
+          ) {
+            entranceStart = Math.max(
+              performance.now(),
+              Number(entranceViewport?.dataset.introStarted ?? 0) + 550,
+            );
+          }
           const state = readScroll();
           footerFraming =
             footerWords.length === 2 &&

@@ -69,6 +69,7 @@ export function PortfolioHeader() {
         scroll={false}
         onClick={() => setOpen(false)}
         aria-label="김도훈 포트폴리오 홈"
+        data-intro-logo
       >
         DOHOON<span>®</span>
       </Link>
@@ -175,7 +176,7 @@ export default function Portfolio() {
           aria-hidden="true"
         />
         <div className={styles.heroBottom}>
-          <div className={styles.heroSummary}>
+          <div className={styles.heroSummary} data-intro-summary>
             <p className={styles.heroCoordinates}>퍼블리싱에서 프론트엔드로</p>
             <p className={styles.heroLead}>
               화면과 기능을 함께 만드는
@@ -188,6 +189,7 @@ export default function Portfolio() {
             href="#work"
             className={styles.explore}
             aria-label="프로젝트 살펴보기"
+            data-intro-cta
             {...buttonMotion}
           >
             <span className={styles.exploreLabel} aria-hidden="true">

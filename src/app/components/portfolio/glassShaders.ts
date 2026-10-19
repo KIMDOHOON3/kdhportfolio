@@ -51,6 +51,7 @@ export const glassFragmentShader = `
   uniform vec2 uPointer;
   uniform sampler2D uFlow;
   uniform float uMotion;
+  uniform float uReveal;
   varying vec3 vWorldPosition;
   varying vec3 vNormal;
   varying float vLocalHeight;
@@ -169,6 +170,9 @@ export const glassFragmentShader = `
     // Avoid stacking opaque white shoulders over every curved face.
     color = color * (1.0 - fresnel) + reflectedLight * fresnel;
     color += vec3(1.0, 0.98, 0.93) * specular;
+    // A one-time entrance blends into the same linear backdrop. The uniform
+    // branch skips this sample entirely after the lettering has appeared.
+    if (uReveal < 1.0) color = mix(texture2D(uScene, screenUv).rgb, color, uReveal);
     gl_FragColor = vec4(color, 1.0);
     #include <colorspace_fragment>
   }

@@ -1338,6 +1338,7 @@ $label: "NewYork", "Pretendard-Regular", sans-serif;
 }
 .hero {
   top: auto;
+  height: 100vh;
   height: 100dvh;
   min-height: 0;
   max-height: none;
@@ -1631,6 +1632,7 @@ $label: "NewYork", "Pretendard-Regular", sans-serif;
 }
 @media (max-width: 760px) {
   .hero {
+    height: 100vh;
     height: 100dvh;
     min-height: 0;
     max-height: none;
@@ -1652,8 +1654,11 @@ $label: "NewYork", "Pretendard-Regular", sans-serif;
       font-size: 13px;
       gap: 12px;
       align-self: flex-start;
+      flex-shrink: 0;
+      white-space: nowrap;
     }
   }
+  .heroSummary { min-width: 0; width: 100%; }
   .about {
     padding: 72px 16px;
     gap: 30px 0;
@@ -1760,12 +1765,16 @@ $label: "NewYork", "Pretendard-Regular", sans-serif;
   .heroSummary {
     gap: 8px;
   }
-  .heroBottom {
-    flex-direction: row;
-    align-items: flex-end;
-    gap: 16px;
-    .heroCoordinates {
-      font-size: 10px;
+  // A short portrait webview (e.g. in-app browser toolbars) still needs
+  // stacked copy and CTA. Only wide screens can use the compact row.
+  @media (min-width: 761px) {
+    .heroBottom {
+      flex-direction: row;
+      align-items: flex-end;
+      gap: 16px;
+      .heroCoordinates {
+        font-size: 10px;
+      }
     }
   }
   .storyPinned {

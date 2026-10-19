@@ -4,6 +4,8 @@ import { useEffect, useLayoutEffect, useRef, type ReactNode } from "react";
 import { usePathname } from "next/navigation";
 import Lenis from "lenis";
 import styles from "./Portfolio.module.scss";
+import entranceStyles from "./HeroEntrance.module.scss";
+import { useHeroEntrance } from "./useHeroEntrance";
 
 type ScrollSnapshot = {
   top: number;
@@ -76,6 +78,7 @@ export default function ScrollViewport({ children }: { children: ReactNode }) {
   const viewport = useRef<HTMLDivElement>(null);
   const content = useRef<HTMLDivElement>(null);
   const pathname = usePathname();
+  const intro = useHeroEntrance(viewport, pathname);
   useEffect(() => {
     const wrapper = viewport.current;
     const body = content.current;
@@ -243,7 +246,8 @@ export default function ScrollViewport({ children }: { children: ReactNode }) {
   return (
     <div
       ref={viewport}
-      className={styles.scrollViewport}
+      className={`${styles.scrollViewport} ${entranceStyles.scope}`}
+      data-intro={intro}
       data-scroll-viewport
       data-scrolled="false"
       data-home={pathname === "/"}
