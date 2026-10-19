@@ -875,8 +875,10 @@ export default function GlassScene() {
           if (hasHero) loadHero?.();
           const wasContactVisible = contactVisible;
           const wasFooterFraming = footerFraming;
-          if (footerTop < viewportHeight * 3) loadFooter?.();
-          contactVisible = footerTop < viewportHeight;
+          if (footerTop < state.visibleHeight * 3) loadFooter?.();
+          // Visibility follows the real screen; animation distances use the
+          // stable layout height so browser chrome cannot shift the scene.
+          contactVisible = footerTop < state.visibleHeight;
           // Switch buffer sizes in the hidden gap, before reverse scrolling
           // brings HELLO back into view, rather than on its first visible frame.
           footerFraming =

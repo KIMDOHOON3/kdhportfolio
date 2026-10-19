@@ -77,7 +77,7 @@ $label: "NewYork", "Pretendard-Regular", sans-serif;
 .hero {
   position: relative;
   z-index: 2;
-  height: 100dvh;
+  height: calc(100 * var(--layout-vh, 1dvh));
   min-height: 0;
   display: grid;
   grid-template-columns: var(--grid-columns);
@@ -104,6 +104,10 @@ $label: "NewYork", "Pretendard-Regular", sans-serif;
   min-height: 0;
   z-index: 0;
   pointer-events: none;
+  @media (hover: none) and (pointer: coarse) {
+    bottom: auto;
+    height: var(--glass-viewport-height, 100lvh);
+  }
   canvas {
     display: block;
     position: relative;
@@ -1362,13 +1366,13 @@ $label: "NewYork", "Pretendard-Regular", sans-serif;
 .hero {
   top: auto;
   height: 100vh;
-  height: 100dvh;
+  height: calc(100 * var(--layout-vh, 1dvh));
   min-height: 0;
   max-height: none;
-  padding: 96px var(--page-inset) clamp(28px, 5dvh, 56px);
+  padding: 96px var(--page-inset) clamp(28px, calc(5 * var(--layout-vh, 1dvh)), 56px);
   grid-template-rows: minmax(0, 1fr) auto;
   grid-template-columns: repeat(12, minmax(0, 1fr));
-  row-gap: clamp(16px, 2.5dvh, 28px);
+  row-gap: clamp(16px, calc(2.5 * var(--layout-vh, 1dvh)), 28px);
 }
 .heroLetteringFrame {
   grid-column: 1 / -1;
@@ -1523,7 +1527,7 @@ $label: "NewYork", "Pretendard-Regular", sans-serif;
   background: #050607;
   color: #f4f7fa;
   &[data-enhanced="true"] {
-    height: calc(var(--story-screens, 4) * 100dvh);
+    height: calc(var(--story-screens, 4) * 100 * var(--layout-vh, 1dvh));
     background: transparent;
     color: $ink;
   }
@@ -1571,7 +1575,7 @@ $label: "NewYork", "Pretendard-Regular", sans-serif;
 }
 .storyPinned {
   position: relative;
-  min-height: 100dvh;
+  min-height: calc(100 * var(--layout-vh, 1dvh));
   display: grid;
   place-items: center;
   padding: 96px var(--page-inset);
@@ -1579,7 +1583,7 @@ $label: "NewYork", "Pretendard-Regular", sans-serif;
 [data-enhanced="true"] > .storyPinned {
   position: sticky;
   top: 0;
-  height: 100dvh;
+  height: calc(100 * var(--layout-vh, 1dvh));
 }
 .storyPanel {
   position: relative;
@@ -1656,7 +1660,7 @@ $label: "NewYork", "Pretendard-Regular", sans-serif;
 @media (max-width: 760px) {
   .hero {
     height: 100vh;
-    height: 100dvh;
+    height: calc(100 * var(--layout-vh, 1dvh));
     min-height: 0;
     max-height: none;
     padding: 86px 16px calc(28px + env(safe-area-inset-bottom, 0px));

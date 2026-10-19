@@ -6,10 +6,12 @@ import Lenis from "lenis";
 import styles from "./Portfolio.module.scss";
 import entranceStyles from "./HeroEntrance.module.scss";
 import { useHeroEntrance } from "./useHeroEntrance";
+import { useStableViewport } from "./useStableViewport";
 
 type ScrollSnapshot = {
   top: number;
   height: number;
+  visibleHeight: number;
   limit: number;
   velocity: number;
   hasHero: boolean;
@@ -48,11 +50,13 @@ export const readScroll = (): ScrollSnapshot => {
   const element = getScrollViewport();
   if (!regions || regionPath !== location.pathname) measureRegions();
   const top = element?.scrollTop ?? window.scrollY;
-  const height = element?.clientHeight ?? window.innerHeight;
+  const visibleHeight = element?.clientHeight ?? window.innerHeight;
+  const height = Number(element?.dataset.layoutHeight) || visibleHeight;
   const { hero, footer, ending } = regions!;
   return {
     top,
     height,
+    visibleHeight,
     limit: element
       ? Math.max(0, element.scrollHeight - element.clientHeight)
       : 0,
@@ -78,18 +82,23 @@ export default function ScrollViewport({ children }: { children: ReactNode }) {
   const viewport = useRef<HTMLDivElement>(null);
   const content = useRef<HTMLDivElement>(null);
   const pathname = usePathname();
+  useStableViewport(viewport);
   const initialized = useRef(false);
   useLayoutEffect(() => {
     if (initialized.current) return;
     initialized.current = true;
-    const navigation = performance.getEntriesByType(
-      "navigation",
-    )[0] as PerformanceNavigationTiming | undefined;
+    const navigation = performance.getEntriesByType("navigation")[0] as
+      | PerformanceNavigationTiming
+      | undefined;
     // Reset a home-page refresh before the intro and anchor alignment run.
     // Direct section links and subsequent client-side navigation still work.
     if (pathname !== "/" || navigation?.type !== "reload") return;
     history.scrollRestoration = "manual";
-    history.replaceState(history.state, "", location.pathname + location.search);
+    history.replaceState(
+      history.state,
+      "",
+      location.pathname + location.search,
+    );
     if (viewport.current) viewport.current.scrollTop = 0;
     window.scrollTo(0, 0);
   }, [pathname]);
@@ -102,8 +111,11 @@ export default function ScrollViewport({ children }: { children: ReactNode }) {
     let frame = 0;
     let pending = false;
     let layoutDirty = true;
+    let lastTick = 0;
+    let engineClock = 0;
     const notify = () => {
       pending = true;
+      if (!frame) frame = requestAnimationFrame(raf);
     };
     const flush = () => {
       pending = false;
@@ -128,6 +140,8 @@ export default function ScrollViewport({ children }: { children: ReactNode }) {
     };
     const configure = () => {
       engine?.destroy();
+      lastTick = 0;
+      engineClock = 0;
       engine = motion.matches
         ? null
         : new Lenis({
@@ -142,12 +156,25 @@ export default function ScrollViewport({ children }: { children: ReactNode }) {
             anchors: false,
             autoRaf: false,
           });
+      engine?.on("scroll", notify);
+      engine?.on("virtual-scroll", ({ event }) => {
+        // A wheel starts Lenis before any native scroll event is dispatched.
+        // Touch momentum remains native and wakes through scroll events.
+        if (event.type === "wheel") notify();
+      });
       notify();
     };
     const raf = (time: number) => {
-      engine?.raf(time);
+      frame = 0;
+      // Waking after an idle gap must not advance a new scroll animation by
+      // several seconds on its first frame.
+      engineClock += lastTick ? Math.min(32, time - lastTick) : 1000 / 60;
+      lastTick = time;
+      engine?.raf(engineClock);
       if (pending) flush();
-      frame = requestAnimationFrame(raf);
+      // Native touch momentum needs no perpetual JS animation loop.
+      if (engine?.isScrolling === "smooth" && !frame)
+        frame = requestAnimationFrame(raf);
     };
     const anchor = (event: MouseEvent) => {
       if (
@@ -179,6 +206,8 @@ export default function ScrollViewport({ children }: { children: ReactNode }) {
       const actualTop = target.getBoundingClientRect().top + wrapper.scrollTop;
       const margin = parseFloat(getComputedStyle(target).scrollMarginTop) || 0;
       if (engine) {
+        // Filters can change content height before Lenis' debounced observer.
+        engine.resize();
         // Focusing an offscreen link can change the native scroll position
         // before Lenis receives that scroll event. Use actual coordinates.
         engine.scrollTo(wrapper.scrollTop, { immediate: true, force: true });
@@ -192,11 +221,10 @@ export default function ScrollViewport({ children }: { children: ReactNode }) {
             (location.pathname !== "/" || target.id.startsWith("journey-")
               ? margin
               : 0),
-          behavior: "instant",
+          behavior: motion.matches ? "instant" : "smooth",
         });
     };
     configure();
-    frame = requestAnimationFrame(raf);
     wrapper.addEventListener("scroll", notify, { passive: true });
     window.addEventListener("resize", layoutChange);
     wrapper.addEventListener("click", anchor, true);

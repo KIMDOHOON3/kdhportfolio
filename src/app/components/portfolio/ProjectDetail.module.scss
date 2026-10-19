@@ -16,7 +16,7 @@ $display: "NewYork", "Pretendard-Regular", serif;
   color: $ink;
   background: transparent;
   font: 16px/1.7 $sans;
-  min-height: 80dvh;
+  min-height: calc(80 * var(--layout-vh, 1dvh));
   &::before {
     content: "";
     position: absolute;

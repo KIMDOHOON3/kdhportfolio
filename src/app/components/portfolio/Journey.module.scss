@@ -38,7 +38,7 @@ $line: rgba(48, 71, 90, 0.17);
 .journey[data-enhanced="true"] {
   .runway {
     display: block;
-    height: 70dvh;
+    height: calc(70 * var(--layout-vh, 1dvh));
   }
   &[data-entered="false"] .page {
     opacity: 0;
@@ -503,7 +503,7 @@ $line: rgba(48, 71, 90, 0.17);
 }
 .ending {
   position: relative;
-  min-height: clamp(540px, 76dvh, 720px);
+  min-height: clamp(540px, calc(76 * var(--layout-vh, 1dvh)), 720px);
   padding: 190px var(--journey-inset) 150px;
   isolation: isolate;
   overflow: hidden;
