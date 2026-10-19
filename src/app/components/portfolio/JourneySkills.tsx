@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { Icon } from "../Icons";
 import { JOURNEY_SKILLS } from "@/app/data/journey";
 import styles from "./Journey.module.scss";
+import CopyReveal from "./CopyReveal";
 
 export default function JourneySkills({
   decorative = false,
@@ -31,7 +32,16 @@ export default function JourneySkills({
     >
       <div className={styles.skillsHeading}>
         <h3>
-          Skill<span>계속 배우고, 직접 사용합니다.</span>
+          {decorative ? "Skill" : <CopyReveal inline>Skill</CopyReveal>}
+          <span className={styles.skillsCaption}>
+            {decorative ? (
+              "계속 배우고, 직접 사용합니다."
+            ) : (
+              <CopyReveal inline delay={45}>
+                계속 배우고, 직접 사용합니다.
+              </CopyReveal>
+            )}
+          </span>
         </h3>
         {!decorative && (
           <button
@@ -39,13 +49,17 @@ export default function JourneySkills({
             className={styles.pause}
             aria-label={paused ? "스킬 롤링 재생" : "스킬 롤링 일시 정지"}
             aria-pressed={paused}
+            data-element-reveal="item"
             onClick={() => setPaused(!paused)}
           >
             <span aria-hidden="true">{paused ? "▶" : "Ⅱ"}</span>
           </button>
         )}
       </div>
-      <div className={styles.skillsWindow}>
+      <div
+        className={styles.skillsWindow}
+        data-element-reveal={decorative ? undefined : "frame"}
+      >
         <div className={styles.skillsTrack} data-skills-track>
           {[0, 1].map((copy) => (
             <ul

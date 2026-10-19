@@ -8,7 +8,7 @@ export default function AboutSection() {
       <h2 id="about-title" className={styles.visuallyHidden}>
         소개
       </h2>
-      <div className={styles.aboutPortrait}>
+      <div className={styles.aboutPortrait} data-element-reveal="frame">
         <InterfaceSketch />
       </div>
       <div className={styles.aboutText}>

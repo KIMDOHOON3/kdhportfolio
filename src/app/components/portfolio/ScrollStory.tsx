@@ -10,6 +10,27 @@ import JourneySkills from "./JourneySkills";
 import { JOURNEY } from "@/app/data/journey";
 import { DownloadIcon } from "../Icons";
 import styles from "./Journey.module.scss";
+import CopyReveal from "./CopyReveal";
+
+function JourneyCopy({
+  children,
+  preview = false,
+  inline = false,
+  delay = 0,
+}: {
+  children: string;
+  preview?: boolean;
+  inline?: boolean;
+  delay?: number;
+}) {
+  return preview ? (
+    <>{children}</>
+  ) : (
+    <CopyReveal inline={inline} delay={delay}>
+      {children}
+    </CopyReveal>
+  );
+}
 
 const clamp = (value: number) => Math.max(0, Math.min(1, value));
 const smooth = (value: number) => {
@@ -21,13 +42,23 @@ const mix = (a: number, b: number, t: number) => a + (b - a) * t;
 function JourneyHeading({ preview = false }: { preview?: boolean }) {
   return (
     <div className={styles.heading}>
-      <p className={styles.eyebrow}>EXPERIENCE & EDUCATION</p>
+      <p className={styles.eyebrow}>
+        <JourneyCopy preview={preview}>EXPERIENCE & EDUCATION</JourneyCopy>
+      </p>
       <h2 id={preview ? undefined : "journey-title"}>
-        퍼블리싱에서 시작해
+        <JourneyCopy preview={preview} inline>
+          퍼블리싱에서 시작해
+        </JourneyCopy>
         <br />
-        프론트엔드로.
+        <JourneyCopy preview={preview} inline delay={45}>
+          프론트엔드로.
+        </JourneyCopy>
       </h2>
-      <p className={styles.intro}>화면과 기능을 함께 만들어온 과정입니다.</p>
+      <p className={styles.intro}>
+        <JourneyCopy preview={preview} delay={70}>
+          화면과 기능을 함께 만들어온 과정입니다.
+        </JourneyCopy>
+      </p>
     </div>
   );
 }
@@ -47,6 +78,7 @@ function JourneyAside({ preview = false }: { preview?: boolean }) {
             href={`#journey-${chapter.id}`}
             tabIndex={preview ? -1 : undefined}
             aria-current={index === 0 ? "step" : undefined}
+            data-element-reveal={preview ? undefined : "item"}
           >
             <span>{chapter.year}</span>
             <span>{chapter.label}</span>
@@ -58,6 +90,7 @@ function JourneyAside({ preview = false }: { preview?: boolean }) {
         download
         tabIndex={preview ? -1 : undefined}
         className={styles.resume}
+        data-element-reveal={preview ? undefined : "item"}
       >
         이력서 내려받기{" "}
         <DownloadIcon
@@ -74,24 +107,44 @@ function JourneyAside({ preview = false }: { preview?: boolean }) {
 function ChapterContent({
   chapter,
   index,
+  preview = false,
 }: {
   chapter: (typeof JOURNEY)[number];
   index: number;
+  preview?: boolean;
 }) {
   return (
     <>
       <div className={styles.chapterTop}>
-        <p className={styles.year}>{chapter.year}</p>
+        <p className={styles.year}>
+          <JourneyCopy preview={preview} inline>
+            {chapter.year}
+          </JourneyCopy>
+        </p>
         <span className={styles.chapterNumber}>
-          {String(index + 1).padStart(2, "0")}
+          <JourneyCopy preview={preview} inline>
+            {String(index + 1).padStart(2, "0")}
+          </JourneyCopy>
         </span>
       </div>
-      <h3>{chapter.title}</h3>
-      <p className={styles.organization}>{chapter.organization}</p>
-      <p className={styles.description}>{chapter.description}</p>
+      <h3>
+        <JourneyCopy preview={preview}>{chapter.title}</JourneyCopy>
+      </h3>
+      <p className={styles.organization}>
+        <JourneyCopy preview={preview} delay={45}>
+          {chapter.organization}
+        </JourneyCopy>
+      </p>
+      <p className={styles.description}>
+        <JourneyCopy preview={preview} delay={70}>
+          {chapter.description}
+        </JourneyCopy>
+      </p>
       <ul className={styles.details}>
         {chapter.details.map((detail) => (
-          <li key={detail}>{detail}</li>
+          <li key={detail} data-element-reveal={preview ? undefined : "item"}>
+            {detail}
+          </li>
         ))}
       </ul>
     </>
@@ -472,7 +525,7 @@ export default function ScrollStory() {
               <JourneyAside preview />
               <div className={styles.timeline}>
                 <div className={styles.chapter}>
-                  <ChapterContent chapter={JOURNEY[0]} index={0} />
+                  <ChapterContent chapter={JOURNEY[0]} index={0} preview />
                 </div>
               </div>
             </div>
@@ -536,13 +589,19 @@ export default function ScrollStory() {
             ))}
           </svg>
           <div className={styles.endingCopy}>
-            <span>Contact me</span>
+            <span>
+              <CopyReveal inline>Contact me</CopyReveal>
+            </span>
             <p>
-              함께 일하고 싶은 프론트엔드 개발자
+              <CopyReveal inline>함께 일하고 싶은 프론트엔드 개발자</CopyReveal>
               <br />
-              찾고 계신가요?
+              <CopyReveal inline delay={45}>
+                찾고 계신가요?
+              </CopyReveal>
             </p>
-            <a href="mailto:kingyska@nate.com">언제든 연락주세요! ↗</a>
+            <a href="mailto:kingyska@nate.com" data-element-reveal="item">
+              언제든 연락주세요! ↗
+            </a>
           </div>
         </div>
       </div>

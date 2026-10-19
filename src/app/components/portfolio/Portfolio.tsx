@@ -19,6 +19,7 @@ import { buttonMotion } from "./buttonMotion";
 import { GLASS_ASSETS } from "../../data/glassAssets";
 import ProjectCoverEntrance from "./ProjectCoverEntrance";
 import CopyReveal from "./CopyReveal";
+import useElementEntrances from "./useElementEntrances";
 
 const projectCount = (count: number) => String(count).padStart(2, "0");
 
@@ -84,46 +85,55 @@ export function PortfolioHeader() {
 }
 
 export function PortfolioFooter() {
+  const root = useRef<HTMLElement>(null);
+  useElementEntrances(root);
   return (
-    <footer className={styles.footer} id="contact">
+    <footer ref={root} className={styles.footer} id="contact">
       <div className={styles.contactMain}>
         <h2 className={styles.thankYou} lang="en" data-footer-thanks>
           <span>THANK</span> <span>YOU</span>
         </h2>
       </div>
       <div className={styles.contactLinks}>
-        <a href="mailto:kingyska@nate.com">
+        <a href="mailto:kingyska@nate.com" data-element-reveal="frame">
           <MailIcon
             className={styles.actionIcon}
             fill="currentColor"
             aria-hidden="true"
           />
-          kingyska@nate.com
+          <CopyReveal inline>kingyska@nate.com</CopyReveal>
         </a>
         <a
           href="https://github.com/KIMDOHOON3"
           target="_blank"
           rel="noreferrer"
+          data-element-reveal="frame"
         >
           <GithubIcon
             className={styles.actionIcon}
             fill="currentColor"
             aria-hidden="true"
           />
-          GitHub
+          <CopyReveal inline>GitHub</CopyReveal>
         </a>
-        <a href="/resume/김도훈-이력서.pdf" download>
+        <a href="/resume/김도훈-이력서.pdf" download data-element-reveal="frame">
           <DownloadIcon
             className={styles.actionIcon}
             fill="currentColor"
             aria-hidden="true"
           />
-          이력서 다운로드
+          <CopyReveal inline>이력서 다운로드</CopyReveal>
         </a>
       </div>
       <div className={styles.footerBottom}>
-        <span>© {new Date().getFullYear()} 김도훈</span>
-        <a href="#top">맨 위로 ↑</a>
+        <span>
+          <CopyReveal
+            inline
+          >{`© ${new Date().getFullYear()} 김도훈`}</CopyReveal>
+        </span>
+        <a href="#top">
+          <CopyReveal inline>맨 위로 ↑</CopyReveal>
+        </a>
       </div>
     </footer>
   );
@@ -131,13 +141,15 @@ export function PortfolioFooter() {
 
 export default function Portfolio() {
   const [filter, setFilter] = useState("전체");
+  const root = useRef<HTMLElement>(null);
+  useElementEntrances(root, filter);
   const revealed = useRef(new Set<number>());
   const visibleProjects = portfolioProjects.filter(
     (project) => filter === "전체" || project.category === filter,
   );
 
   return (
-    <main id="top" className={styles.portfolio}>
+    <main ref={root} id="top" className={styles.portfolio}>
       <link
         rel="preload"
         href={GLASS_ASSETS.hello}
@@ -214,6 +226,7 @@ export default function Portfolio() {
                   onClick={() => setFilter(value)}
                   aria-pressed={filter === value}
                   aria-label={`${label} ${count}`}
+                  data-element-reveal="item"
                   {...buttonMotion}
                 >
                   <span
@@ -249,10 +262,16 @@ export default function Portfolio() {
               >
                 <div className={styles.projectMeta}>
                   <span>
-                    {projectCount(portfolioProjects.indexOf(project) + 1)}{" "}
-                    {project.category}
+                    <CopyReveal
+                      inline
+                      seen={revealed.current.has(project.id)}
+                    >{`${projectCount(portfolioProjects.indexOf(project) + 1)} ${project.category}`}</CopyReveal>
                   </span>
-                  <span>{project.year}</span>
+                  <span>
+                    <CopyReveal inline seen={revealed.current.has(project.id)}>
+                      {project.year}
+                    </CopyReveal>
+                  </span>
                 </div>
                 <div className={styles.projectTitle}>
                   <h3>
@@ -306,7 +325,13 @@ export default function Portfolio() {
                 </ProjectCoverEntrance>
                 <div className={styles.stack}>
                   {project.stack.slice(0, 3).map((tech) => (
-                    <span key={tech}>
+                    <span
+                      key={tech}
+                      data-element-reveal="item"
+                      data-element-seen={
+                        revealed.current.has(project.id) ? "true" : undefined
+                      }
+                    >
                       <TechnologyIcon name={tech} />
                       {tech}
                     </span>
@@ -318,7 +343,7 @@ export default function Portfolio() {
         </div>
         {filter !== "전체" && (
           <p className={styles.filterResult} aria-live="polite">
-            {visibleProjects.length}개의 프로젝트를 보고 있습니다.
+            <CopyReveal>{`${visibleProjects.length}개의 프로젝트를 보고 있습니다.`}</CopyReveal>
           </p>
         )}
       </section>

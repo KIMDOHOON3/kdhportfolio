@@ -1,7 +1,7 @@
 "use client";
 
 import { useLayoutEffect, useRef, useState, type CSSProperties } from "react";
-import { getScrollViewport } from "./ScrollViewport";
+import { observeEntrance } from "./entranceObserver";
 import styles from "./CopyReveal.module.scss";
 
 /** Original text owns layout and accessibility; the overlay only animates. */
@@ -9,10 +9,12 @@ export default function CopyReveal({
   children,
   seen = false,
   delay = 0,
+  inline = false,
 }: {
   children: string;
   seen?: boolean;
   delay?: number;
+  inline?: boolean;
 }) {
   const root = useRef<HTMLSpanElement>(null);
   const source = useRef<HTMLSpanElement>(null);
@@ -23,7 +25,7 @@ export default function CopyReveal({
     const textElement = source.current;
     if (!element || !textElement) return;
     const motion = matchMedia("(prefers-reduced-motion: reduce)");
-    let observer: IntersectionObserver | undefined;
+    let unsubscribe = () => {};
     let resize: ResizeObserver | undefined;
     let cancelled = false;
     let preparing = false;
@@ -31,7 +33,7 @@ export default function CopyReveal({
     let fallback: ReturnType<typeof setTimeout> | undefined;
     const finish = () => {
       element.dataset.copyEntrance = "done";
-      observer?.disconnect();
+      unsubscribe();
       resize?.disconnect();
       clearTimeout(fallback);
       setLines([]);
@@ -45,25 +47,34 @@ export default function CopyReveal({
       const node = textElement.firstChild;
       if (!node || node.nodeType !== Node.TEXT_NODE) return finish();
       const range = document.createRange();
+      const font = getComputedStyle(textElement);
+      const lineHeight =
+        parseFloat(font.lineHeight) || parseFloat(font.fontSize) * 1.2;
       const measured: string[] = [];
       let line = "";
-      let top: number | undefined;
+      let center: number | undefined;
       for (let index = 0; index < children.length; index++) {
         range.setStart(node, index);
         range.setEnd(node, index + 1);
         const rect = range.getBoundingClientRect();
-        if (rect.width && top !== undefined && Math.abs(rect.top - top) > 2) {
+        const nextCenter = rect.top + rect.height * 0.5;
+        // Mixed NewYork/Korean glyphs have different ascenders on the same line.
+        if (
+          rect.width &&
+          center !== undefined &&
+          Math.abs(nextCenter - center) > lineHeight * 0.55
+        ) {
           measured.push(line.trim());
           line = "";
         }
-        if (rect.width) top = rect.top;
+        if (rect.width) center = nextCenter;
         line += children[index];
       }
       if (line.trim()) measured.push(line.trim());
       if (!measured.length) return finish();
       setLines(measured);
       element.dataset.copyEntrance = "playing";
-      observer?.disconnect();
+      unsubscribe();
       fallback = setTimeout(
         finish,
         1000 + delay + Math.min(measured.length * 45, 225),
@@ -72,18 +83,14 @@ export default function CopyReveal({
     if (seen || motion.matches) finish();
     else {
       element.dataset.copyEntrance = "pending";
-      observer = new IntersectionObserver(
-        (entries) => {
-          if (entries.some((entry) => entry.isIntersecting)) void start();
-        },
-        { root: getScrollViewport(), rootMargin: "0px 0px -9% 0px" },
-      );
-      observer.observe(element);
+      unsubscribe = observeEntrance(element, () => {
+        void start();
+      });
       // On width changes restore ordinary text instead of using stale line breaks.
       resize = new ResizeObserver(() => {
         if (textElement.offsetWidth !== width) {
           width = textElement.offsetWidth;
-          finish();
+          if (element.dataset.copyEntrance === "playing") finish();
         }
       });
       resize.observe(textElement);
@@ -102,7 +109,7 @@ export default function CopyReveal({
     return () => {
       cancelled = true;
       clearTimeout(fallback);
-      observer?.disconnect();
+      unsubscribe();
       resize?.disconnect();
       focusTarget.removeEventListener("focusin", finish);
       element.removeEventListener("animationend", complete);
@@ -115,6 +122,7 @@ export default function CopyReveal({
       ref={root}
       className={styles.copy}
       data-copy-reveal
+      data-copy-inline={inline ? "" : undefined}
       data-copy-entrance="static"
     >
       <span ref={source} className={styles.source}>

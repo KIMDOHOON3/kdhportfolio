@@ -6,6 +6,12 @@
 .source {
   display: block;
 }
+.copy[data-copy-inline] {
+  display: inline-block;
+  width: auto;
+  max-width: 100%;
+  vertical-align: bottom;
+}
 .overlay {
   position: absolute;
   inset: 0;

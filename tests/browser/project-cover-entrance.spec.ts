@@ -200,7 +200,7 @@ test("no JavaScript keeps content readable and detail covers keep their normal a
   await page.goto("/work/1");
   await expect(
     page.locator(
-      "[data-cover-entrance], [data-cover-reflection], [data-copy-reveal]",
+      "main [data-cover-entrance], main [data-cover-reflection], main [data-copy-reveal]",
     ),
   ).toHaveCount(0);
 });

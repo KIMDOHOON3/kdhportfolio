@@ -1221,7 +1221,7 @@ $label: "NewYork", "Pretendard-Regular", sans-serif;
     flex-wrap: wrap;
     gap: 10px;
     font-size: 14px;
-    span:nth-child(2) {
+    > span:nth-child(2) {
       display: none;
     }
   }

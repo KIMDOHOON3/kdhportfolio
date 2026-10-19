@@ -1,0 +1,38 @@
+.item[data-element-state="pending"] {
+  clip-path: inset(100% 0 0);
+  translate: 0 12px;
+}
+.item[data-element-state="playing"] {
+  animation: enterElement 760ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.item[data-element-reveal="frame"][data-element-state="pending"] {
+  translate: none;
+}
+.item[data-element-reveal="frame"][data-element-state="playing"] {
+  animation-name: openFrame;
+}
+@keyframes enterElement {
+  from {
+    clip-path: inset(100% 0 0);
+    translate: 0 12px;
+  }
+  to {
+    clip-path: inset(0);
+    translate: none;
+  }
+}
+@keyframes openFrame {
+  from {
+    clip-path: inset(100% 0 0);
+  }
+  to {
+    clip-path: inset(0);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .item[data-element-state] {
+    clip-path: none;
+    translate: none;
+    animation: none;
+  }
+}
