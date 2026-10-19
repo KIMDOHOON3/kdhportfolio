@@ -4,32 +4,32 @@
 
 .scope[data-intro="playing"] {
   [data-intro-logo] {
-    animation: inkWipe 420ms cubic-bezier(0.22, 1, 0.36, 1) 60ms both;
+    animation: inkWipe 650ms cubic-bezier(0.25, 0.1, 0.25, 1) 100ms both;
   }
   [data-intro-item] {
-    --menu-delay: 220ms;
+    --menu-delay: 500ms;
     &:nth-child(2) {
-      --menu-delay: 320ms;
+      --menu-delay: 680ms;
     }
     &:nth-child(3) {
-      --menu-delay: 420ms;
+      --menu-delay: 860ms;
     }
   }
   [data-intro-line] {
-    animation: inkWipe 380ms ease-out var(--menu-delay) both;
+    animation: inkWipe 600ms ease var(--menu-delay) both;
   }
   [data-intro-label] {
-    animation: inkLift 400ms cubic-bezier(0.22, 1, 0.36, 1) var(--menu-delay)
+    animation: inkLift 650ms cubic-bezier(0.22, 0.61, 0.36, 1) var(--menu-delay)
       both;
   }
   :global(#navTrigger) svg {
-    animation: inkWipe 420ms ease-out 240ms both;
+    animation: inkWipe 650ms ease 550ms both;
   }
   [data-intro-summary] {
-    animation: inkLift 400ms cubic-bezier(0.22, 1, 0.36, 1) 1050ms both;
+    animation: inkLift 550ms cubic-bezier(0.22, 0.61, 0.36, 1) 1900ms both;
   }
   [data-intro-cta] {
-    animation: inkLift 380ms cubic-bezier(0.22, 1, 0.36, 1) 1120ms both;
+    animation: inkLift 550ms cubic-bezier(0.22, 0.61, 0.36, 1) 2020ms both;
   }
 }
 

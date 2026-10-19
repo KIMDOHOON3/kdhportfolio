@@ -723,15 +723,15 @@ export default function GlassScene() {
               entranceStart === null ? -Infinity : time - entranceStart;
             material.uniforms.uReveal.value = skip
               ? 1
-              : entranceEase(elapsed / 600);
+              : entranceEase(elapsed / 950);
             accents.forEach(({ mesh }, index) => {
               // Claude -> Figma -> Codex follows their positions from left to right.
               const order = index === 0 ? 0 : index === 2 ? 1 : 2;
               mesh.material.uniforms.uReveal.value = skip
                 ? 1
-                : entranceEase((elapsed - 300 - order * 70) / 400);
+                : entranceEase((elapsed - 500 - order * 120) / 650);
             });
-            if (skip || elapsed >= 840) {
+            if (skip || elapsed >= 1390) {
               entranceFinished = true;
               element.dataset.heroEntrance = "done";
             } else if (
@@ -756,7 +756,7 @@ export default function GlassScene() {
               time >= entranceStart
             ) {
               // Sweep the existing light, without an extra full-screen pass.
-              const sweep = entranceEase((time - entranceStart) / 750);
+              const sweep = entranceEase((time - entranceStart) / 1150);
               material.uniforms.uLight.value.x =
                 center.x + (sweep - 0.5) * worldHeight * camera.aspect;
             }
@@ -989,7 +989,7 @@ export default function GlassScene() {
           ) {
             entranceStart = Math.max(
               performance.now(),
-              Number(entranceViewport?.dataset.introStarted ?? 0) + 550,
+              Number(entranceViewport?.dataset.introStarted ?? 0) + 950,
             );
           }
           const state = readScroll();

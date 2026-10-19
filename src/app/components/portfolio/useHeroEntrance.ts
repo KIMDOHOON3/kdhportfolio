@@ -29,7 +29,7 @@ export function useHeroEntrance(
     element.dataset.introStarted = String(performance.now());
     // Text/navigation never wait for a model download. CSS also completes
     // without hydration; user input immediately releases every control.
-    const timer = window.setTimeout(finish, 1600);
+    const timer = window.setTimeout(finish, 2700);
     const inputs = ["wheel", "touchstart", "pointerdown", "keydown"] as const;
     inputs.forEach((type) =>
       element.addEventListener(type, finish, { passive: true }),
