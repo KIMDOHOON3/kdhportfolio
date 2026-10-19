@@ -182,6 +182,8 @@ test("unavailable WebGL leaves the original readable typography", async ({
   const scene = page.locator("[data-glass-scene]");
   await expect(scene).toHaveAttribute("data-failed", "true");
   await expect(scene.locator("span")).toHaveText("hello");
+  await expect(page.locator("[data-intro-summary]")).toHaveCSS("opacity", "1");
+  await expect(page.locator("[data-intro-cta]")).toHaveCSS("opacity", "1");
   const heading = page.locator("[data-footer-thanks]");
   await expect(heading).toHaveText("THANK YOU");
   await expect(heading).not.toHaveCSS("color", "rgba(0, 0, 0, 0)");

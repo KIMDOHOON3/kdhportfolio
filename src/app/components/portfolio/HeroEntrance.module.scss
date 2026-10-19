@@ -26,10 +26,28 @@
     animation: inkWipe 650ms ease 550ms both;
   }
   [data-intro-summary] {
-    animation: inkLift 550ms cubic-bezier(0.22, 0.61, 0.36, 1) 1900ms both;
+    animation: inkLift 550ms cubic-bezier(0.22, 0.61, 0.36, 1) 2450ms both;
   }
   [data-intro-cta] {
-    animation: inkLift 550ms cubic-bezier(0.22, 0.61, 0.36, 1) 2020ms both;
+    animation: inkLift 550ms cubic-bezier(0.22, 0.61, 0.36, 1) 2570ms both;
+  }
+  // Without JavaScript the timed CSS above still reveals readable content.
+  // With WebGL, release these animations only when every orb has appeared.
+  &[data-intro-copy="waiting"] {
+    [data-intro-summary],
+    [data-intro-cta] {
+      animation: none;
+      opacity: 0;
+      transform: translateY(6px);
+    }
+  }
+  &[data-intro-copy="ready"] {
+    [data-intro-summary] {
+      animation-delay: 120ms;
+    }
+    [data-intro-cta] {
+      animation-delay: 240ms;
+    }
   }
 }
 

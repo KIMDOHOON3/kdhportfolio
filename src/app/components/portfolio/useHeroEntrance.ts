@@ -27,9 +27,35 @@ export function useHeroEntrance(
       return;
     }
     element.dataset.introStarted = String(performance.now());
-    // Text/navigation never wait for a model download. CSS also completes
-    // without hydration; user input immediately releases every control.
-    const timer = window.setTimeout(finish, 2700);
+    element.dataset.introCopy = "waiting";
+    let timer = 0;
+    let released = false;
+    const glass = element.querySelector<HTMLElement>("[data-glass-scene]");
+    // Observe the real final glass frame, not an estimated download duration.
+    // A failed WebGL scene releases the copy alongside its HTML fallback.
+    const releaseCopy = () => {
+      if (released) return;
+      if (
+        glass &&
+        glass.dataset.failed !== "true" &&
+        !(
+          glass.dataset.heroEntrance === "done" &&
+          glass.dataset.ready === "true"
+        )
+      )
+        return;
+      released = true;
+      element.dataset.introCopy = "ready";
+      observer.disconnect();
+      timer = window.setTimeout(finish, 850);
+    };
+    const observer = new MutationObserver(releaseCopy);
+    if (glass)
+      observer.observe(glass, {
+        attributes: true,
+        attributeFilter: ["data-hero-entrance", "data-ready", "data-failed"],
+      });
+    releaseCopy();
     const inputs = ["wheel", "touchstart", "pointerdown", "keydown"] as const;
     inputs.forEach((type) =>
       element.addEventListener(type, finish, { passive: true }),
@@ -37,6 +63,7 @@ export function useHeroEntrance(
     motion.addEventListener("change", finish);
     return () => {
       clearTimeout(timer);
+      observer.disconnect();
       inputs.forEach((type) => element.removeEventListener(type, finish));
       motion.removeEventListener("change", finish);
     };

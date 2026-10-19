@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { GLASS_ASSETS } from "../../src/app/data/glassAssets";
 
-test("navigation and copy appear without waiting for the model, then the glass enters once", async ({
+test("navigation appears first, and copy waits for the complete glass entrance even on a slow connection", async ({
   page,
 }, info) => {
   let release!: () => void;
@@ -32,11 +32,17 @@ test("navigation and copy appear without waiting for the model, then the glass e
     else
       for (const item of await nav.all())
         await expect(item).toHaveCSS("opacity", "1");
+    await expect(page.locator("[data-scroll-viewport]")).toHaveAttribute(
+      "data-intro-copy",
+      "waiting",
+    );
+    // Keep the model blocked past the former fixed 2.7-second intro deadline.
+    await page.waitForTimeout(2800);
     await expect(page.locator("[data-intro-summary]")).toHaveCSS(
       "opacity",
-      "1",
+      "0",
     );
-    await expect(page.locator("[data-intro-cta]")).toHaveCSS("opacity", "1");
+    await expect(page.locator("[data-intro-cta]")).toHaveCSS("opacity", "0");
     await expect(page.locator("[data-glass-scene]")).toHaveAttribute(
       "data-ready",
       "false",
@@ -46,7 +52,14 @@ test("navigation and copy appear without waiting for the model, then the glass e
   }
   const scene = page.locator("[data-glass-scene]");
   await expect(scene).toHaveAttribute("data-hero-entrance", "revealing");
+  await expect(page.locator("[data-intro-summary]")).toHaveCSS("opacity", "0");
   await expect(scene).toHaveAttribute("data-hero-entrance", "done");
+  await expect(page.locator("[data-scroll-viewport]")).toHaveAttribute(
+    "data-intro-copy",
+    "ready",
+  );
+  await expect(page.locator("[data-intro-summary]")).toHaveCSS("opacity", "1");
+  await expect(page.locator("[data-intro-cta]")).toHaveCSS("opacity", "1");
   await expect(scene).toHaveAttribute("data-glass-logos", "3");
   await expect(page.locator("[data-scroll-viewport]")).toHaveAttribute(
     "data-intro",
