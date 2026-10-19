@@ -48,6 +48,10 @@ test("resizing repaints the cleared glass canvas before the frame is presented",
   await page.goto("/");
   const scene = page.locator("[data-glass-scene]");
   await expect(scene).toHaveAttribute("data-ready", "true");
+  await expect(page.locator("[data-scroll-viewport]")).toHaveAttribute(
+    "data-intro",
+    "done",
+  );
   await page.evaluate(() => document.fonts.ready);
   await page.evaluate(() => {
     const scope = window as typeof window & {

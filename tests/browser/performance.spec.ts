@@ -13,6 +13,10 @@ test("the first screen only loads its lettering and scroll keeps connection geom
   await page.evaluate(() => document.fonts.ready);
   const scene = page.locator("[data-glass-scene]");
   await expect(scene).toHaveAttribute("data-ready", "true");
+  await expect(page.locator("[data-scroll-viewport]")).toHaveAttribute(
+    "data-intro",
+    "done",
+  );
   await expect(scene).toHaveAttribute("data-hello-geometry", "glass-mesh");
   expect(models.filter((path) => path === GLASS_ASSETS.hello)).toHaveLength(1);
   expect(models).not.toContain(GLASS_ASSETS.footer);

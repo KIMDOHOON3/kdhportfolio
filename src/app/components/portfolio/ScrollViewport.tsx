@@ -138,6 +138,10 @@ export default function ScrollViewport({ children }: { children: ReactNode }) {
       layoutDirty = true;
       notify();
     };
+    const syncIntroLock = () => {
+      if (wrapper.dataset.introLock === "true") engine?.stop();
+      else engine?.start();
+    };
     const configure = () => {
       engine?.destroy();
       lastTick = 0;
@@ -162,6 +166,7 @@ export default function ScrollViewport({ children }: { children: ReactNode }) {
         // Touch momentum remains native and wakes through scroll events.
         if (event.type === "wheel") notify();
       });
+      syncIntroLock();
       notify();
     };
     const raf = (time: number) => {
@@ -202,6 +207,7 @@ export default function ScrollViewport({ children }: { children: ReactNode }) {
       );
       if (!target) return;
       event.preventDefault();
+      if (wrapper.dataset.introLock === "true") return;
       history.replaceState(null, "", url.hash);
       const actualTop = target.getBoundingClientRect().top + wrapper.scrollTop;
       const margin = parseFloat(getComputedStyle(target).scrollMarginTop) || 0;
@@ -225,6 +231,11 @@ export default function ScrollViewport({ children }: { children: ReactNode }) {
         });
     };
     configure();
+    const introLock = new MutationObserver(syncIntroLock);
+    introLock.observe(wrapper, {
+      attributes: true,
+      attributeFilter: ["data-intro-lock"],
+    });
     wrapper.addEventListener("scroll", notify, { passive: true });
     window.addEventListener("resize", layoutChange);
     wrapper.addEventListener("click", anchor, true);
@@ -241,6 +252,7 @@ export default function ScrollViewport({ children }: { children: ReactNode }) {
       window.removeEventListener("resize", layoutChange);
       motion.removeEventListener("change", configure);
       resize.disconnect();
+      introLock.disconnect();
       regions = null;
     };
   }, []);
@@ -296,6 +308,18 @@ export default function ScrollViewport({ children }: { children: ReactNode }) {
       data-home={pathname === "/"}
       tabIndex={-1}
     >
+      <noscript>
+        <style>{`
+          [data-scroll-viewport][data-home="true"][data-intro="playing"] {
+            overflow-y: auto !important;
+            overscroll-behavior: contain;
+            touch-action: auto;
+          }
+          [data-scroll-viewport][data-home="true"][data-intro="playing"] [data-intro-below] {
+            visibility: visible !important;
+          }
+        `}</style>
+      </noscript>
       <div ref={content} data-scroll-content>
         {children}
       </div>

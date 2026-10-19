@@ -9,6 +9,7 @@ test("header stays transparent through the hero and becomes readable near its en
     header.evaluate((element) => getComputedStyle(element, "::before").opacity);
   await page.goto("/");
   await page.evaluate(() => document.fonts.ready);
+  await expect(viewport).toHaveAttribute("data-intro", "done");
   await expect.poll(opacity).toBe("0");
   const bounds = await header.boundingBox();
   const scale = await page.evaluate(() =>

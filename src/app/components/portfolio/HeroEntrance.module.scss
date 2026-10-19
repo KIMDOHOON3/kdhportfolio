@@ -5,6 +5,20 @@
   display: block;
 }
 
+// Cover the server-rendered frame too, before hydration can install listeners.
+.scope[data-intro-lock="true"],
+.scope[data-home="true"][data-intro="playing"] {
+  overflow-y: hidden;
+  overscroll-behavior: none;
+  touch-action: pinch-zoom;
+}
+
+// Preserve every measured section height; no reflow when the content opens.
+.scope[data-home="true"][data-intro="playing"]:not([data-intro-content="ready"])
+  [data-intro-below] {
+  visibility: hidden;
+}
+
 .scope[data-intro="playing"] {
   [data-intro-logo] {
     animation: inkWipe 650ms cubic-bezier(0.25, 0.1, 0.25, 1) 100ms both;

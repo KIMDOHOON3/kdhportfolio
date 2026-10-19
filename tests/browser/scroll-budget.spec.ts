@@ -48,6 +48,10 @@ test("forward and reverse hero scroll reuse GPU resources and obey the render bu
     "data-ready",
     "true",
   );
+  await expect(page.locator("[data-scroll-viewport]")).toHaveAttribute(
+    "data-intro",
+    "done",
+  );
   // Optional pointer shader preparation happens during the first idle gap.
   await page.waitForTimeout(600);
   const result = await page.evaluate(async () => {
@@ -115,6 +119,10 @@ test("mobile touch scroll uses native momentum without snapping back", async ({
   await expect(page.locator("[data-glass-scene]")).toHaveAttribute(
     "data-ready",
     "true",
+  );
+  await expect(page.locator("[data-scroll-viewport]")).toHaveAttribute(
+    "data-intro",
+    "done",
   );
   const cdp = await page.context().newCDPSession(page);
   const { width, height } = page.viewportSize()!;

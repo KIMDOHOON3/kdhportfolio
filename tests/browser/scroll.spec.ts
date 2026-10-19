@@ -7,6 +7,10 @@ async function ready(page: Page) {
     "true",
   );
   await page.evaluate(() => document.fonts.ready);
+  await expect(page.locator("[data-scroll-viewport]")).toHaveAttribute(
+    "data-intro",
+    "done",
+  );
 }
 async function wheelTo(page: Page, target: number) {
   const viewport = page.locator("[data-scroll-viewport]");

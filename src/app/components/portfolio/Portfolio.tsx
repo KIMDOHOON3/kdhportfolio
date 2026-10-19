@@ -97,7 +97,7 @@ export function PortfolioFooter() {
   }, []);
   useElementEntrances(root);
   return (
-    <footer ref={root} className={styles.footer} id="contact">
+    <footer ref={root} className={styles.footer} id="contact" data-intro-below>
       <div className={styles.contactMain}>
         <h2 className={styles.thankYou} lang="en" data-footer-thanks>
           <span>THANK</span> <span>YOU</span>
@@ -219,7 +219,12 @@ export default function Portfolio() {
           </a>
         </div>
       </section>
-      <section id="work" className={styles.work} aria-labelledby="work-title">
+      <section
+        id="work"
+        className={styles.work}
+        aria-labelledby="work-title"
+        data-intro-below
+      >
         <div
           className={styles.workHeading}
           data-entrance-area="프로젝트 제목·필터"

@@ -8,6 +8,10 @@ test("detail pages reuse the home glass footer through client navigation", async
   const footer = page.locator("#contact");
   const scene = page.locator("[data-glass-scene]");
   const showFooter = async () => {
+    await expect(page.locator("[data-scroll-viewport]")).toHaveAttribute(
+      "data-intro",
+      "done",
+    );
     const scale = await page.evaluate(() =>
       navigator.maxTouchPoints > 0 ? devicePixelRatio : 1,
     );
@@ -121,6 +125,10 @@ test("deployment revision, illuminated glass and centered thank-you footer", asy
   );
   await page.evaluate(() => document.fonts.ready);
   const capture = async (name: string) => {
+    await expect(page.locator("[data-scroll-viewport]")).toHaveAttribute(
+      "data-intro",
+      "done",
+    );
     const path = info.outputPath(`${name}.png`);
     await page.screenshot({ path, scale: "css" });
     await info.attach(name, { path, contentType: "image/png" });

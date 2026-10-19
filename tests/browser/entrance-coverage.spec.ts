@@ -46,6 +46,7 @@ test("career is immediately readable after browser entry and lower sections stil
 }, info) => {
   await page.goto("/");
   const viewport = page.locator("[data-scroll-viewport]");
+  await expect(viewport).toHaveAttribute("data-intro", "done");
   const story = page.locator("[data-journey]");
   await expect(story).toHaveAttribute("data-ready", "true");
   await page.evaluate(() => document.fonts.ready);

@@ -431,6 +431,7 @@ export default function ScrollStory() {
       ref={root}
       className={styles.journey}
       data-scroll-story
+      data-intro-below
       data-journey
       data-enhanced="false"
       data-entered="true"

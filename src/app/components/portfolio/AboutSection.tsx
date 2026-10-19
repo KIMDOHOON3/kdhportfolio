@@ -6,6 +6,7 @@ export default function AboutSection() {
   return (
     <section
       id="about"
+      data-intro-below
       className={layout.section}
       aria-labelledby="about-title"
     >

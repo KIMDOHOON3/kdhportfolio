@@ -6,6 +6,7 @@ type Area = {
   element: HTMLElement;
   members: Set<HTMLElement>;
   entered: boolean;
+  project: boolean;
   trigger?: ScrollTrigger;
 };
 type Entrance = { callback: () => void; area: Area };
@@ -114,6 +115,10 @@ function flush() {
   });
   const now = performance.now();
   scopes.forEach((items, scope) => {
+    const project = scope instanceof HTMLElement && scope.id === "work";
+    const maxDelay = project ? 1000 : Infinity;
+    const step = project ? 75 : 90;
+    const rowGap = project ? 75 : 90;
     items.sort((a, b) => a.top - b.top || a.left - b.left);
     const rows: (typeof items)[] = [];
     items.forEach((item) => {
@@ -128,9 +133,9 @@ function flush() {
       row.forEach(({ element }) => {
         const entry = waiting.get(element);
         if (!entry) return;
-        let start = cursor;
+        let start = Math.min(cursor, now + maxDelay);
         if (entry.area.element.dataset.entranceMode === "together") {
-          start = together.get(entry.area) ?? cursor;
+          start = together.get(entry.area) ?? start;
           together.set(entry.area, start);
         }
         element.style.setProperty(
@@ -140,9 +145,9 @@ function flush() {
         element.dataset.entranceAt = String(start);
         waiting.delete(element);
         entry.callback();
-        cursor += 90;
+        cursor += step;
       });
-      cursor += 90;
+      cursor += rowGap;
     });
     cursors.set(scope, cursor);
   });
@@ -168,6 +173,7 @@ function areaFor(element: HTMLElement) {
     element: root,
     members: new Set(),
     entered: false,
+    project: !!root.closest("#work"),
   };
   areas.set(root, area);
   const enter = () => {
@@ -180,9 +186,9 @@ function areaFor(element: HTMLElement) {
     id,
     trigger: root,
     scroller: getScrollViewport() ?? undefined,
-    // Clamp only affects the final footer items that cannot reach 80% before
-    // the scroll area ends; they still reveal at the bottom of the page.
-    start: "clamp(top 80%)",
+    // Projects start near the viewport edge; other sections retain 80%.
+    // Clamp lets final footer items reveal before the scroll area ends.
+    start: area.project ? "clamp(top 85%)" : "clamp(top 80%)",
     end: "bottom top",
     markers: false,
     onEnter: enter,
@@ -197,7 +203,7 @@ function areaFor(element: HTMLElement) {
   return area;
 }
 
-/** One top-80% trigger per area; its children keep their existing row sequence. */
+/** One trigger per area; its children keep their existing row sequence. */
 export function observeEntrance(element: HTMLElement, callback: () => void) {
   if (!registered) {
     gsap.registerPlugin(ScrollTrigger);

@@ -87,6 +87,7 @@ test("portal controls stay aligned across small forward and reverse scroll steps
     );
   });
   const viewport = page.locator("[data-scroll-viewport]");
+  await expect(viewport).toHaveAttribute("data-intro", "done");
   for (const offset of [-2, 2, -1, 1, -2]) {
     await viewport.evaluate((e, top) => {
       e.scrollTop = top;

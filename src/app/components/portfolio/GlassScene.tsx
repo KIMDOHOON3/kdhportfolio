@@ -786,11 +786,7 @@ export default function GlassScene() {
             1 - Math.exp(-8 * dt),
           );
           if (!entranceFinished) {
-            const skip =
-              motion.matches ||
-              scrollTop > 8 ||
-              location.pathname !== "/" ||
-              entranceViewport?.dataset.introCancelled === "true";
+            const skip = motion.matches || location.pathname !== "/";
             const elapsed =
               entranceStart === null ? -Infinity : time - entranceStart;
             material.uniforms.uReveal.value = skip
@@ -833,6 +829,12 @@ export default function GlassScene() {
                 `orb${accent.logo[0].toUpperCase()}${accent.logo.slice(1)}`
               ] = progress.toFixed(4);
             });
+            if (
+              (skip || elapsed >= HERO_ENTRANCE_MS * 0.8) &&
+              entranceViewport &&
+              entranceViewport.dataset.introContent !== "ready"
+            )
+              entranceViewport.dataset.introContent = "ready";
             if (skip || elapsed >= HERO_ENTRANCE_MS) {
               entranceFinished = true;
               element.dataset.heroEntrance = "done";

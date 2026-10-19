@@ -45,6 +45,10 @@ test("presentation assets load while local documents remain excluded", async ({
         ),
     )
     .toBe(true);
+  await expect(page.locator("[data-scroll-viewport]")).toHaveAttribute(
+    "data-intro",
+    "done",
+  );
   await page.mouse.wheel(0, 100000);
   await expect(scene).toHaveAttribute("data-footer-geometry", "glass-path");
 });
