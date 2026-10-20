@@ -284,6 +284,7 @@ export default function GlassScene() {
             uMotion: { value: 1 },
             uReveal: { value: entranceEligible ? 0 : 1 },
             uStrokeReveal: strokeReveal,
+            uClearRim: { value: 1 },
           },
         });
         const footerMaterial = new THREE.ShaderMaterial({

@@ -63,6 +63,7 @@ export const glassFragmentShader = `
   uniform float uReveal;
   uniform float uStrokeReveal;
   varying vec3 vWorldPosition;
+  uniform float uClearRim;
   varying vec3 vNormal;
   varying float vLocalHeight;
   varying float vStroke;
@@ -182,6 +183,12 @@ export const glassFragmentShader = `
     // Avoid stacking opaque white shoulders over every curved face.
     color = color * (1.0 - fresnel) + reflectedLight * fresnel;
     color += vec3(1.0, 0.98, 0.93) * specular;
+    // At grazing angles the dark studio reflection looks like a black outline.
+    // Let the glass silhouette transmit the backdrop instead of a painted rim.
+    if (uClearRim > 0.0) {
+      float clearEdge = 1.0 - smoothstep(0.08, 0.35, facing);
+      color = mix(color, texture2D(uScene, screenUv).rgb, clearEdge * uClearRim);
+    }
     float surfaceReveal = uReveal;
     if (uStrokeReveal < 1.0) {
       // V follows the asset's original tube path, including the loops that
