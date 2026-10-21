@@ -196,12 +196,12 @@ export default function Portfolio() {
         <div className={styles.heroBottom}>
           <div className={styles.heroSummary} data-intro-summary>
             <p className={styles.heroLead}>
-              상담·예약 UI와 브랜드 인터랙션을 개발하는
+              보이는 장면과
               <br />
-              프론트엔드 개발자 김도훈입니다.
+              보이지 않는 흐름을 만듭니다.
             </p>
             <p className={styles.heroIntro}>
-              렉서스 상담·예약 컴포넌트 · 기아 반응형 UI·스크롤 인터랙션
+              프론트엔드 개발자 김도훈입니다.
             </p>
           </div>
           <a
