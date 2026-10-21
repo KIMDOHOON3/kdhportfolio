@@ -976,7 +976,19 @@ export default function GlassScene() {
           scrollTop = state.top;
           viewportHeight = state.height;
           const { heroBottom, footerTop, hasHero } = state;
-          const heroBlue = hasHero && heroBottom > 0 ? 1 : 0;
+          // Bring back the same blue sky as the footer enters, without a
+          // section edge or an extra rendering pass behind the glass.
+          const footerProgress = Math.max(
+            0,
+            Math.min(
+              1,
+              (state.visibleHeight - footerTop) /
+                Math.max(1, Math.min(state.visibleHeight, state.footerHeight)),
+            ),
+          );
+          const footerBlue =
+            footerProgress * footerProgress * (3 - 2 * footerProgress);
+          const heroBlue = hasHero && heroBottom > 0 ? 1 : footerBlue;
           if (backdropMaterial.uniforms.uHeroBlue.value !== heroBlue) {
             backdropMaterial.uniforms.uHeroBlue.value = heroBlue;
             backdropDirty = true;

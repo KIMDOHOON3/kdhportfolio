@@ -599,7 +599,9 @@ export default function ScrollStory() {
             </span>
             <p>
               <CopyReveal>
-                {"함께 일하고 싶은 프론트엔드 개발자\n찾고 계신가요?"}
+                함께 일하고 싶은
+                <br className={styles.mobileCopyBreak} />
+                {" 프론트엔드 개발자\n찾고 계신가요?"}
               </CopyReveal>
             </p>
             <a

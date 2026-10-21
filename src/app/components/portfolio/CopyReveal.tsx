@@ -1,6 +1,6 @@
 "use client";
 
-import { useLayoutEffect, useRef } from "react";
+import { useLayoutEffect, useRef, type ReactNode } from "react";
 import { observeEntrance } from "./entranceObserver";
 import styles from "./CopyReveal.module.scss";
 
@@ -10,7 +10,7 @@ export default function CopyReveal({
   seen = false,
   inline = false,
 }: {
-  children: string;
+  children: ReactNode;
   seen?: boolean;
   inline?: boolean;
 }) {

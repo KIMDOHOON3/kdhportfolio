@@ -543,6 +543,9 @@ $line: rgba(48, 71, 90, 0.17);
     vector-effect: non-scaling-stroke;
   }
 }
+.mobileCopyBreak {
+  display: none;
+}
 .endingCopy {
   position: relative;
   max-width: 740px;
@@ -603,6 +606,9 @@ $line: rgba(48, 71, 90, 0.17);
   }
 }
 @media (max-width: 600px) {
+  .mobileCopyBreak {
+    display: initial;
+  }
   .journey {
     --journey-inset: 24px;
   }
