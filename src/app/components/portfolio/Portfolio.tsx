@@ -195,9 +195,6 @@ export default function Portfolio() {
         />
         <div className={styles.heroBottom}>
           <div className={styles.heroSummary} data-intro-summary>
-            <p className={styles.heroCoordinates}>
-              디자인피버 재직 중 · 프론트엔드 개발자
-            </p>
             <p className={styles.heroLead}>
               상담·예약 UI와 브랜드 인터랙션을 개발하는
               <br />
