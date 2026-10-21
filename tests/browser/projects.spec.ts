@@ -124,8 +124,8 @@ test("one Lexus project retains renewal and operations details", async ({
   ]);
   await expect(kia.getByRole("listitem")).toHaveText([
     "브랜드·차량 콘텐츠 및 스크롤 인터랙션 개발",
-    "차량 탐색 UI·컴포넌트 구조 개선",
-    "Safari 호환성·디자인 QA 및 UI 품질 개선",
+    "이미지 로딩·iOS 헤더·Safari 영상 모션 개선",
+    "이미지 파일 용량 절감·공통 컴포넌트 구조 정비",
   ]);
   const filters = gallery.getByRole("group", { name: "프로젝트 필터" });
   await expect(

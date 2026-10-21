@@ -182,45 +182,156 @@ export const portfolioProjects: PortfolioProject[] = [
     year: "2025–2026",
     visual: "kia",
     description:
-      "기아 글로벌 웹사이트 Kia Worldwide의 구축 및 고도화에 참여했습니다. 브랜드·차량 콘텐츠의 반응형 UI와 스크롤 인터랙션을 개발하고, 차량 탐색 UI·컴포넌트 구조·Safari 호환성과 반응형 화면의 품질을 개선했습니다.",
+      "기아 글로벌 웹사이트 Kia Worldwide의 브랜드·차량 콘텐츠와 반응형 UI·스크롤 인터랙션을 개발했습니다. 이미지 로딩 시점에 따른 슬라이더 높이 계산, iOS 헤더 방향 판정, Safari 영상 모션을 개선하고, 이미지 파일 용량 절감과 공통 컴포넌트 구조 정비를 맡았습니다.",
     stack: ["React", "TypeScript", "Emotion", "Vite"],
     role: "프론트엔드 개발 · 웹사이트 구축 및 고도화",
     responsibilities: [
       "브랜드·차량 콘텐츠 및 스크롤 인터랙션 개발",
-      "차량 탐색 UI·컴포넌트 구조 개선",
-      "Safari 호환성·디자인 QA 및 UI 품질 개선",
+      "이미지 로딩·iOS 헤더·Safari 영상 모션 개선",
+      "이미지 파일 용량 절감·공통 컴포넌트 구조 정비",
     ],
     site: "https://worldwide.kia.com/int",
-    highlights: [
+    highlights: [],
+    phases: [
       {
-        title: "브랜드·차량 콘텐츠 구현",
-        description:
-          "Opposites United, EV2, The Ocean Cleanup 등 주요 콘텐츠의 PC·모바일 반응형 UI와 스크롤 인터랙션을 개발했습니다.",
+        id: "implementation",
+        title: "직접 구현한 범위",
+        year: "2025–2026",
+        role: "브랜드·차량 콘텐츠의 반응형 UI · 스크롤 인터랙션 · 차량 탐색 UI 개발",
+        stack: ["React", "TypeScript", "Emotion", "Vite"],
+        highlights: [
+          {
+            title: "브랜드·차량 콘텐츠와 스크롤 인터랙션",
+            description:
+              "Opposites United, EV2, The Ocean Cleanup 등 주요 콘텐츠의 PC·모바일 반응형 UI와 스크롤 인터랙션을 개발했습니다.",
+          },
+          {
+            title: "차량 슬라이더의 전환·탐색 UI",
+            description:
+              "EV·ICE·Hybrid·PBV 슬라이더의 전환 효과와 내비게이션, 모바일 페이지네이션을 구현했습니다.",
+          },
+        ],
       },
       {
-        title: "차량 탐색 UI 개선",
-        description:
-          "EV·ICE·Hybrid·PBV 슬라이더의 전환 효과와 내비게이션, 모바일 페이지네이션을 구현해 디바이스별 탐색 경험을 개선했습니다.",
+        id: "problem-solving",
+        title: "대표 문제 해결",
+        year: "2025–2026",
+        role: "비동기 이미지 로딩과 레이아웃 계산 · iOS 스크롤 예외 처리 · Safari 영상 모션 개선",
+        stack: ["React", "TypeScript", "Emotion"],
+        highlights: [
+          {
+            title: "이미지 준비 상태에 맞춘 슬라이더 높이 계산",
+            description:
+              "높이 재계산 시점을 타이머 실행에서 실제 이미지 로딩 완료 기준으로 변경했습니다.",
+            steps: [
+              {
+                label: "문제",
+                description:
+                  "슬라이더 초기화 시 이미지 로딩이 끝나지 않으면 실제 이미지 높이를 기준으로 레이아웃을 계산하기 어려웠습니다.",
+              },
+              {
+                label: "원인 확인",
+                description:
+                  "기존 타이머는 실행을 미룰 뿐 이미지 로딩 완료를 보장하지 않았습니다.",
+              },
+              {
+                label: "변경",
+                description:
+                  "이미지의 로딩 상태를 확인하고, 준비되지 않은 이미지는 로드 완료 이벤트를 기다린 뒤 높이를 다시 계산하도록 바꿨습니다. 이미지가 없거나 이미 준비된 경우도 처리하고, 정리 함수에서 이벤트 리스너를 제거했습니다.",
+              },
+              {
+                label: "결과",
+                description:
+                  "높이 계산을 비동기 이미지의 실제 준비 시점과 연결하도록 초기화 흐름을 개선했습니다.",
+              },
+            ],
+          },
+          {
+            title: "iOS 바운스 스크롤을 고려한 헤더 방향 판정",
+            description:
+              "상하단 예외 처리와 누적 이동량 기준을 추가해 바운스·미세 움직임과 실제 방향 전환을 구분하도록 개선했습니다.",
+            steps: [
+              {
+                label: "문제",
+                description:
+                  "직전 위치와 현재 위치만 비교하면 iOS의 상하단 바운스와 미세 움직임도 스크롤 방향 전환으로 해석될 수 있었습니다.",
+              },
+              {
+                label: "변경",
+                description:
+                  "상단 overscroll에서는 헤더를 표시하고 누적 이동량을 초기화했습니다. 하단 근처에서는 상태 변경을 보류하고, 같은 방향의 이동량이 기준을 넘었을 때 표시·숨김 상태를 바꾸도록 했습니다.",
+              },
+              {
+                label: "결과",
+                description:
+                  "플랫폼 특유의 바운스와 작은 움직임을 고려하도록 공통 헤더의 상태 전환 기준을 정비했습니다.",
+              },
+            ],
+          },
+          {
+            title: "Safari 영상 모션을 clip-path 방식으로 전환",
+            description:
+              "Safari에서 발생한 영상 등장 모션 오류에 대응해 크기를 늘리는 방식에서 잘라내기 영역을 펼치는 방식으로 변경했습니다.",
+            steps: [
+              {
+                label: "문제",
+                description:
+                  "공통 영상 등장 모션이 Safari에서 다르게 표시되는 문제가 있었습니다.",
+              },
+              {
+                label: "기존 방식",
+                description:
+                  "중앙에 배치한 영상 영역의 너비와 높이를 늘려 등장시키는 구조였습니다.",
+              },
+              {
+                label: "변경",
+                description:
+                  "영상 영역의 크기는 유지하고 clip-path의 잘라내기 범위를 펼치도록 바꿨습니다. 전환 대상도 clip-path로 맞추고, 영상의 배율과 위치 이동을 하나의 transform 값으로 통합했습니다.",
+              },
+              {
+                label: "결과",
+                description:
+                  "크기 변화에 의존하던 효과를 공통 영상 모션 컴포넌트에서 교체해 Safari 표시 오류에 대응했습니다.",
+              },
+            ],
+          },
+        ],
       },
       {
-        title: "컴포넌트 구조 개선",
-        description:
-          "Platform 슬라이더를 차량 이미지·내비게이션·설명 등 역할별 컴포넌트로 분리해 수정 범위를 명확히 하고 유지보수성을 높였습니다.",
-      },
-      {
-        title: "Safari의 레이아웃 정렬 차이 수정",
-        description:
-          "Chrome에서는 시안대로 보이던 정렬이 Safari에서 다르게 표시되는 현상을 확인했습니다. CSS 구현 방식을 조정해 시안에 맞게 수정했습니다.",
-      },
-      {
-        title: "Safari의 clip-path 인터랙션 표시 수정",
-        description:
-          "clip-path를 사용하는 인터랙션이 Safari에서 Chrome과 다르게 표시되는 문제를 수정했습니다.",
-      },
-      {
-        title: "디자인 QA 및 UI 품질 개선",
-        description:
-          "디자인 QA를 통해 PC·모바일 반응형 레이아웃과 컬러 토큰, 대체 텍스트를 정비했습니다.",
+        id: "asset-and-structure",
+        title: "용량·구조 개선",
+        year: "2025–2026",
+        role: "EV·브랜드 이미지 WebP 전환 · 반복 콘텐츠 공통화 · 플랫폼 슬라이더의 역할별 분리",
+        stack: ["React", "TypeScript", "Emotion"],
+        highlights: [
+          {
+            title: "이미지 36개 파일 용량을 약 90% 절감",
+            description:
+              "EV·브랜드 이미지 36개를 WebP로 전환하고 참조 경로를 정비해 해당 이미지 파일 합계를 약 19.16MB에서 1.93MB로 줄였습니다.",
+            steps: [
+              {
+                label: "변경",
+                description:
+                  "EV 이미지 30개와 브랜드 이미지 6개의 JPG·PNG 파일을 WebP로 전환하고, 사용하는 컴포넌트의 이미지 경로를 수정했습니다.",
+              },
+              {
+                label: "비교 범위",
+                description:
+                  "Git에 저장된 해당 36개 이미지 파일의 변경 전후 크기 합계 기준입니다. 1MB는 1,000,000바이트로 계산했습니다.",
+              },
+            ],
+          },
+          {
+            title: "반복 콘텐츠를 데이터·props 기반으로 공통화",
+            description:
+              "별도로 관리하던 좌우 콘텐츠 영역을 공통 컴포넌트로 통합했습니다. 콘텐츠 목록은 데이터로, 배치와 이미지 크기 차이는 props로 관리하도록 정리했습니다.",
+          },
+          {
+            title: "플랫폼 차량 슬라이더를 5개 역할로 분리",
+            description:
+              "상위 슬라이더에 모여 있던 화살표 탐색·큰 차량 이미지·하단 설명·반원형 차량 배치·타이틀을 각각의 컴포넌트로 나누고 상위에서 조합하도록 바꿨습니다. 화면 영역별로 이해하고 수정할 수 있도록 책임을 분리했습니다.",
+          },
+        ],
       },
     ],
   },
