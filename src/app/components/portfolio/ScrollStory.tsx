@@ -25,9 +25,12 @@ function JourneyHeading({ preview = false }: { preview?: boolean }) {
     <div className={styles.heading}>
       <p className={styles.eyebrow}>EXPERIENCE & EDUCATION</p>
       <h2 id={preview ? undefined : "journey-title"}>
-        {"퍼블리싱에서 시작해\n프론트엔드로."}
+        {"브랜드 웹사이트의\n프론트엔드를 개발합니다."}
       </h2>
-      <p className={styles.intro}>화면과 기능을 함께 만들어온 과정입니다.</p>
+      <p className={styles.intro}>
+        퍼블리싱에서 익힌 반응형 화면 구현을 바탕으로, 사용자 입력과 인터랙션을
+        개발합니다.
+      </p>
     </div>
   );
 }
@@ -39,7 +42,7 @@ function JourneyAside({ preview = false }: { preview?: boolean }) {
       <nav
         className={styles.chapterNav}
         data-journey-nav={preview ? undefined : ""}
-        aria-label={preview ? undefined : "성장 과정 바로가기"}
+        aria-label={preview ? undefined : "경력·교육 바로가기"}
       >
         {JOURNEY.map((chapter, index) => (
           <a

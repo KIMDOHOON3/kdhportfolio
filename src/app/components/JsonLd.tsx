@@ -9,7 +9,7 @@ export default function JsonLd() {
     url: "https://kdhportfolio-omega.vercel.app/",
     sameAs: ["https://github.com/KIMDOHOON3"],
     description:
-      "섬세한 인터랙션과 견고한 코드로 기억에 남는 웹 경험을 만듭니다.",
+      "디자인피버에서 렉서스 상담·예약 UI와 기아 반응형 UI·스크롤 인터랙션을 개발하고 있습니다.",
     knowsAbout: [
       "React",
       "Next.js",

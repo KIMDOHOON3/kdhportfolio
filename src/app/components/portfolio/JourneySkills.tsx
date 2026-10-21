@@ -7,6 +7,11 @@ import styles from "./Journey.module.scss";
 import { ButtonLight } from "./ButtonEffect";
 
 let skillsClock: number | undefined;
+const skillIconNames: Record<string, string> = {
+  "styled-components": "Styled-components",
+  "Tailwind CSS": "Tailwind",
+  "React Query": "React-query",
+};
 
 export function syncJourneySkillsClock(root: Element) {
   const element = root.matches("[data-journey-skills]")
@@ -92,7 +97,7 @@ export default function JourneySkills({
                 <li key={skill}>
                   <span className={styles.skillCircle}>
                     <Icon
-                      name={skill}
+                      name={skillIconNames[skill] ?? skill}
                       color="currentColor"
                       size={28}
                       aria-hidden="true"

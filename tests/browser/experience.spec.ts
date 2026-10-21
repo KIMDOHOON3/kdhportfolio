@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-test("rolling skills remain above the chronological career and anchors stay readable", async ({
+test("rolling skills remain above the current role first career and anchors stay readable", async ({
   page,
 }, info) => {
   const errors: string[] = [];
@@ -57,17 +57,18 @@ test("rolling skills remain above the chronological career and anchors stay read
   const chapters = content.locator("[data-journey-chapter]");
   await expect(chapters).toHaveCount(5);
   for (const [index, title] of [
-    "한경대학교",
-    "SBS아카데미",
-    "언제나 디자인",
+    "디자인피버",
     "코드잇 스프린트",
-    "렉서스·기아",
+    "언제나 디자인",
+    "SBS아카데미",
+    "한경대학교",
   ].entries())
     await expect(chapters.nth(index)).toContainText(title);
   await expect(chapters.nth(2)).not.toContainText("2022.07 — 2023.10");
-  await expect(chapters.nth(3)).not.toContainText("2024.08 — 2025.02");
+  await expect(chapters.first()).toContainText("프론트엔드 개발자로 재직 중");
+  await expect(chapters.first()).not.toContainText("개인 프로젝트");
   const navigation = page.getByRole("navigation", {
-    name: "성장 과정 바로가기",
+    name: "경력·교육 바로가기",
   });
   for (const id of ["2022", "2024", "now"]) {
     const link = navigation.locator(`a[href="#journey-${id}"]`);

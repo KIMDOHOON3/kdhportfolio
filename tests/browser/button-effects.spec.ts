@@ -3,7 +3,7 @@ import { expect, test } from "@playwright/test";
 test("secondary detail action keeps readable text on hover and keyboard focus", async ({
   page,
 }, info) => {
-  await page.goto("/work/5");
+  await page.goto("/work/4");
   const action = page.getByRole("link", {
     name: "GitHub 코드 보기",
     exact: true,

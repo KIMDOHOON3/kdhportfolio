@@ -195,13 +195,17 @@ export default function Portfolio() {
         />
         <div className={styles.heroBottom}>
           <div className={styles.heroSummary} data-intro-summary>
-            <p className={styles.heroCoordinates}>퍼블리싱에서 프론트엔드로</p>
+            <p className={styles.heroCoordinates}>
+              디자인피버 재직 중 · 프론트엔드 개발자
+            </p>
             <p className={styles.heroLead}>
-              화면과 기능을 함께 만드는
+              상담·예약 UI와 브랜드 인터랙션을 개발하는
               <br />
               프론트엔드 개발자 김도훈입니다.
             </p>
-            <p className={styles.heroIntro}>렉서스·기아 웹 프로젝트 참여</p>
+            <p className={styles.heroIntro}>
+              렉서스 상담·예약 컴포넌트 · 기아 반응형 UI·스크롤 인터랙션
+            </p>
           </div>
           <a
             href="#work"
@@ -362,6 +366,15 @@ export default function Portfolio() {
             </article>
           ))}
         </div>
+        {filter !== "실무 프로젝트" && (
+          <aside className={styles.personalNote}>
+            <h3>개인 프로젝트와 개발 방식</h3>
+            <p>
+              Aeppy와 Dog Atlas는 기획·디자인·개발을 맡은 개인 프로젝트입니다.
+              AI를 개발 과정에 활용하며, 회사 업무와 별도로 만들고 있습니다.
+            </p>
+          </aside>
+        )}
         {filter !== "전체" && (
           <p
             className={styles.filterResult}

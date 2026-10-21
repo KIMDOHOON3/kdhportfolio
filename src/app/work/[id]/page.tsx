@@ -118,8 +118,16 @@ export default async function ProjectDetail({ params }: Props) {
             <dd>{project.role}</dd>
           </div>
           <div>
-            <dt>작업 연도</dt>
-            <dd>{project.year}</dd>
+            <dt>작업 기간</dt>
+            <dd className={project.periods ? styles.periods : undefined}>
+              {project.periods
+                ? project.periods.map((period) => (
+                    <span key={period.label}>
+                      {period.label} {period.value}
+                    </span>
+                  ))
+                : project.year}
+            </dd>
           </div>
           <div>
             <dt>작업 유형</dt>
@@ -182,6 +190,16 @@ export default async function ProjectDetail({ params }: Props) {
                   <div>
                     <h3>{item.title}</h3>
                     <p>{item.description}</p>
+                    {item.steps && (
+                      <dl className={styles.caseSteps}>
+                        {item.steps.map((step) => (
+                          <div key={step.label}>
+                            <dt>{step.label}</dt>
+                            <dd>{step.description}</dd>
+                          </div>
+                        ))}
+                      </dl>
+                    )}
                   </div>
                 </article>
               ))}

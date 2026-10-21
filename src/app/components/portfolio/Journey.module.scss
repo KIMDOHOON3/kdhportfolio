@@ -43,7 +43,9 @@ $line: rgba(48, 71, 90, 0.17);
   &[data-entered="false"] .page {
     opacity: 0;
     pointer-events: none;
-    [data-button-light]::before { animation-play-state: paused; }
+    [data-button-light]::before {
+      animation-play-state: paused;
+    }
   }
 }
 .browser {
@@ -109,7 +111,8 @@ $line: rgba(48, 71, 90, 0.17);
 .previewPage {
   width: var(--preview-width, 100vw);
   padding-top: 104px;
-  transform: scale(var(--preview-scale, 1)) translateY(var(--preview-shift-y, 0px));
+  transform: scale(var(--preview-scale, 1))
+    translateY(var(--preview-shift-y, 0px));
   transform-origin: top left;
   opacity: var(--page-reveal, 1);
   .skillsDock {
@@ -407,8 +410,7 @@ $line: rgba(48, 71, 90, 0.17);
   scroll-margin-top: 300px;
   h3 {
     font:
-      400 clamp(23px, 2.2vw, 30px) / 1.5 "NewYork",
-      "Pretendard-Regular",
+      400 clamp(23px, 2.2vw, 30px) / 1.5 "Pretendard-Regular",
       sans-serif;
     margin: 29px 0 12px;
     letter-spacing: -0.04em;
@@ -442,7 +444,8 @@ $line: rgba(48, 71, 90, 0.17);
 .year {
   font:
     400 clamp(44px, 5.6vw, 78px) / 1.15 "NewYork",
-    serif;
+    "Pretendard-Regular",
+    sans-serif;
   letter-spacing: -0.04em;
   color: #385d7c;
   margin: 0;

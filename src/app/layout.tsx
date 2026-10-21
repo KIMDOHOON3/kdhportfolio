@@ -16,7 +16,7 @@ export const metadata: Metadata = {
   },
   title: "김도훈 — 프론트엔드 개발자",
   description:
-    "섬세한 인터랙션과 견고한 코드로 기억에 남는 웹 경험을 만드는 프론트엔드 개발자 김도훈의 포트폴리오.",
+    "디자인피버에서 렉서스 상담·예약 UI와 기아 반응형 UI·스크롤 인터랙션을 개발하는 프론트엔드 개발자 김도훈의 포트폴리오.",
   keywords:
     "프론트엔드 개발자, 포트폴리오, 프론트엔드 포트폴리오, 개발자 포트폴리오",
   openGraph: {
@@ -24,7 +24,7 @@ export const metadata: Metadata = {
     title: "프론트엔드 개발자 김도훈 포트폴리오",
     type: "website",
     description:
-      "항상 도전하고 성장해나가는 삶을 추구하는 프론트엔드 개발자 입니다.",
+      "디자인피버 재직 중인 프론트엔드 개발자 김도훈. 렉서스 상담·예약 UI와 기아 반응형 UI·스크롤 인터랙션 개발 경험을 소개합니다.",
     images: [
       {
         url: "https://kdhportfolio-omega.vercel.app/meta/sum-logo.jpg",

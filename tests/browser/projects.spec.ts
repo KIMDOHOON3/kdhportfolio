@@ -106,12 +106,9 @@ test("one Lexus project retains renewal and operations details", async ({
     gallery.getByRole("link", { name: "LEXUS 프로젝트 보기", exact: true }),
   ).toHaveCount(1);
   await expect(gallery.locator('a[href="/work/2"]')).toHaveCount(0);
-  await expect(gallery.getByRole("heading", { level: 3 })).toHaveText([
-    "LEXUS",
-    "Kia Worldwide",
-    "Aeppy",
-    "Dog Atlas",
-  ]);
+  await expect(
+    gallery.locator("article").getByRole("heading", { level: 3 }),
+  ).toHaveText(["LEXUS", "Kia Worldwide", "Aeppy", "Dog Atlas"]);
   const sectionOrder = await page
     .locator("main#top > section")
     .evaluateAll((sections) =>
@@ -121,9 +118,9 @@ test("one Lexus project retains renewal and operations details", async ({
   const lexus = gallery.locator('a[href="/work/1"]');
   const kia = gallery.locator('a[href="/work/3"]');
   await expect(lexus.getByRole("listitem")).toHaveText([
-    "전시장 상담신청·서비스 예약 플로우 개발",
-    "API·본인인증 연동 및 상태 관리",
-    "마이페이지·홈 인터랙션·차량 뷰어 구현",
+    "상담신청 폼·예약 달력·마이페이지 공통 LNB 개발",
+    "Three.js 별 표현·이미지 시퀀스 차량 뷰어 구현",
+    "시승 신청 흐름 개선·프론트엔드 일정 및 QA 조율",
   ]);
   await expect(kia.getByRole("listitem")).toHaveText([
     "브랜드·차량 콘텐츠 및 스크롤 인터랙션 개발",
@@ -142,15 +139,13 @@ test("one Lexus project retains renewal and operations details", async ({
   await capture("four-projects");
   await filters.getByRole("button", { name: /실무/ }).click();
   await expect(gallery.locator("article")).toHaveCount(2);
-  await expect(gallery.getByRole("heading", { level: 3 })).toHaveText([
-    "LEXUS",
-    "Kia Worldwide",
-  ]);
+  await expect(
+    gallery.locator("article").getByRole("heading", { level: 3 }),
+  ).toHaveText(["LEXUS", "Kia Worldwide"]);
   await filters.getByRole("button", { name: /개인/ }).click();
-  await expect(gallery.getByRole("heading", { level: 3 })).toHaveText([
-    "Aeppy",
-    "Dog Atlas",
-  ]);
+  await expect(
+    gallery.locator("article").getByRole("heading", { level: 3 }),
+  ).toHaveText(["Aeppy", "Dog Atlas"]);
   await filters.getByRole("button", { name: /전체/ }).click();
   await gallery
     .getByRole("link", { name: "LEXUS 프로젝트 보기", exact: true })
@@ -172,12 +167,35 @@ test("one Lexus project retains renewal and operations details", async ({
     name: "운영 · 기능 개선",
     exact: true,
   });
-  await expect(renewal.locator("article")).toHaveCount(4);
-  await expect(operations.locator("article")).toHaveCount(6);
+  await expect(renewal.locator("article")).toHaveCount(5);
+  await expect(operations.locator("article")).toHaveCount(3);
+  await expect(page.locator("[data-project-overview] dl")).toContainText(
+    "운영 2026.04–10",
+  );
+  await expect(page.locator("[data-project-overview] dl")).toContainText(
+    "리뉴얼 2026.05–10",
+  );
+  await expect(renewal).toContainText("2026.05–10");
+  await expect(renewal).toContainText("수동으로 확인했습니다");
+  await expect(operations).toContainText("2026.04–10");
+  await expect(operations.locator("article").first().locator("dt")).toHaveText([
+    "문제",
+    "재현",
+    "원인 확인",
+    "수정",
+  ]);
+  await expect(operations.locator("article").nth(1)).toContainText(
+    "기획팀과 기존 정책·변경 이력",
+  );
+  await expect(page.locator("main")).not.toContainText("신청 흐름 검증 테스트");
+  await expect(page.locator("main")).not.toContainText("오래된 비동기 응답");
   await expect(renewal.getByText("React", { exact: true })).toBeVisible();
   await expect(operations.getByText("Vue 2", { exact: true })).toBeVisible();
   await expect(
-    operations.getByRole("heading", { name: "360° 차량 뷰어", exact: true }),
+    operations.getByRole("heading", {
+      name: "이미지 시퀀스 기반 360° 차량 뷰어",
+      exact: true,
+    }),
   ).toBeVisible();
   await page
     .getByRole("navigation", { name: "렉서스 작업 구분" })

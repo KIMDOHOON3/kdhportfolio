@@ -210,6 +210,29 @@ $display: "NewYork", "Pretendard-Regular", serif;
     aspect-ratio: 1.95;
   }
 }
+.facts > div:nth-child(2) dd.periods {
+  display: grid;
+  gap: 4px;
+  font: 13px/1.7 $sans;
+  font-variant-numeric: tabular-nums;
+}
+.caseSteps {
+  display: grid;
+  gap: 16px;
+  margin-top: 24px;
+  padding-left: 18px;
+  box-shadow: inset 2px 0 0 $line;
+  font: 15px/1.85 $sans;
+  word-break: keep-all;
+  dt {
+    color: $blue;
+    font-size: 12px;
+    margin-bottom: 4px;
+  }
+  dd {
+    color: #526573;
+  }
+}
 .reading {
   display: flow-root;
   position: relative;
@@ -368,7 +391,9 @@ $display: "NewYork", "Pretendard-Regular", serif;
   box-shadow: inset 0 0 0 1px $line;
   background: linear-gradient(110deg, #f2f5f4, transparent);
   transition: background-color 200ms;
-  > span:first-child { min-width: 0; }
+  > span:first-child {
+    min-width: 0;
+  }
   small {
     display: block;
     font: 12px/1.5 $sans;
