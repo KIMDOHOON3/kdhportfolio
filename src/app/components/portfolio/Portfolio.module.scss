@@ -1336,6 +1336,11 @@ $label: "NewYork", "Pretendard-Regular", sans-serif;
 
 // Shared viewport scroll: foreground sections keep their natural document order.
 .scrollViewport {
+  &[data-route-lock="true"] {
+    overflow-y: hidden;
+    touch-action: none;
+    pointer-events: none;
+  }
   --page-inset: 56px;
   --grid-gap: 0px;
   --grid-count: 12;

@@ -7,6 +7,7 @@ import styles from "./Portfolio.module.scss";
 import entranceStyles from "./HeroEntrance.module.scss";
 import { useHeroEntrance } from "./useHeroEntrance";
 import { useStableViewport } from "./useStableViewport";
+import { restoredRouteScroll } from "./routeScroll";
 
 type ScrollSnapshot = {
   top: number;
@@ -119,7 +120,7 @@ export default function ScrollViewport({ children }: { children: ReactNode }) {
     };
     const flush = () => {
       pending = false;
-      if (layoutDirty) {
+      if (layoutDirty && wrapper.dataset.routePhase !== "enter") {
         measureRegions();
         layoutDirty = false;
       }
@@ -139,7 +140,11 @@ export default function ScrollViewport({ children }: { children: ReactNode }) {
       notify();
     };
     const syncIntroLock = () => {
-      if (wrapper.dataset.introLock === "true") engine?.stop();
+      if (
+        wrapper.dataset.introLock === "true" ||
+        wrapper.dataset.routeLock === "true"
+      )
+        engine?.stop();
       else engine?.start();
     };
     const configure = () => {
@@ -234,10 +239,11 @@ export default function ScrollViewport({ children }: { children: ReactNode }) {
     const introLock = new MutationObserver(syncIntroLock);
     introLock.observe(wrapper, {
       attributes: true,
-      attributeFilter: ["data-intro-lock"],
+      attributeFilter: ["data-intro-lock", "data-route-lock"],
     });
     wrapper.addEventListener("scroll", notify, { passive: true });
     window.addEventListener("resize", layoutChange);
+    window.addEventListener("portfolio:route-settled", layoutChange);
     wrapper.addEventListener("click", anchor, true);
     motion.addEventListener("change", configure);
     const resize = new ResizeObserver(layoutChange);
@@ -250,6 +256,7 @@ export default function ScrollViewport({ children }: { children: ReactNode }) {
       wrapper.removeEventListener("scroll", notify);
       wrapper.removeEventListener("click", anchor, true);
       window.removeEventListener("resize", layoutChange);
+      window.removeEventListener("portfolio:route-settled", layoutChange);
       motion.removeEventListener("change", configure);
       resize.disconnect();
       introLock.disconnect();
@@ -261,9 +268,11 @@ export default function ScrollViewport({ children }: { children: ReactNode }) {
     if (!element) return;
     const id = location.hash.slice(1);
     const target = id ? document.getElementById(decodeURIComponent(id)) : null;
+    const restoredTop = restoredRouteScroll(pathname);
     let following = true;
     const align = () => {
       if (!following || (id && location.hash.slice(1) !== id)) return;
+      if (element.dataset.routePhase === "enter") return;
       measureRegions();
       engine?.resize();
       // Detail anchors keep their heading below the fixed header on first
@@ -272,14 +281,16 @@ export default function ScrollViewport({ children }: { children: ReactNode }) {
         target && (pathname !== "/" || id.startsWith("journey-"))
           ? parseFloat(getComputedStyle(target).scrollMarginTop) || 0
           : 0;
-      const top = target
-        ? target.getBoundingClientRect().top + element.scrollTop - margin
-        : 0;
+      const top =
+        restoredTop ??
+        (target
+          ? target.getBoundingClientRect().top + element.scrollTop - margin
+          : 0);
       if (engine) engine.scrollTo(top, { immediate: true, force: true });
       else element.scrollTop = top;
     };
     align();
-    if (!target || !content.current) return;
+    if ((!target && restoredTop === null) || !content.current) return;
     // Fonts and the enhanced story can change the initial anchor's offset
     // after hydration. Follow that layout only until the user takes control.
     const resize = new ResizeObserver(align);
