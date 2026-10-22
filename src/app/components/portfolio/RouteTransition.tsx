@@ -8,7 +8,6 @@ import {
   rememberRouteScroll,
 } from "./routeScroll";
 import styles from "./RouteTransition.module.scss";
-import { createRouteTunnel } from "./routeTunnel";
 
 const projectPath = (path: string) => /^\/work\/\d+\/?$/.test(path);
 const relevant = (from: URL, to: URL) =>
@@ -16,6 +15,8 @@ const relevant = (from: URL, to: URL) =>
   (projectPath(from.pathname) || projectPath(to.pathname));
 const easing = "cubic-bezier(.65,0,.25,1)";
 const historyKey = "portfolioRouteIndex";
+const leaveDuration = 150;
+const enterDuration = 300;
 
 /** A bounded transition; the portfolio's shared Three.js scene stays mounted. */
 export default function RouteTransition() {
@@ -28,10 +29,6 @@ export default function RouteTransition() {
     const root = layer.current;
     if (!root) return;
     const veil = root.querySelector<HTMLElement>("[data-route-veil]")!;
-    const passage = root.querySelector<HTMLCanvasElement>(
-      "[data-route-tunnel]",
-    )!;
-    const tunnel = createRouteTunnel(passage);
     const motion = matchMedia("(prefers-reduced-motion: reduce)");
     let current = new URL(location.href);
     let index = Number(history.state?.[historyKey]) || 0;
@@ -43,7 +40,6 @@ export default function RouteTransition() {
       covered: boolean;
       committed: boolean;
       revealing: boolean;
-      origin: string;
       fromPath: string;
     } | null = null;
     let timeout = 0;
@@ -87,7 +83,6 @@ export default function RouteTransition() {
       cancelAnimationFrame(frame);
       clearTimeout(timeout);
       cancelAnimations();
-      tunnel.stop();
       root.dataset.active = "false";
       root.dataset.phase = "idle";
       active = null;
@@ -117,56 +112,40 @@ export default function RouteTransition() {
                   `a[href="${navigation.fromPath}"]`,
                 )
               : null;
-          // Existing focus handlers finish this card's copy/cover entrances.
-          // It must already be complete inside the return portal, too.
+          // Restore a complete card rather than replaying its entrances while
+          // the returning page is still moving.
           returningCard?.focus({ preventScroll: true });
-          const focus =
-            location.pathname === "/"
-              ? returningCard?.querySelector<HTMLElement>("h3")
-              : page?.querySelector<HTMLElement>("#project-title");
-          const box = focus?.getBoundingClientRect();
-          const focusX = box ? box.left + box.width / 2 : innerWidth / 2;
-          const focusY = box ? box.top + box.height / 2 : innerHeight * 0.45;
-          const portal = tunnel.previewPoint();
-          const arrivalOrigin = `${focusX}px ${Math.round((wrapper?.scrollTop ?? 0) + focusY)}px`;
-          const previewTransform = `translate3d(${Math.round(portal.x - focusX)}px, ${Math.round(portal.y - focusY)}px, 0) scale(${navigation.back ? 0.56 : 0.46})`;
-          if (page) {
-            animate(
-              page,
-              [
+          const arrivalOrigin = `50% ${Math.round((wrapper?.scrollTop ?? 0) + (wrapper?.clientHeight ?? innerHeight) * 0.45)}px`;
+          const arrival = page
+            ? animate(
+                page,
+                [
+                  {
+                    transform: navigation.back
+                      ? "translate3d(0, -8px, 0) scale(1.014)"
+                      : "translate3d(0, 10px, 0) scale(.982)",
+                    opacity: 0,
+                    transformOrigin: arrivalOrigin,
+                  },
+                  {
+                    transform: "none",
+                    opacity: 1,
+                    transformOrigin: arrivalOrigin,
+                  },
+                ],
                 {
-                  transform: previewTransform,
-                  opacity: 1,
-                  transformOrigin: arrivalOrigin,
+                  duration: enterDuration,
+                  easing: "cubic-bezier(.22,1,.36,1)",
                 },
-                {
-                  transform: previewTransform,
-                  opacity: 1,
-                  transformOrigin: arrivalOrigin,
-                  offset: 0.32,
-                  easing: "cubic-bezier(.45,0,.2,1)",
-                },
-                {
-                  transform: "scale(1) translate3d(0, 0, 0)",
-                  opacity: 1,
-                  transformOrigin: arrivalOrigin,
-                },
-              ],
-              { duration: 810, easing: "linear" },
-            );
-          }
-          tunnel.arrive();
-          animate(veil, [{ opacity: 1 }, { opacity: 0 }], {
-            duration: 100,
+              )
+            : null;
+          const opening = animate(veil, [{ opacity: 1 }, { opacity: 0 }], {
+            duration: enterDuration,
+            easing: "cubic-bezier(.22,1,.36,1)",
           });
-          const opening = animate(
-            passage,
-            [{ opacity: 1 }, { opacity: 1, offset: 0.92 }, { opacity: 0 }],
-            {
-              duration: 840,
-            },
-          );
-          void opening.finished
+          // Both effects reach their final frame before restoring native
+          // layout and scroll. There is no separate camera/preview clock.
+          void Promise.all([opening.finished, arrival?.finished])
             .then(() => {
               if (token !== generation) return;
               const back = navigation.back;
@@ -193,7 +172,6 @@ export default function RouteTransition() {
       url: URL,
       back: boolean,
       nextIndex: number,
-      origin: string,
       navigate?: () => void,
     ) => {
       reset();
@@ -206,7 +184,6 @@ export default function RouteTransition() {
         covered: false,
         committed: false,
         revealing: false,
-        origin,
         fromPath: current.pathname,
       };
       root.dataset.active = "true";
@@ -215,18 +192,8 @@ export default function RouteTransition() {
       const wrapper = viewport();
       if (wrapper) wrapper.dataset.routeLock = "true";
       foreground()?.setAttribute("aria-busy", "true");
-      tunnel.start(back);
-      animate(
-        passage,
-        [
-          { opacity: 0 },
-          { opacity: 0.12, offset: 0.25 },
-          { opacity: 1, offset: 0.78 },
-          { opacity: 1 },
-        ],
-        { duration: 320 },
-      );
       const page = foreground();
+      const origin = `50% ${Math.round((wrapper?.scrollTop ?? 0) + (wrapper?.clientHeight ?? innerHeight) * 0.45)}px`;
       const leaving =
         page && navigate
           ? animate(
@@ -238,27 +205,20 @@ export default function RouteTransition() {
                   transformOrigin: origin,
                 },
                 {
-                  transform: back ? "scale(.98)" : "scale(.985)",
-                  opacity: 0.95,
-                  offset: 0.22,
-                  transformOrigin: origin,
-                },
-                {
                   transform: back
-                    ? "scale(.62) translate3d(2%, -1%, 0)"
-                    : "scale(1.58) translate3d(-4%, 2%, 0)",
+                    ? "translate3d(0, 6px, 0) scale(.986)"
+                    : "translate3d(0, -8px, 0) scale(1.022)",
                   opacity: 0,
                   transformOrigin: origin,
                 },
               ],
-              { duration: 310 },
+              { duration: leaveDuration, easing: "cubic-bezier(.4,0,.8,1)" },
             )
           : null;
-      const cover = animate(
-        veil,
-        [{ opacity: 0 }, { opacity: 0.05, offset: 0.35 }, { opacity: 1 }],
-        { duration: 320 },
-      );
+      const cover = animate(veil, [{ opacity: 0 }, { opacity: 1 }], {
+        duration: leaveDuration,
+        easing: "cubic-bezier(.4,0,.8,1)",
+      });
       void cover.finished
         .then(() => {
           if (token !== generation || !active) return;
@@ -323,12 +283,7 @@ export default function RouteTransition() {
         return;
       }
       event.preventDefault();
-      const box = link.getBoundingClientRect();
-      const x = event.detail ? event.clientX : box.left + box.width / 2;
-      const y = event.detail ? event.clientY : box.top + box.height / 2;
-      const wrapper = viewport();
-      const origin = `${Math.round(x)}px ${Math.round(y + (wrapper?.scrollTop ?? 0))}px`;
-      start(url, back, index + 1, origin, () =>
+      start(url, back, index + 1, () =>
         router.push(url.pathname + url.search + url.hash, { scroll: false }),
       );
     };
@@ -351,7 +306,7 @@ export default function RouteTransition() {
         index = nextIndex;
         return;
       }
-      start(url, back, nextIndex, "50% 40%");
+      start(url, back, nextIndex);
       // Browser forward also restores the destination's saved scroll position.
       prepareRouteScroll(url, true);
     };
@@ -395,7 +350,6 @@ export default function RouteTransition() {
     motion.addEventListener("change", reduce);
     return () => {
       reset();
-      tunnel.destroy();
       commit.current = () => {};
       document.removeEventListener("click", click, true);
       window.removeEventListener("popstate", pop, true);
@@ -419,13 +373,6 @@ export default function RouteTransition() {
       data-phase="idle"
     >
       <div className={styles.veil} data-route-veil aria-hidden="true" />
-      <canvas
-        className={styles.passage}
-        data-route-tunnel
-        width="1"
-        height="1"
-        aria-hidden="true"
-      />
       <span className={styles.status} role="status">
         페이지를 이동하고 있습니다
       </span>

@@ -84,12 +84,12 @@ export default function RootLayout({
             본문으로 바로가기
           </a>
           <PortfolioHeader />
+          <RouteTransition />
           <div id="main-content" className={portfolioStyles.routeContent}>
             {children}
           </div>
           <PortfolioFooter />
         </ScrollViewport>
-        <RouteTransition />
       </body>
     </html>
   );
