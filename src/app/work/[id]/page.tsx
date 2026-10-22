@@ -104,7 +104,9 @@ export default async function ProjectDetail({ params }: Props) {
           <p className={styles.eyebrow}>PROJECT OVERVIEW</p>
           <p className={styles.description}>{project.description}</p>
           <div className={styles.responsibilities}>
-            <h2>{project.responsibilities ? "담당 업무" : "구현한 기능"}</h2>
+            <h2>
+              {project.category === "실무 프로젝트" ? "담당 업무" : "구현한 기능"}
+            </h2>
             <ul>
               {responsibilities.map((item) => (
                 <li key={item}>{item}</li>

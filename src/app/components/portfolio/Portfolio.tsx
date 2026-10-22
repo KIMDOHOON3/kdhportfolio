@@ -316,7 +316,9 @@ export default function Portfolio() {
                   <div className={styles.projectTasks}>
                     <p>
                       <CopyReveal seen={revealed.current.has(project.id)}>
-                        담당 업무
+                        {project.category === "개인 프로젝트"
+                          ? "주요 구현"
+                          : "담당 업무"}
                       </CopyReveal>
                     </p>
                     <ul id={`project-tasks-${project.id}`}>

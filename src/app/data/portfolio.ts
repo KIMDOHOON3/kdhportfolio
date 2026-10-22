@@ -348,6 +348,11 @@ export const portfolioProjects: PortfolioProject[] = [
     stack: ["Next.js", "TypeScript", "Supabase", "Zustand", "PWA"],
     role: "개인 프로젝트 · 기획, 디자인, 프론트엔드 개발",
     site: "https://aeppy.app/",
+    responsibilities: [
+      "인증·초대 코드 기반 커플 연결",
+      "사진·공유 일정·편지 기록 기능",
+      "Realtime 동기화·PWA 구성",
+    ],
     highlights: [
       {
         title: "Supabase 인증과 초대 코드 연결",
@@ -396,6 +401,11 @@ export const portfolioProjects: PortfolioProject[] = [
     role: "개인 프로젝트 · 기획, 디자인, 프론트엔드 개발",
     site: "https://dog-atlas-eosin.vercel.app/",
     github: "https://github.com/KIMDOHOON3/dog-atlas",
+    responsibilities: [
+      "견종 이름·별칭 검색과 생활 조건 필터",
+      "필터 URL 연동·목록 단계별 렌더링",
+      "견종 상세 구성·Zod 데이터 구조 검증",
+    ],
     highlights: [
       {
         title: "한글·영문·별칭 검색과 생활 조건 필터",
