@@ -7,7 +7,6 @@
   isolation: isolate;
   touch-action: none;
   pointer-events: none;
-  perspective: 640px;
   contain: strict;
   &[data-active="true"] {
     display: block;
@@ -21,40 +20,24 @@
   opacity: 0;
   background: radial-gradient(
     ellipse at 58% 44%,
-    #f4f7fa 8%,
-    #dbe9f8 58%,
-    #b1d0f0 100%
+    #e2f2ff 2%,
+    #92bff0 22%,
+    #3276c5 58%,
+    #153e79 100%
   );
 }
 
 .passage {
   position: absolute;
-  inset: -12%;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
   opacity: 0;
-  transform-style: preserve-3d;
-}
-
-.ring {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  width: 78vmax;
-  height: 56vmax;
-  margin: -28vmax 0 0 -39vmax;
-  border-radius: 48% 52% 56% 44% / 52% 44% 56% 48%;
-  border: 1px solid #638fc33b;
-  background: radial-gradient(
-    ellipse,
-    transparent 58%,
-    #c4dcf42b 70%,
-    transparent 72%
-  );
-  box-shadow:
-    inset 2px 3px 2px #ffffff9c,
-    inset -2px -2px 8px #729ac329,
-    0 0 22px #a1c4e52b;
-  opacity: 0;
-  backface-visibility: hidden;
+  pointer-events: none;
+  &[data-ready="false"] {
+    visibility: hidden;
+  }
 }
 
 .status {
@@ -65,18 +48,4 @@
   overflow: hidden;
   clip-path: inset(50%);
   white-space: nowrap;
-}
-
-@media (max-width: 768px) {
-  .layer {
-    perspective: 480px;
-  }
-  .ring {
-    width: 90vmax;
-    height: 70vmax;
-    margin: -35vmax 0 0 -45vmax;
-    box-shadow:
-      inset 1px 2px 2px #ffffff8c,
-      0 0 12px #a1c4e52b;
-  }
 }

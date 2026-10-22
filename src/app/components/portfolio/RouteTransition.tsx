@@ -8,6 +8,7 @@ import {
   rememberRouteScroll,
 } from "./routeScroll";
 import styles from "./RouteTransition.module.scss";
+import { createRouteTunnel } from "./routeTunnel";
 
 const projectPath = (path: string) => /^\/work\/\d+\/?$/.test(path);
 const relevant = (from: URL, to: URL) =>
@@ -16,7 +17,7 @@ const relevant = (from: URL, to: URL) =>
 const easing = "cubic-bezier(.65,0,.25,1)";
 const historyKey = "portfolioRouteIndex";
 
-/** A temporary compositor animation; the shared WebGL renderer stays mounted. */
+/** A bounded transition; the portfolio's shared Three.js scene stays mounted. */
 export default function RouteTransition() {
   const layer = useRef<HTMLDivElement>(null);
   const commit = useRef<() => void>(() => {});
@@ -27,8 +28,10 @@ export default function RouteTransition() {
     const root = layer.current;
     if (!root) return;
     const veil = root.querySelector<HTMLElement>("[data-route-veil]")!;
-    const passage = root.querySelector<HTMLElement>("[data-route-passage]")!;
-    const rings = [...root.querySelectorAll<HTMLElement>("[data-route-ring]")];
+    const passage = root.querySelector<HTMLCanvasElement>(
+      "[data-route-tunnel]",
+    )!;
+    const tunnel = createRouteTunnel(passage);
     const motion = matchMedia("(prefers-reduced-motion: reduce)");
     let current = new URL(location.href);
     let index = Number(history.state?.[historyKey]) || 0;
@@ -84,6 +87,7 @@ export default function RouteTransition() {
       cancelAnimationFrame(frame);
       clearTimeout(timeout);
       cancelAnimations();
+      tunnel.stop();
       root.dataset.active = "false";
       root.dataset.phase = "idle";
       active = null;
@@ -114,9 +118,9 @@ export default function RouteTransition() {
               [
                 {
                   transform: navigation.back
-                    ? "scale(1.12) translate3d(-1%, 1%, 0)"
-                    : "scale(.92) translate3d(1%, -1%, 0)",
-                  opacity: 0,
+                    ? "scale(1.3) translate3d(-2%, 1%, 0)"
+                    : "scale(.8) translate3d(2%, -1%, 0)",
+                  opacity: 1,
                   transformOrigin: arrivalOrigin,
                 },
                 {
@@ -125,15 +129,20 @@ export default function RouteTransition() {
                   transformOrigin: arrivalOrigin,
                 },
               ],
-              { duration: 490, easing: "cubic-bezier(.16,1,.3,1)" },
+              { duration: 550, easing: "cubic-bezier(.16,1,.3,1)" },
             );
           }
-          animate(passage, [{ opacity: 0.7 }, { opacity: 0 }], {
-            duration: 390,
+          tunnel.arrive();
+          animate(veil, [{ opacity: 1 }, { opacity: 0 }], {
+            duration: 180,
           });
-          const opening = animate(veil, [{ opacity: 1 }, { opacity: 0 }], {
-            duration: 500,
-          });
+          const opening = animate(
+            passage,
+            [{ opacity: 1 }, { opacity: 1, offset: 0.92 }, { opacity: 0 }],
+            {
+              duration: 560,
+            },
+          );
           void opening.finished
             .then(() => {
               if (token !== generation) return;
@@ -183,40 +192,17 @@ export default function RouteTransition() {
       const wrapper = viewport();
       if (wrapper) wrapper.dataset.routeLock = "true";
       foreground()?.setAttribute("aria-busy", "true");
-      // Mobile uses three rings, desktop four. All marks animate transforms and
-      // opacity only; no screenshots, blur filter, new canvas, or render loop.
-      const marks = innerWidth <= 768 ? rings.slice(0, 3) : rings;
-      marks.forEach((ring, i) => {
-        const frames = [
-          { transform: "translate3d(8%, -6%, -440px) scale(.18)", opacity: 0 },
-          {
-            transform: "translate3d(4%, -3%, -180px) scale(.55)",
-            opacity: 0.55,
-            offset: 0.3,
-          },
-          {
-            transform: "translate3d(-3%, 2%, 160px) scale(1.18)",
-            opacity: 0.7,
-            offset: 0.72,
-          },
-          { transform: "translate3d(-8%, 6%, 420px) scale(1.65)", opacity: 0 },
-        ];
-        animate(
-          ring,
-          back
-            ? [...frames].reverse().map((keyframe) => ({
-                transform: keyframe.transform,
-                opacity: keyframe.opacity,
-              }))
-            : frames,
-          {
-            duration: 700,
-            delay: i * 55,
-            easing: "cubic-bezier(.45,.05,.65,1)",
-          },
-        );
-      });
-      animate(passage, [{ opacity: 0 }, { opacity: 1 }], { duration: 180 });
+      tunnel.start(back);
+      animate(
+        passage,
+        [
+          { opacity: 0 },
+          { opacity: 0.12, offset: 0.25 },
+          { opacity: 1, offset: 0.78 },
+          { opacity: 1 },
+        ],
+        { duration: 620 },
+      );
       const page = foreground();
       const leaving =
         page && navigate
@@ -236,19 +222,19 @@ export default function RouteTransition() {
                 },
                 {
                   transform: back
-                    ? "scale(.84) translate3d(1%, -1%, 0)"
-                    : "scale(1.24) translate3d(-2%, 2%, 0)",
+                    ? "scale(.62) translate3d(2%, -1%, 0)"
+                    : "scale(1.58) translate3d(-4%, 2%, 0)",
                   opacity: 0,
                   transformOrigin: origin,
                 },
               ],
-              { duration: 390 },
+              { duration: 610 },
             )
           : null;
       const cover = animate(
         veil,
-        [{ opacity: 0 }, { opacity: 0.2, offset: 0.35 }, { opacity: 1 }],
-        { duration: 400 },
+        [{ opacity: 0 }, { opacity: 0.05, offset: 0.35 }, { opacity: 1 }],
+        { duration: 620 },
       );
       void cover.finished
         .then(() => {
@@ -386,6 +372,7 @@ export default function RouteTransition() {
     motion.addEventListener("change", reduce);
     return () => {
       reset();
+      tunnel.destroy();
       commit.current = () => {};
       document.removeEventListener("click", click, true);
       window.removeEventListener("popstate", pop, true);
@@ -409,11 +396,13 @@ export default function RouteTransition() {
       data-phase="idle"
     >
       <div className={styles.veil} data-route-veil aria-hidden="true" />
-      <div className={styles.passage} data-route-passage aria-hidden="true">
-        {[0, 1, 2, 3].map((ring) => (
-          <div key={ring} className={styles.ring} data-route-ring />
-        ))}
-      </div>
+      <canvas
+        className={styles.passage}
+        data-route-tunnel
+        width="1"
+        height="1"
+        aria-hidden="true"
+      />
       <span className={styles.status} role="status">
         페이지를 이동하고 있습니다
       </span>
