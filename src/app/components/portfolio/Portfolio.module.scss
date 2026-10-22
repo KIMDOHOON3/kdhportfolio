@@ -1358,6 +1358,12 @@ $label: "NewYork", "Pretendard-Regular", sans-serif;
     outline: none;
   }
 }
+.routeContent {
+  // Keep transformed route content above the persistent WebGL backdrop and
+  // its screen, including while it is visible through the transition portal.
+  position: relative;
+  z-index: 2;
+}
 .backgroundScreen {
   position: fixed;
   inset: 0;

@@ -9,6 +9,7 @@ import JsonLd from "@/app/components/JsonLd";
 import Script from "next/script";
 import ScrollViewport from "./components/portfolio/ScrollViewport";
 import RouteTransition from "./components/portfolio/RouteTransition";
+import portfolioStyles from "./components/portfolio/Portfolio.module.scss";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://kdhportfolio-omega.vercel.app"),
@@ -83,7 +84,9 @@ export default function RootLayout({
             본문으로 바로가기
           </a>
           <PortfolioHeader />
-          <div id="main-content">{children}</div>
+          <div id="main-content" className={portfolioStyles.routeContent}>
+            {children}
+          </div>
           <PortfolioFooter />
         </ScrollViewport>
         <RouteTransition />

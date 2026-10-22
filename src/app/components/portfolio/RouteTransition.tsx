@@ -111,17 +111,40 @@ export default function RouteTransition() {
           const wrapper = viewport();
           if (wrapper) wrapper.dataset.routePhase = "enter";
           const page = foreground();
-          const arrivalOrigin = `50% ${Math.round((wrapper?.scrollTop ?? 0) + innerHeight * 0.45)}px`;
+          const returningCard =
+            location.pathname === "/" && location.hash === "#work"
+              ? document.querySelector<HTMLElement>(
+                  `a[href="${navigation.fromPath}"]`,
+                )
+              : null;
+          // Existing focus handlers finish this card's copy/cover entrances.
+          // It must already be complete inside the return portal, too.
+          returningCard?.focus({ preventScroll: true });
+          const focus =
+            location.pathname === "/"
+              ? returningCard?.querySelector<HTMLElement>("h3")
+              : page?.querySelector<HTMLElement>("#project-title");
+          const box = focus?.getBoundingClientRect();
+          const focusX = box ? box.left + box.width / 2 : innerWidth / 2;
+          const focusY = box ? box.top + box.height / 2 : innerHeight * 0.45;
+          const portal = tunnel.previewPoint();
+          const arrivalOrigin = `${focusX}px ${Math.round((wrapper?.scrollTop ?? 0) + focusY)}px`;
+          const previewTransform = `translate3d(${Math.round(portal.x - focusX)}px, ${Math.round(portal.y - focusY)}px, 0) scale(${navigation.back ? 0.56 : 0.46})`;
           if (page) {
             animate(
               page,
               [
                 {
-                  transform: navigation.back
-                    ? "scale(1.3) translate3d(-2%, 1%, 0)"
-                    : "scale(.8) translate3d(2%, -1%, 0)",
+                  transform: previewTransform,
                   opacity: 1,
                   transformOrigin: arrivalOrigin,
+                },
+                {
+                  transform: previewTransform,
+                  opacity: 1,
+                  transformOrigin: arrivalOrigin,
+                  offset: 0.32,
+                  easing: "cubic-bezier(.45,0,.2,1)",
                 },
                 {
                   transform: "scale(1) translate3d(0, 0, 0)",
@@ -129,18 +152,18 @@ export default function RouteTransition() {
                   transformOrigin: arrivalOrigin,
                 },
               ],
-              { duration: 550, easing: "cubic-bezier(.16,1,.3,1)" },
+              { duration: 810, easing: "linear" },
             );
           }
           tunnel.arrive();
           animate(veil, [{ opacity: 1 }, { opacity: 0 }], {
-            duration: 180,
+            duration: 100,
           });
           const opening = animate(
             passage,
             [{ opacity: 1 }, { opacity: 1, offset: 0.92 }, { opacity: 0 }],
             {
-              duration: 560,
+              duration: 840,
             },
           );
           void opening.finished
@@ -201,7 +224,7 @@ export default function RouteTransition() {
           { opacity: 1, offset: 0.78 },
           { opacity: 1 },
         ],
-        { duration: 620 },
+        { duration: 320 },
       );
       const page = foreground();
       const leaving =
@@ -228,13 +251,13 @@ export default function RouteTransition() {
                   transformOrigin: origin,
                 },
               ],
-              { duration: 610 },
+              { duration: 310 },
             )
           : null;
       const cover = animate(
         veil,
         [{ opacity: 0 }, { opacity: 0.05, offset: 0.35 }, { opacity: 1 }],
-        { duration: 620 },
+        { duration: 320 },
       );
       void cover.finished
         .then(() => {

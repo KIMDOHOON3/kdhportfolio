@@ -33,6 +33,16 @@ test("project entry, history navigation and list return release the transition a
   expect(buffer.width).toBeLessThanOrEqual(560);
   expect(buffer.height).toBeLessThanOrEqual(1000);
   await expect(page).toHaveURL(/\/work\/1$/);
+  await expect(tunnel).toHaveAttribute("data-preview", "true");
+  // The real route is already mounted under the curved opening. Its transform
+  // must not drop it behind the persistent opaque background screen.
+  await expect(page.locator("#main-content")).toHaveCSS("z-index", "2");
+  await expect(transition).toHaveAttribute("data-active", "true");
+  const preview = await page.locator("#project-title").boundingBox();
+  expect(preview!.y).toBeGreaterThan(0);
+  expect(preview!.y + preview!.height).toBeLessThan(
+    page.viewportSize()!.height,
+  );
   await expect(transition).toHaveAttribute("data-active", "false");
   await expect(tunnel).toHaveAttribute("width", "1");
   await expect(tunnel).toHaveAttribute("height", "1");

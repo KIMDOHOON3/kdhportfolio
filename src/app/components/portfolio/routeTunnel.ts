@@ -14,6 +14,7 @@ varying vec2 uv;
 uniform vec2 resolution;
 uniform float progress;
 uniform float direction;
+uniform float arrival;
 
 vec2 center(float z, vec2 bend) {
   return bend * z * z * vec2(.012, .008);
@@ -63,10 +64,14 @@ void main() {
   }
   float glow = pow(max(0., ray.z), 18.) * .14;
   color += vec3(.12, .17, .2) * glow;
-  float exit = smoothstep(.68, 1., progress);
-  float radius = pow(exit, 1.3) * (length(vec2(resolution.x / resolution.y, 1.)) + .2);
-  float aperture = smoothstep(radius - .035, radius + .035, length(screen));
-  float alpha = mix(1., aperture, smoothstep(.68, .72, progress));
+  // Keep the real destination visible through the far end of the tube before
+  // it expands. Its opening follows the projected bend, not the screen center.
+  vec2 portal = (center(18., bend) / 18. * 1.8 - vec2(.32, -.10)) / fov;
+  float exit = smoothstep(.32, 1., arrival);
+  float previewRadius = mix(.18, .30, smoothstep(0., .32, arrival));
+  float radius = mix(previewRadius, length(vec2(resolution.x / resolution.y, 1.)) + length(portal) + .2, pow(exit, 1.3));
+  float aperture = smoothstep(radius - .018, radius + .018, length(screen - portal));
+  float alpha = mix(1., aperture, smoothstep(0., .12, arrival));
   gl_FragColor = vec4(clamp(color, 0., 1.), alpha);
 }`;
 
@@ -78,10 +83,12 @@ export function createRouteTunnel(canvas: HTMLCanvasElement) {
   let uniforms: {
     progress: WebGLUniformLocation | null;
     direction: WebGLUniformLocation | null;
+    arrival: WebGLUniformLocation | null;
   } | null = null;
   let frame = 0;
   let value = 0;
   let back = false;
+  let arrival = -1;
   let disabled = false;
   const shaders: WebGLShader[] = [];
   const initialize = () => {
@@ -130,6 +137,7 @@ export function createRouteTunnel(canvas: HTMLCanvasElement) {
       uniforms = {
         progress: context.getUniformLocation(program, "progress"),
         direction: context.getUniformLocation(program, "direction"),
+        arrival: context.getUniformLocation(program, "arrival"),
       };
       return true;
     } catch {
@@ -142,9 +150,10 @@ export function createRouteTunnel(canvas: HTMLCanvasElement) {
     if (!gl || !program || !uniforms || gl.isContextLost()) return;
     gl.uniform1f(uniforms.progress, value);
     gl.uniform1f(uniforms.direction, back ? -1 : 1);
+    gl.uniform1f(uniforms.arrival, arrival);
     gl.drawArrays(gl.TRIANGLES, 0, 6);
   };
-  const move = (end: number, duration: number) => {
+  const move = (end: number, duration: number, arriving = false) => {
     cancelAnimationFrame(frame);
     const start = value;
     const began = performance.now();
@@ -153,6 +162,7 @@ export function createRouteTunnel(canvas: HTMLCanvasElement) {
       // Accelerate through the bend, then decelerate on arrival.
       const eased = end < 1 ? t * t : 1 - Math.pow(1 - t, 2);
       value = start + (end - start) * eased;
+      arrival = arriving ? t : -1;
       draw();
       if (t < 1) frame = requestAnimationFrame(tick);
     };
@@ -181,17 +191,37 @@ export function createRouteTunnel(canvas: HTMLCanvasElement) {
         canvas.height,
       );
       value = 0;
+      arrival = -1;
       back = reverse;
       canvas.dataset.ready = "true";
+      canvas.dataset.preview = "false";
       draw();
       move(0.68, 620);
     },
     arrive() {
       if (disabled || !gl) return;
-      move(1, 520);
+      canvas.dataset.preview = "true";
+      move(1, 800, true);
+    },
+    previewPoint() {
+      // Same projection as the shader, in CSS pixels. This places the new
+      // project's title inside the opening while the camera approaches it.
+      const travel = back ? 1 - value : value;
+      const bendX = 0.8 + 0.36 * Math.sin(travel * 2.8);
+      const bendY = -0.58 + 0.26 * Math.cos(travel * 3);
+      const fov = 1.05 + 0.3 * Math.sin(value * Math.PI);
+      const x =
+        (bendX * 18 * 0.012 * 1.8 - 0.32) / fov + 0.06 * Math.sin(travel * 2.6);
+      const y =
+        (bendY * 18 * 0.008 * 1.8 + 0.1) / fov + 0.04 * Math.cos(travel * 2.2);
+      return {
+        x: innerWidth / 2 + (x * innerHeight) / 2,
+        y: innerHeight / 2 - (y * innerHeight) / 2,
+      };
     },
     stop() {
       cancelAnimationFrame(frame);
+      canvas.dataset.preview = "false";
       canvas.width = canvas.height = 1;
     },
     destroy() {
