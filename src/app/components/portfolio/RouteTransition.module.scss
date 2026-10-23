@@ -12,6 +12,9 @@
     display: block;
     pointer-events: auto;
   }
+  &[data-gallery-flight="true"] .veil {
+    display: none;
+  }
 }
 
 .veil {

@@ -8,6 +8,9 @@ import {
   rememberRouteScroll,
 } from "./routeScroll";
 import styles from "./RouteTransition.module.scss";
+import { beginGalleryFlight } from "./galleryBridge";
+import type { GalleryFlight } from "./galleryScene";
+import { rememberProjectRoute } from "./gallerySelection";
 
 const projectPath = (path: string) => /^\/work\/\d+\/?$/.test(path);
 const relevant = (from: URL, to: URL) =>
@@ -45,6 +48,8 @@ export default function RouteTransition() {
     let timeout = 0;
     let generation = 0;
     let frame = 0;
+    let galleryFlight: GalleryFlight | null = null;
+    let hiddenArrival: { element: HTMLElement; opacity: string } | null = null;
     const viewport = () =>
       document.querySelector<HTMLElement>("[data-scroll-viewport]");
     const foreground = () => document.getElementById("main-content");
@@ -80,9 +85,16 @@ export default function RouteTransition() {
     };
     const reset = () => {
       generation++;
+      galleryFlight?.cancel();
+      galleryFlight = null;
+      delete root.dataset.galleryFlight;
       cancelAnimationFrame(frame);
       clearTimeout(timeout);
       cancelAnimations();
+      if (hiddenArrival) {
+        hiddenArrival.element.style.opacity = hiddenArrival.opacity;
+        hiddenArrival = null;
+      }
       root.dataset.active = "false";
       root.dataset.phase = "idle";
       active = null;
@@ -115,6 +127,41 @@ export default function RouteTransition() {
           // Restore a complete card rather than replaying its entrances while
           // the returning page is still moving.
           returningCard?.focus({ preventScroll: true });
+          if (galleryFlight) {
+            const reverse = location.pathname === "/";
+            const target = document.querySelector<HTMLElement>(
+              reverse
+                ? "[data-gallery-canvas]"
+                : "[data-project-transition-cover]",
+            );
+            if (target) {
+              if (page)
+                animate(
+                  page,
+                  [
+                    { opacity: 0, offset: 0 },
+                    { opacity: 0, offset: reverse ? 0.32 : 0.55 },
+                    { opacity: 1 },
+                  ],
+                  { duration: 1050, easing: "linear" },
+                );
+              void galleryFlight.arrive(target, reverse).then(() => {
+                if (token !== generation) return;
+                const destination = reverse
+                  ? returningCard
+                  : document.getElementById("project-title");
+                reset();
+                if (destination) {
+                  if (!destination.matches("a,button"))
+                    destination.tabIndex = -1;
+                  destination.focus({ preventScroll: true });
+                }
+              });
+              return;
+            }
+            galleryFlight.cancel();
+            galleryFlight = null;
+          }
           const arrivalOrigin = `50% ${Math.round((wrapper?.scrollTop ?? 0) + (wrapper?.clientHeight ?? innerHeight) * 0.45)}px`;
           const arrival = page
             ? animate(
@@ -173,6 +220,7 @@ export default function RouteTransition() {
       back: boolean,
       nextIndex: number,
       navigate?: () => void,
+      galleryEntry = false,
     ) => {
       reset();
       const token = generation;
@@ -193,6 +241,60 @@ export default function RouteTransition() {
       if (wrapper) wrapper.dataset.routeLock = "true";
       foreground()?.setAttribute("aria-busy", "true");
       const page = foreground();
+      const departingHero =
+        url.pathname === "/"
+          ? document.querySelector<HTMLElement>(
+              "[data-project-transition-cover]",
+            )
+          : null;
+      // A shared image can only lead back from what the user can actually see.
+      // Reading lower in a detail must not fly in an offscreen hero rectangle.
+      const heroBounds = departingHero?.getBoundingClientRect();
+      const headerBottom =
+        document
+          .querySelector("[data-scroll-viewport] > div > header")
+          ?.getBoundingClientRect().bottom ?? 0;
+      const visibleHeroHeight = heroBounds
+        ? Math.max(
+            0,
+            Math.min(heroBounds.bottom, innerHeight) -
+              Math.max(heroBounds.top, headerBottom),
+          )
+        : 0;
+      const visibleHeroWidth = heroBounds
+        ? Math.max(
+            0,
+            Math.min(heroBounds.right, innerWidth) -
+              Math.max(heroBounds.left, 0),
+          )
+        : 0;
+      const visibleHero =
+        !!heroBounds &&
+        heroBounds.width > 1 &&
+        heroBounds.height > 1 &&
+        visibleHeroHeight >= heroBounds.height * 0.4 &&
+        visibleHeroWidth >= heroBounds.width * 0.6;
+      if (galleryEntry || visibleHero)
+        galleryFlight = beginGalleryFlight(
+          root,
+          departingHero ?? undefined,
+          Number(
+            (projectPath(url.pathname) ? url.pathname : current.pathname)
+              .split("/")
+              .pop(),
+          ),
+        );
+      if (galleryFlight) {
+        root.dataset.galleryFlight = "true";
+        if (page)
+          animate(page, [{ opacity: 1 }, { opacity: 0 }], { duration: 180 });
+        active.covered = true;
+        navigate?.();
+        reveal();
+        timeout = window.setTimeout(reset, 12000);
+        return;
+      }
+      const duration = leaveDuration;
       const origin = `50% ${Math.round((wrapper?.scrollTop ?? 0) + (wrapper?.clientHeight ?? innerHeight) * 0.45)}px`;
       const leaving =
         page && navigate
@@ -212,11 +314,11 @@ export default function RouteTransition() {
                   transformOrigin: origin,
                 },
               ],
-              { duration: leaveDuration, easing: "cubic-bezier(.4,0,.8,1)" },
+              { duration, easing: "cubic-bezier(.4,0,.8,1)" },
             )
           : null;
       const cover = animate(veil, [{ opacity: 0 }, { opacity: 1 }], {
-        duration: leaveDuration,
+        duration,
         easing: "cubic-bezier(.4,0,.8,1)",
       });
       void cover.finished
@@ -239,6 +341,17 @@ export default function RouteTransition() {
           location.pathname !== current.pathname)
       ) {
         index = active.index;
+        if (galleryFlight && !active.committed) {
+          // Hide the incoming content in the commit's layout effect, before
+          // the two measurement frames. The outgoing opacity animation must
+          // not briefly reveal a new title underneath the moving surface.
+          cancelAnimations();
+          const page = foreground();
+          if (page) {
+            hiddenArrival = { element: page, opacity: page.style.opacity };
+            page.style.opacity = "0";
+          }
+        }
         active.committed = true;
         stamp();
         reveal();
@@ -283,8 +396,14 @@ export default function RouteTransition() {
         return;
       }
       event.preventDefault();
-      start(url, back, index + 1, () =>
-        router.push(url.pathname + url.search + url.hash, { scroll: false }),
+      const galleryEntry = !!link.closest("[data-project-gallery]");
+      start(
+        url,
+        back,
+        index + 1,
+        () =>
+          router.push(url.pathname + url.search + url.hash, { scroll: false }),
+        galleryEntry,
       );
     };
     const pop = (event: PopStateEvent) => {
@@ -306,7 +425,13 @@ export default function RouteTransition() {
         index = nextIndex;
         return;
       }
-      start(url, back, nextIndex);
+      start(
+        url,
+        back,
+        nextIndex,
+        undefined,
+        current.pathname === "/" && projectPath(url.pathname),
+      );
       // Browser forward also restores the destination's saved scroll position.
       prepareRouteScroll(url, true);
     };
@@ -361,6 +486,7 @@ export default function RouteTransition() {
   }, [router]);
 
   useLayoutEffect(() => {
+    rememberProjectRoute(pathname);
     commit.current();
   }, [pathname]);
 

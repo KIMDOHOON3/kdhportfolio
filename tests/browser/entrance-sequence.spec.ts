@@ -45,11 +45,6 @@ test("responsive rows enter left to right and buttons pop without changing layou
   await expect(
     filters.getByRole("button", { name: "개인 02", exact: true }),
   ).toHaveAttribute("data-element-state", "done");
-  const firstCard = page.locator("#work article").first();
-  await expect(firstCard.locator("h3 [data-copy-reveal]")).toHaveAttribute(
-    "data-copy-entrance",
-    "done",
-  );
   const starts = await page.evaluate(
     () =>
       (
@@ -58,15 +53,7 @@ test("responsive rows enter left to right and buttons pop without changing layou
         }
       ).entranceStarts,
   );
-  const order = [
-    "프로젝트",
-    "전체 04",
-    "실무 02",
-    "개인 02",
-    "01 실무 프로젝트",
-    "2026",
-    "LEXUS",
-  ];
+  const order = ["프로젝트", "전체 04", "실무 02", "개인 02"];
   const indices = order.map((label) =>
     starts.findIndex((entry) => entry.label === label),
   );
@@ -87,26 +74,6 @@ test("responsive rows enter left to right and buttons pop without changing layou
   );
   expect(motion.scales).toEqual(["0", "1.035", "1"]);
   expect(motion.duration).toBe(480);
-  await firstCard.locator("[data-cover-entrance]").scrollIntoViewIfNeeded();
-  await expect(firstCard.locator("[data-cover-entrance]")).toHaveAttribute(
-    "data-cover-entrance",
-    "done",
-  );
-  await firstCard
-    .locator("[data-project-action]")
-    .evaluate((element) => element.scrollIntoView({ block: "center" }));
-  await expect(firstCard.locator("[data-project-action]")).toHaveAttribute(
-    "data-element-state",
-    "done",
-  );
-  await firstCard
-    .locator("[data-entrance-after-cover]")
-    .evaluate((element) => element.scrollIntoView({ block: "center" }));
-  await expect(
-    firstCard
-      .locator("[data-entrance-after-cover] [data-element-reveal]")
-      .last(),
-  ).toHaveAttribute("data-element-state", "done");
   await page.screenshot({
     path: info.outputPath("responsive-sequence.png"),
     scale: "css",

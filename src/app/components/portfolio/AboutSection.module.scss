@@ -3,7 +3,7 @@
   z-index: 2;
   display: grid;
   place-items: center;
-  padding: clamp(96px, 9vw, 128px) var(--page-inset) clamp(112px, 11vw, 152px);
+  padding: clamp(112px, 10vw, 144px) var(--page-inset) clamp(128px, 12vw, 176px);
   scroll-margin-top: 30px;
 }
 .illustration {
@@ -11,7 +11,7 @@
 }
 @media (max-width: 768px) {
   .section {
-    padding: 80px 24px 96px;
+    padding: 96px 24px 120px;
   }
   .illustration {
     width: min(100%, 360px);

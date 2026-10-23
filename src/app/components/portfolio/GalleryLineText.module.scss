@@ -1,0 +1,30 @@
+.root {
+  display: block;
+  position: relative;
+}
+.source {
+  display: block;
+}
+.root[data-lines-ready="true"] > .source {
+  opacity: 0;
+}
+.visual {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  clip-path: inset(-0.08em -0.08em);
+}
+.motion {
+  position: relative;
+  display: block;
+  white-space: pre;
+  transform: translateY(110%);
+  &::before {
+    content: attr(data-line-text);
+  }
+}

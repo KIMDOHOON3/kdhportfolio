@@ -7,9 +7,8 @@ import Navigation from "../Header/Navigation";
 import NavTrigger from "../Header/NavTrigger";
 import { portfolioProjects } from "../../data/portfolio";
 import GlassScene from "./GlassScene";
-import ProjectCover from "./ProjectCover";
+import ProjectGallery from "./ProjectGallery";
 import ArrowIcon from "./ArrowIcon";
-import TechnologyIcon from "./TechnologyIcon";
 import AboutSection from "./AboutSection";
 import ScrollStory from "./ScrollStory";
 import BackgroundScreen from "./BackgroundScreen";
@@ -18,9 +17,9 @@ import styles from "./Portfolio.module.scss";
 import { buttonMotion } from "./buttonMotion";
 import { ButtonLabel, ButtonLight } from "./ButtonEffect";
 import { GLASS_ASSETS } from "../../data/glassAssets";
-import ProjectCoverEntrance from "./ProjectCoverEntrance";
 import CopyReveal from "./CopyReveal";
 import useElementEntrances from "./useElementEntrances";
+import { filterGalleryProjects, getProjectFilter } from "./gallerySelection";
 
 const projectCount = (count: number) => String(count).padStart(2, "0");
 
@@ -163,10 +162,9 @@ export function PortfolioFooter() {
 }
 
 export default function Portfolio() {
-  const [filter, setFilter] = useState("전체");
+  const [filter, setFilter] = useState(getProjectFilter);
   const root = useRef<HTMLElement>(null);
   useElementEntrances(root, filter);
-  const revealed = useRef(new Set<number>());
   const visibleProjects = portfolioProjects.filter(
     (project) => filter === "전체" || project.category === filter,
   );
@@ -200,9 +198,7 @@ export default function Portfolio() {
               <br />
               보이지 않는 흐름을 만듭니다.
             </p>
-            <p className={styles.heroIntro}>
-              프론트엔드 개발자 김도훈입니다.
-            </p>
+            <p className={styles.heroIntro}>프론트엔드 개발자 김도훈입니다.</p>
           </div>
           <a
             href="#work"
@@ -253,7 +249,10 @@ export default function Portfolio() {
               return (
                 <button
                   key={value}
-                  onClick={() => setFilter(value)}
+                  onClick={() => {
+                    filterGalleryProjects(value);
+                    setFilter(value);
+                  }}
                   aria-pressed={filter === value}
                   aria-label={`${label} ${count}`}
                   data-element-reveal="button"
@@ -271,100 +270,7 @@ export default function Portfolio() {
             })}
           </div>
         </div>
-        <div className={styles.projectGrid}>
-          {visibleProjects.map((project) => (
-            <article
-              data-paper
-              key={project.id}
-              className={styles.project}
-              data-entrance-area={project.title}
-            >
-              <Link
-                href={`/work/${project.id}`}
-                scroll={false}
-                className={styles.projectLink}
-                data-paper-surface
-                data-button-effect
-                aria-label={`${project.title} 프로젝트 보기`}
-                aria-describedby={
-                  project.responsibilities
-                    ? `project-tasks-${project.id}`
-                    : undefined
-                }
-              >
-                <div className={styles.projectMeta}>
-                  <span>
-                    <CopyReveal
-                      inline
-                      seen={revealed.current.has(project.id)}
-                    >{`${projectCount(portfolioProjects.indexOf(project) + 1)} ${project.category}`}</CopyReveal>
-                  </span>
-                  <span>
-                    <CopyReveal inline seen={revealed.current.has(project.id)}>
-                      {project.year}
-                    </CopyReveal>
-                  </span>
-                </div>
-                <div className={styles.projectTitle}>
-                  <h3>
-                    <CopyReveal seen={revealed.current.has(project.id)}>
-                      {project.title}
-                    </CopyReveal>
-                  </h3>
-                </div>
-                {project.responsibilities ? (
-                  <div className={styles.projectTasks}>
-                    <p>
-                      <CopyReveal seen={revealed.current.has(project.id)}>
-                        {project.category === "개인 프로젝트"
-                          ? "주요 구현"
-                          : "담당 업무"}
-                      </CopyReveal>
-                    </p>
-                    <ul id={`project-tasks-${project.id}`}>
-                      {project.responsibilities.map((task) => (
-                        <li key={task}>
-                          <CopyReveal seen={revealed.current.has(project.id)}>
-                            {task}
-                          </CopyReveal>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                ) : (
-                  <p className={styles.projectSubtitle}>
-                    <CopyReveal seen={revealed.current.has(project.id)}>
-                      {project.subtitle}
-                    </CopyReveal>
-                  </p>
-                )}
-                <ProjectCoverEntrance
-                  projectId={project.id}
-                  seen={revealed.current.has(project.id)}
-                  onStart={() => {
-                    revealed.current.add(project.id);
-                  }}
-                >
-                  <ProjectCover project={project} />
-                </ProjectCoverEntrance>
-                <div className={styles.stack} data-entrance-after-cover>
-                  {project.stack.slice(0, 3).map((tech) => (
-                    <span
-                      key={tech}
-                      data-element-reveal="item"
-                      data-element-seen={
-                        revealed.current.has(project.id) ? "true" : undefined
-                      }
-                    >
-                      <TechnologyIcon name={tech} />
-                      {tech}
-                    </span>
-                  ))}
-                </div>
-              </Link>
-            </article>
-          ))}
-        </div>
+        <ProjectGallery key={filter} projects={visibleProjects} />
         {filter !== "실무 프로젝트" && (
           <aside className={styles.personalNote}>
             <h3>개인 프로젝트와 개발 방식</h3>

@@ -1508,7 +1508,9 @@ $label: "NewYork", "Pretendard-Regular", sans-serif;
 }
 .work {
   z-index: 2;
-  padding-block: 70px 96px;
+  margin-top: clamp(96px, 9vw, 160px);
+  padding-block: 20px 128px;
+  scroll-margin-top: 96px;
 }
 .workHeading {
   display: flex;
@@ -1516,7 +1518,7 @@ $label: "NewYork", "Pretendard-Regular", sans-serif;
   align-items: center;
   flex-wrap: wrap;
   gap: 20px 32px;
-  padding: 28px 8px 32px;
+  padding: 8px 0 12px;
   h2 {
     flex: 0 0 auto;
     font-size: clamp(28px, 3.3vw, 46px);
@@ -1758,12 +1760,30 @@ $label: "NewYork", "Pretendard-Regular", sans-serif;
     font-size: 11px;
   }
   .work {
-    padding: 40px 16px 72px;
+    margin-top: clamp(64px, 18vw, 96px);
+    padding: 24px 16px 96px;
+    scroll-margin-top: 64px;
   }
   .workHeading {
-    padding: 30px 8px;
+    padding: 12px 0 18px;
+    flex-wrap: nowrap;
+    gap: 12px;
     h2 {
-      font-size: 32px;
+      font-size: 28px;
+    }
+    .filters {
+      flex-wrap: nowrap;
+      gap: 6px;
+      button {
+        min-width: 62px;
+        min-height: 36px;
+        padding: 8px;
+        gap: 6px;
+        font-size: 12px;
+        > [data-filter-count] {
+          font-size: 11px;
+        }
+      }
     }
   }
   .workAside p {

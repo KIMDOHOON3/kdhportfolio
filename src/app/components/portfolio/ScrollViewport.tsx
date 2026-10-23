@@ -229,7 +229,9 @@ export default function ScrollViewport({ children }: { children: ReactNode }) {
         wrapper.scrollTo({
           top:
             actualTop -
-            (location.pathname !== "/" || target.id.startsWith("journey-")
+            (location.pathname !== "/" ||
+            target.id === "work" ||
+            target.id.startsWith("journey-")
               ? margin
               : 0),
           behavior: motion.matches ? "instant" : "smooth",
@@ -275,10 +277,11 @@ export default function ScrollViewport({ children }: { children: ReactNode }) {
       if (element.dataset.routePhase === "enter") return;
       measureRegions();
       engine?.resize();
-      // Detail anchors keep their heading below the fixed header on first
-      // entry too. Home's full-screen section alignment remains unchanged.
+      // Keep content headings below the fixed header, including the compact
+      // work gallery. Other home sections retain their full-screen alignment.
       const margin =
-        target && (pathname !== "/" || id.startsWith("journey-"))
+        target &&
+        (pathname !== "/" || id === "work" || id.startsWith("journey-"))
           ? parseFloat(getComputedStyle(target).scrollMarginTop) || 0
           : 0;
       const top =

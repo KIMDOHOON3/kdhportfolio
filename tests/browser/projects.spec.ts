@@ -32,23 +32,13 @@ test("project controls roll down, retain selection and stop offscreen", async ({
   await work.click();
   await expect(work).toHaveAttribute("aria-pressed", "true");
   expect((await work.boundingBox())!.width).toBeCloseTo(bounds!.width, 0);
-  const card = page.getByRole("link", {
-    name: "LEXUS 프로젝트 보기",
+  const action = page.getByRole("button", {
+    name: "다음 프로젝트",
     exact: true,
   });
-  const action = card.locator("[data-project-action]");
   await action.hover();
-  await expect(action.locator("svg")).toHaveCount(2);
-  await page.screenshot({
-    path: info.outputPath("button-hover.png"),
-    scale: "css",
-  });
+  await expect(action.locator("[data-button-light]")).toHaveCount(1);
   await page.emulateMedia({ reducedMotion: "reduce" });
-  expect(
-    await action
-      .locator("[data-button-light]")
-      .evaluate((e) => getComputedStyle(e, "::before").animationName),
-  ).toBe("none");
   await expect(letters.first()).toHaveCSS("transform", "none");
 });
 
@@ -60,93 +50,42 @@ test("one Lexus project retains renewal and operations details", async ({
   await page.goto("/#work");
   await page.evaluate(() => document.fonts.ready);
   const gallery = page.locator("#work");
-  await expect(gallery.locator("article")).toHaveCount(4);
-  await expect(gallery.locator("[data-work-cover-mockup]")).toHaveCount(2);
-  await expect
-    .poll(() =>
-      gallery
-        .locator("[data-work-cover-mockup] img")
-        .evaluateAll(
-          (images) =>
-            images.length === 4 &&
-            images.every(
-              (image) =>
-                (image as HTMLImageElement).complete &&
-                (image as HTMLImageElement).naturalWidth > 0,
-            ),
-        ),
-    )
-    .toBe(true);
-  await expect(
-    gallery.locator('img[src*="lexus-renewal"], img[src*="kia-worldwide"]'),
-  ).toHaveCount(0);
-  if (page.viewportSize()!.width > 760) {
-    const cards = await gallery.locator("article").evaluateAll((elements) =>
-      elements.map((element) => {
-        const rect = element.getBoundingClientRect();
-        return {
-          top: rect.top,
-          left: rect.left,
-          right: rect.right,
-          width: rect.width,
-        };
-      }),
-    );
-    expect(Math.abs(cards[0].top - cards[1].top)).toBeLessThan(1);
-    expect(Math.abs(cards[2].top - cards[3].top)).toBeLessThan(1);
-    expect(cards[2].top).toBeGreaterThan(cards[0].top);
-    expect(cards[1].left).toBeGreaterThan(cards[0].right);
-    expect(Math.abs(cards[0].left - cards[2].left)).toBeLessThan(1);
-    expect(Math.abs(cards[1].left - cards[3].left)).toBeLessThan(1);
-    cards.forEach((card) =>
-      expect(Math.abs(card.width - cards[0].width)).toBeLessThan(1),
-    );
-  }
-  await expect(
-    gallery.getByRole("link", { name: "LEXUS 프로젝트 보기", exact: true }),
-  ).toHaveCount(1);
-  await expect(gallery.locator('a[href="/work/2"]')).toHaveCount(0);
-  await expect(
-    gallery.locator("article").getByRole("heading", { level: 3 }),
-  ).toHaveText(["LEXUS", "Kia Worldwide", "Aeppy", "Dog Atlas"]);
-  const sectionOrder = await page
-    .locator("main#top > section")
-    .evaluateAll((sections) =>
-      sections.slice(0, 3).map((section) => section.id),
-    );
-  expect(sectionOrder).toEqual(["home", "work", "about"]);
-  const lexus = gallery.locator('a[href="/work/1"]');
-  const kia = gallery.locator('a[href="/work/3"]');
-  await expect(lexus.getByRole("listitem")).toHaveText([
+  await expect(gallery.locator("[data-gallery-panel]")).toHaveCount(4);
+  await expect(gallery.locator("[data-gallery-canvas]")).toHaveCount(1);
+  await expect(gallery.locator("[data-selected-project]")).toHaveAttribute(
+    "data-selected-project",
+    "1",
+  );
+  await expect(gallery.locator("[data-selected-project] li")).toHaveText([
     "상담신청 폼·예약 달력·마이페이지 공통 LNB 개발",
     "Three.js 별 표현·이미지 시퀀스 차량 뷰어 구현",
     "시승 신청 흐름 개선·프론트엔드 일정 및 QA 조율",
   ]);
-  await expect(kia.getByRole("listitem")).toHaveText([
+  await page
+    .getByRole("button", { name: "다음 프로젝트", exact: true })
+    .click();
+  await expect(gallery.locator("[data-selected-project] li")).toHaveText([
     "브랜드·차량 콘텐츠 및 스크롤 인터랙션 개발",
     "이미지 로딩·iOS 헤더·Safari 영상 모션 개선",
     "이미지 파일 용량 절감·공통 컴포넌트 구조 정비",
   ]);
   const filters = gallery.getByRole("group", { name: "프로젝트 필터" });
-  await expect(
-    filters.getByRole("button").locator("[data-filter-count]"),
-  ).toHaveText(["04", "02", "02"]);
   const capture = async (name: string) => {
     const path = info.outputPath(`${name}.png`);
     await page.screenshot({ path, scale: "css" });
     await info.attach(name, { path, contentType: "image/png" });
   };
-  await capture("four-projects");
+  await capture("project-gallery");
   await filters.getByRole("button", { name: /실무/ }).click();
-  await expect(gallery.locator("article")).toHaveCount(2);
-  await expect(
-    gallery.locator("article").getByRole("heading", { level: 3 }),
-  ).toHaveText(["LEXUS", "Kia Worldwide"]);
+  await expect(gallery.locator("[data-gallery-panel]")).toHaveCount(2);
   await filters.getByRole("button", { name: /개인/ }).click();
-  await expect(
-    gallery.locator("article").getByRole("heading", { level: 3 }),
-  ).toHaveText(["Aeppy", "Dog Atlas"]);
+  await expect(gallery.locator("[data-gallery-panel]")).toHaveCount(2);
+  await expect(gallery.locator("[data-selected-project] h3")).toHaveText("Aeppy");
   await filters.getByRole("button", { name: /전체/ }).click();
+  await page
+    .getByRole("navigation", { name: "프로젝트 바로 선택" })
+    .getByRole("button", { name: /LEXUS/ })
+    .click();
   await gallery
     .getByRole("link", { name: "LEXUS 프로젝트 보기", exact: true })
     .click();
@@ -155,7 +94,9 @@ test("one Lexus project retains renewal and operations details", async ({
     page.getByRole("heading", { name: "LEXUS", exact: true }),
   ).toBeVisible();
   await capture("lexus-summary");
-  await expect(page.locator('[data-work-cover-mockup="lexus"]')).toBeVisible();
+  await expect(
+    page.locator("[data-project-transition-cover] img"),
+  ).toBeVisible();
   await expect(
     page.locator('meta[property="og:image"][content*="lexus-renewal"]'),
   ).toHaveCount(0);

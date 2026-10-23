@@ -48,7 +48,7 @@ export default function ProjectCover({
             <span className={styles.dogLabel}>DOG ATLAS 견종도감</span>
             <div className={styles.dogDeck}>
               {["jindo", "golden", "poodle"].map((dog, i) => (
-                <div className={styles.dogCard} key={dog}>
+                <div className={styles.dogCard} key={dog} data-dog-card>
                   <Image
                     src={`/projects/dog-${dog}.webp`}
                     alt={

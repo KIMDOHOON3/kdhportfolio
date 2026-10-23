@@ -2,7 +2,7 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { portfolioProjects } from "../../data/portfolio";
-import ProjectCover from "../../components/portfolio/ProjectCover";
+import Image from "next/image";
 import TechnologyIcon from "../../components/portfolio/TechnologyIcon";
 import ArrowIcon from "../../components/portfolio/ArrowIcon";
 import DetailAction from "../../components/portfolio/DetailAction";
@@ -70,6 +70,32 @@ export default async function ProjectDetail({ params }: Props) {
           PROJECT {String(index + 1).padStart(2, "0")}
         </span>
       </div>
+      <header className={styles.heroTitle}>
+        <p className={styles.category}>
+          {project.category} <span>{project.year}</span>
+        </p>
+        <h1
+          id="project-title"
+          className={project.title.length > 9 ? styles.longTitle : undefined}
+        >
+          {project.title}
+        </h1>
+      </header>
+      <div
+        className={styles.heroVisual}
+        data-project-visual
+        data-project-transition-cover
+      >
+        <Image
+          src={`/projects/gallery/${project.id}.webp`}
+          alt={`${project.title} 프로젝트 대표 이미지`}
+          width={1200}
+          height={800}
+          priority
+          sizes="100vw"
+          unoptimized
+        />
+      </div>
       <section
         id="overview"
         className={styles.overview}
@@ -77,15 +103,6 @@ export default async function ProjectDetail({ params }: Props) {
         data-project-overview
       >
         <header className={styles.identity}>
-          <p className={styles.category}>
-            {project.category} <span>{project.year}</span>
-          </p>
-          <h1
-            id="project-title"
-            className={project.title.length > 9 ? styles.longTitle : undefined}
-          >
-            {project.title}
-          </h1>
           <p className={styles.subtitle}>{project.subtitle}</p>
           <div className={styles.actions}>
             {project.site && (
@@ -105,7 +122,9 @@ export default async function ProjectDetail({ params }: Props) {
           <p className={styles.description}>{project.description}</p>
           <div className={styles.responsibilities}>
             <h2>
-              {project.category === "실무 프로젝트" ? "담당 업무" : "구현한 기능"}
+              {project.category === "실무 프로젝트"
+                ? "담당 업무"
+                : "구현한 기능"}
             </h2>
             <ul>
               {responsibilities.map((item) => (
@@ -141,9 +160,6 @@ export default async function ProjectDetail({ params }: Props) {
           </div>
         </dl>
       </section>
-      <div className={styles.visual} data-project-visual>
-        <ProjectCover project={project} priority showAction={false} />
-      </div>
       <div className={styles.reading}>
         <nav
           className={styles.contents}
