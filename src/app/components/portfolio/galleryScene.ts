@@ -193,57 +193,63 @@ export class GalleryScene {
       this.ids.join(",") === ids.join(",") && this.selected === selected;
     this.ids = ids;
     this.selected = selected;
-    this.panels.forEach((mesh) => mesh.material.dispose());
-    this.group.clear();
-    this.panels = [];
     // Repeated works form a shallow elliptical ribbon. The number of surfaces
     // remains fixed when a filter reduces the set to two projects.
     for (let i = 0; i < slots; i++) {
       const id = ids[i % ids.length];
       for (const reflection of [false, true]) {
-        const material = new THREE.ShaderMaterial({
-          vertexShader: vertex,
-          fragmentShader: fragment,
-          transparent: true,
-          side: THREE.FrontSide,
-          depthWrite: !reflection,
-          uniforms: {
-            uRadius: { value: radius },
-            uMap: { value: textures[i % ids.length] },
-            uFlight: { value: 0 },
-            uSelected: {
-              value:
-                this.flight && i === this.selectedSlot() && !reflection ? 1 : 0,
+        let mesh = this.panels[i * 2 + (reflection ? 1 : 0)];
+        if (!mesh) {
+          const material = new THREE.ShaderMaterial({
+            vertexShader: vertex,
+            fragmentShader: fragment,
+            transparent: true,
+            side: THREE.FrontSide,
+            depthWrite: !reflection,
+            uniforms: {
+              uRadius: { value: radius },
+              uMap: { value: textures[i % ids.length] },
+              uFlight: { value: 0 },
+              uSelected: {
+                value:
+                  this.flight && i === this.selectedSlot() && !reflection
+                    ? 1
+                    : 0,
+              },
+              uReflection: { value: reflection ? 1 : 0 },
+              uTime: { value: 0 },
+              uFogStart: { value: 14 },
+              uView: { value: new THREE.Vector4(0, 0, 1, 1) },
+              uTarget: { value: new THREE.Vector4(0, 0, 1, 1) },
             },
-            uReflection: { value: reflection ? 1 : 0 },
-            uTime: { value: 0 },
-            uFogStart: { value: 14 },
-            uView: { value: new THREE.Vector4(0, 0, 1, 1) },
-            uTarget: { value: new THREE.Vector4(0, 0, 1, 1) },
-          },
-        });
-        const mesh = new THREE.Mesh(this.geometry, material);
-        const angle = i * step;
-        mesh.position.set(
-          Math.sin(angle) * radius,
-          reflection ? bottomY * 2 - centerY : centerY,
-          Math.cos(angle) * radius,
-        );
-        mesh.rotation.y = angle;
-        if (reflection) {
-          const compression = 0.46;
-          mesh.scale.y = -compression;
-          // Keep the reflection just below the artwork, with a tiny clear seam.
-          mesh.position.y = bottomY - 0.025 - (height * compression) / 2;
+          });
+          mesh = new THREE.Mesh(this.geometry, material);
+          const angle = i * step;
+          mesh.position.set(
+            Math.sin(angle) * radius,
+            reflection ? bottomY * 2 - centerY : centerY,
+            Math.cos(angle) * radius,
+          );
+          mesh.rotation.y = angle;
+          if (reflection) {
+            const compression = 0.46;
+            mesh.scale.y = -compression;
+            // Keep the reflection just below the artwork, with a tiny clear seam.
+            mesh.position.y = bottomY - 0.025 - (height * compression) / 2;
+          }
+          // Paint the artwork after every reflection, including adjacent panels.
+          mesh.renderOrder = reflection ? 0 : 1;
+          mesh.userData = { id, slot: i, reflection };
+          // The visual bend is performed in the vertex shader; do not cull using
+          // the unbent plane's bounds. Picking below uses the cylinder directly.
+          mesh.frustumCulled = false;
+          this.group.add(mesh);
+          this.panels.push(mesh);
         }
-        // Paint the artwork after every reflection, including adjacent panels.
-        mesh.renderOrder = reflection ? 0 : 1;
-        mesh.userData = { id, slot: i, reflection };
-        // The visual bend is performed in the vertex shader; do not cull using
-        // the unbent plane's bounds. Picking below uses the cylinder directly.
-        mesh.frustumCulled = false;
-        this.group.add(mesh);
-        this.panels.push(mesh);
+        // Filter/route changes only replace textures and selection. Geometry,
+        // meshes and their compiled material programs stay alive with the scene.
+        mesh.userData.id = id;
+        mesh.material.uniforms.uMap.value = textures[i % ids.length];
       }
     }
     const slot = ids.indexOf(selected);
@@ -251,6 +257,15 @@ export class GalleryScene {
       this.current = this.target = -Math.max(0, slot) * step;
       this.manualSelection = false;
     }
+    const selectedSlot = this.selectedSlot();
+    this.panels.forEach((mesh) => {
+      mesh.material.uniforms.uSelected.value =
+        this.flight &&
+        mesh.userData.slot === selectedSlot &&
+        !mesh.userData.reflection
+          ? 1
+          : 0;
+    });
     if (this.flight) {
       host.dataset.ready = "true";
       this.applyFlight(this.flight.progress);
@@ -534,8 +549,19 @@ export class GalleryScene {
     // A short real arc movement shares the existing draw loop and reflection.
     this.group.rotation.y = this.current + 0.16 * Math.pow(1 - entry, 3);
     if (entry === 1) this.entranceAt = 0;
+    const visibleEdge = Math.cos(
+      Math.acos(frontZ / this.camera.position.z) + arc / 2 + 0.12,
+    );
     this.panels.forEach((mesh) => {
       mesh.material.uniforms.uTime.value = time / 1000;
+      // The shader bends a flat plane onto an ellipse, so its original bounds
+      // cannot be used for frustum culling. Exclude an arc only when even its
+      // nearest edge is behind the camera-facing part of the ellipse. The
+      // extra margin preserves grazing neighbor frames throughout a drag.
+      const angle = mesh.userData.slot * step + this.group.rotation.y;
+      mesh.visible =
+        Math.cos(angle) > visibleEdge ||
+        (!!this.flight && mesh.material.uniforms.uSelected.value > 0);
     });
     this.renderer.render(this.scene, this.camera);
   }

@@ -4,6 +4,10 @@ import { useLayoutEffect, useRef, useState, type CSSProperties } from "react";
 import styles from "./GalleryLineText.module.scss";
 
 type Line = { text: string; height: number; top: number };
+// Keep repeated font/resize notifications and detail returns from measuring
+// every character again. Bound entries across viewport sizes during resizing.
+const lineCache = new Map<string, Line[]>();
+const cacheLimit = 192;
 
 /** The source owns layout/accessibility; masked visual lines own motion. */
 export default function GalleryLineText({ text }: { text: string }) {
@@ -16,9 +20,47 @@ export default function GalleryLineText({ text }: { text: string }) {
     if (!element) return;
     let disposed = false;
     let signature = "";
+    let measuredKey = "";
     const measure = () => {
       const node = element.firstChild;
       if (disposed || !node || !element.clientWidth) return;
+      const style = getComputedStyle(element);
+      const fontReady = document.fonts.check(
+        `${style.fontSize} ${style.fontFamily}`,
+        text,
+      );
+      const measureKey = JSON.stringify([
+        text,
+        style.width,
+        style.font,
+        style.lineHeight,
+        style.letterSpacing,
+        style.wordSpacing,
+        style.wordBreak,
+        style.overflowWrap,
+        style.whiteSpace,
+        style.textTransform,
+        style.fontFeatureSettings,
+        style.fontVariationSettings,
+        document.fonts.status,
+        fontReady,
+      ]);
+      if (measureKey === measuredKey) return;
+      measuredKey = measureKey;
+      const apply = (next: Line[]) => {
+        const key = JSON.stringify(next);
+        if (key !== signature) {
+          signature = key;
+          setLines(next);
+        }
+      };
+      const cached = fontReady && lineCache.get(measureKey);
+      if (cached) {
+        lineCache.delete(measureKey);
+        lineCache.set(measureKey, cached);
+        apply(cached);
+        return;
+      }
       const range = document.createRange();
       const groups: { top: number; text: string }[] = [];
       let offset = 0;
@@ -33,7 +75,6 @@ export default function GalleryLineText({ text }: { text: string }) {
           previous.text += character;
         else groups.push({ top: rect.top, text: character });
       }
-      const style = getComputedStyle(element);
       const height =
         parseFloat(style.lineHeight) || parseFloat(style.fontSize) * 1.5;
       const next = groups.map((line, index) => ({
@@ -41,19 +82,22 @@ export default function GalleryLineText({ text }: { text: string }) {
         height,
         top: index * height,
       }));
-      const key = JSON.stringify(next);
-      if (key !== signature) {
-        signature = key;
-        setLines(next);
+      if (fontReady && document.fonts.status === "loaded") {
+        lineCache.set(measureKey, next);
+        if (lineCache.size > cacheLimit)
+          lineCache.delete(lineCache.keys().next().value!);
       }
+      apply(next);
     };
     measure();
     const observer = new ResizeObserver(measure);
     observer.observe(element);
     void document.fonts.ready.then(measure);
+    document.fonts.addEventListener("loadingdone", measure);
     return () => {
       disposed = true;
       observer.disconnect();
+      document.fonts.removeEventListener("loadingdone", measure);
     };
   }, [text]);
 

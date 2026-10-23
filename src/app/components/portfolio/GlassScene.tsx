@@ -565,13 +565,10 @@ export default function GlassScene() {
           measureFooter();
           // Narrow glass reflections need more than coverage MSAA at DPR 1.
           // Supersample the footer, with a pixel budget for large displays.
-          const footerPixelRatio = Math.max(
-            nativePixelRatio,
-            Math.min(2, Math.sqrt(4_000_000 / Math.max(1, width * height))),
+          const pixelRatio = Math.min(
+            footerFraming ? 2 : nativePixelRatio,
+            Math.sqrt(4_000_000 / Math.max(1, width * height)),
           );
-          const pixelRatio = footerFraming
-            ? footerPixelRatio
-            : nativePixelRatio;
           if (renderer.getPixelRatio() !== pixelRatio) {
             renderer.setPixelRatio(pixelRatio);
           }
@@ -579,18 +576,25 @@ export default function GlassScene() {
           if (rendererSize.x !== width || rendererSize.y !== height)
             renderer.setSize(width, height);
           renderer.getDrawingBufferSize(material.uniforms.uResolution.value);
+          const bufferWidth = Math.max(
+            1,
+            Math.round(material.uniforms.uResolution.value.x),
+          );
+          const bufferHeight = Math.max(
+            1,
+            Math.round(material.uniforms.uResolution.value.y),
+          );
+          // The sampled sky contains broad color bands, not lettering. Keep
+          // glass depth/edges at full resolution; reduce only this color buffer.
           refractionTarget.setSize(
-            Math.max(1, Math.round(material.uniforms.uResolution.value.x)),
-            Math.max(1, Math.round(material.uniforms.uResolution.value.y)),
+            Math.max(1, Math.round(bufferWidth * 0.65)),
+            Math.max(1, Math.round(bufferHeight * 0.65)),
           );
-          sceneTarget.setSize(refractionTarget.width, refractionTarget.height);
-          backSurfaceTarget.setSize(
-            refractionTarget.width,
-            refractionTarget.height,
-          );
+          sceneTarget.setSize(bufferWidth, bufferHeight);
+          backSurfaceTarget.setSize(bufferWidth, bufferHeight);
           flareTarget.setSize(
-            Math.max(1, Math.round(refractionTarget.width * 0.35)),
-            Math.max(1, Math.round(refractionTarget.height * 0.35)),
+            Math.max(1, Math.round(bufferWidth * 0.35)),
+            Math.max(1, Math.round(bufferHeight * 0.35)),
           );
           flareMaterial.uniforms.uResolution.value.copy(
             material.uniforms.uResolution.value,
@@ -925,9 +929,16 @@ export default function GlassScene() {
           footerGroup.visible = false;
           renderer.setRenderTarget(refractionTarget);
           if (backdropDirty || flowActive) {
+            backdropMaterial.uniforms.uResolution.value.set(
+              refractionTarget.width,
+              refractionTarget.height,
+            );
             renderer.render(scene, camera);
             backdropDirty = false;
           }
+          backdropMaterial.uniforms.uResolution.value.copy(
+            material.uniforms.uResolution.value,
+          );
           group.visible = exposed && !contactVisible;
           accentGroup.visible = exposed && !contactVisible;
           footerGroup.visible = contactVisible;

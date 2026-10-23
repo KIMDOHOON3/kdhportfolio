@@ -1,5 +1,6 @@
 @use "./_index" as *;
 @use "./_reset";
+@use "./pretendard";
 
 // CSS 변수 정의
 :root {
@@ -63,21 +64,7 @@ button {
   font-style: normal;
   font-weight: 400;
   font-display: swap;
-  src: url("/font/Pacifico-Regular.ttf") format("truetype");
-}
-
-@font-face {
-  font-family: "Pretendard-Regular";
-  font-style: normal;
-  font-display: swap;
-  src: url("/font/Pretendard-Regular.woff2") format("woff2");
-}
-
-@font-face {
-  font-family: "Pretendard-Bold";
-  font-style: normal;
-  font-display: swap;
-  src: url("/font/Pretendard-Bold.woff2") format("woff2");
+  src: url("/font/Pacifico-Footer.woff2") format("woff2");
 }
 
 @font-face {
