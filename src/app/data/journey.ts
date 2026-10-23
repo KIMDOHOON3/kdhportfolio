@@ -30,14 +30,15 @@ export const JOURNEY = [
   },
   {
     id: "2021",
-    year: "2021–2022",
-    period: "2021.01–09 · 자격 취득 2022.04",
+    year: "2021",
+    period: "2021.01–09",
     label: "SBS아카데미컴퓨터아트학원",
-    organization: "SBS아카데미컴퓨터아트학원 · 웹 퍼블리셔 과정",
+    organization:
+      "SBS아카데미컴퓨터아트학원 · 웹 퍼블리셔 과정 수료 · 2021.01–09",
     title: "디자인을 화면으로 옮기기 시작했습니다.",
     description:
-      "포토샵과 일러스트레이터로 디자인의 기초를 익히고, HTML·CSS·JavaScript로 웹 화면을 만들었습니다. 웹 포트폴리오를 기획·제작하며 퍼블리싱을 배우고, 웹디자인기능사를 취득했습니다.",
-    details: ["HTML · CSS · JavaScript", "웹디자인기능사"],
+      "포토샵과 일러스트레이터로 디자인의 기초를 익히고, HTML·CSS·JavaScript로 웹 화면을 만들었습니다. 웹 포트폴리오를 기획·제작하며 퍼블리싱을 배웠습니다.",
+    details: ["HTML · CSS · JavaScript", "웹디자인기능사 취득 · 2022.04"],
   },
   {
     id: "2022",
