@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { pointerRefractionShader } from "../../src/app/components/portfolio/pointerRefractionShader";
+import { pointerRefractionShader } from "../../src/components/glass/shaders/pointerRefractionShader";
 
 test("final glass composite preserves hard silhouettes under cursor flow", async ({
   page,

@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 import { expect, test } from "@playwright/test";
-import { FONT_ASSETS, GALLERY_ASSETS } from "../../src/app/data/staticAssets";
+import { FONT_ASSETS, GALLERY_ASSETS } from "../../src/data/staticAssets";
 
 test("content-addressed images and fonts return the correct bytes with immutable caching", async ({
   request,

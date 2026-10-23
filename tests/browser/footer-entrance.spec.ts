@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { GLASS_ASSETS } from "../../src/app/data/glassAssets";
+import { GLASS_ASSETS } from "../../src/data/glassAssets";
 
 const bottom = async (page: import("@playwright/test").Page) => {
   await page.locator("[data-scroll-viewport]").evaluate((element) => {

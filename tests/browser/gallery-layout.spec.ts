@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { GALLERY_ASSETS } from "../../src/app/data/staticAssets";
+import { GALLERY_ASSETS } from "../../src/data/staticAssets";
 
 const hit = (page: Page, fraction = 0.5) =>
   page.locator("[data-gallery-canvas]").evaluate((host, x) => {

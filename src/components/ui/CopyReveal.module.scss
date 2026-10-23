@@ -1,0 +1,33 @@
+@use "@/lib/motion/_entranceMotion.scss" as motion;
+@include motion.keyframes;
+.copy {
+  position: relative;
+  display: block;
+  width: 100%;
+}
+.source {
+  display: block;
+  white-space: pre-line;
+}
+.copy[data-copy-inline] {
+  display: inline-block;
+  width: auto;
+  max-width: 100%;
+  vertical-align: bottom;
+}
+.copy[data-copy-entrance="pending"] {
+  opacity: 0;
+  clip-path: inset(0 0 100% 0);
+}
+.copy[data-copy-entrance="playing"] {
+  animation: contentLift motion.$duration motion.$ease
+    var(--entrance-delay, 0ms) both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .copy[data-copy-entrance] {
+    opacity: 1;
+    clip-path: none;
+    translate: none;
+    animation: none;
+  }
+}

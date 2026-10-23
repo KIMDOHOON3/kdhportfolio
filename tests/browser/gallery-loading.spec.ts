@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { GALLERY_ASSETS } from "../../src/app/data/staticAssets";
+import { GALLERY_ASSETS } from "../../src/data/staticAssets";
 
 test.beforeEach(async ({ page }) => {
   await page.addInitScript(() => {

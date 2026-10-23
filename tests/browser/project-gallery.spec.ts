@@ -9,7 +9,7 @@ test("static fallback keeps every project reachable without JavaScript", async (
   });
   const page = await context.newPage();
   await page.goto(
-    `${process.env.PORTFOLIO_URL ?? "http://localhost:3010"}/#work`,
+    `${process.env.PORTFOLIO_URL ?? "http://localhost:3011"}/#work`,
   );
   const links = page
     .getByRole("navigation", { name: "프로젝트 상세 목록" })

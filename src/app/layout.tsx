@@ -1,16 +1,14 @@
 import { Metadata } from "next";
-import { FONT_ASSETS } from "./data/staticAssets";
-import "@/app/styles/globals.scss";
-import {
-  PortfolioHeader,
-  PortfolioFooter,
-  PortfolioBackdrop,
-} from "./components/portfolio/Portfolio";
-import JsonLd from "@/app/components/JsonLd";
+import { FONT_ASSETS } from "@/data/staticAssets";
+import "@/styles/globals.scss";
+import PortfolioHeader from "@/components/layout/PortfolioHeader";
+import PortfolioFooter from "@/components/layout/PortfolioFooter";
+import PortfolioBackdrop from "@/components/layout/PortfolioBackdrop";
+import JsonLd from "@/components/layout/JsonLd";
 import Script from "next/script";
-import ScrollViewport from "./components/portfolio/ScrollViewport";
-import RouteTransition from "./components/portfolio/RouteTransition";
-import portfolioStyles from "./components/portfolio/Portfolio.module.scss";
+import ScrollViewport from "@/lib/scroll/ScrollViewport";
+import RouteTransition from "@/lib/navigation/RouteTransition";
+import portfolioStyles from "@/styles/Portfolio.module.scss";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://kdhportfolio-omega.vercel.app"),

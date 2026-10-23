@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { GLASS_ASSETS } from "../../src/app/data/glassAssets";
+import { GLASS_ASSETS } from "../../src/data/glassAssets";
 
 test("server HTML locks early scrolling and reveals lower content near 80% without reflow", async ({
   page,

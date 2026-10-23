@@ -1,9 +1,0 @@
-// 스타일 시스템 통합 관리 파일
-// 이 파일은 variables, mixins 등을 모아서 내보냅니다.
-// 컴포넌트에서는 이 파일만 @use하면 됩니다.
-
-// 변수와 믹스인 내보내기
-@forward "./_variables";
-@forward "./_mixins";
-
-// reset 스타일은 별도로 내보내지 않습니다. globals.scss에서만 사용합니다.

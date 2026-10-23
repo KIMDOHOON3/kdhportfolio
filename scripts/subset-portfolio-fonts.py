@@ -88,4 +88,4 @@ for weight in ["Regular", "Bold"]:
         )
     print(f"{weight}: {source.stat().st_size} -> {target.stat().st_size} bytes; {len(points)} characters")
 
-(root / "src/app/styles/_pretendard.scss").write_text("\n".join(css), encoding="utf-8")
+(root / "src/styles/_pretendard.scss").write_text("\n".join(css), encoding="utf-8")

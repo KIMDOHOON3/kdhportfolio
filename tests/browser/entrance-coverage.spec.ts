@@ -7,7 +7,7 @@ test("selected content reveals while skills and career remain static", async ({
   const uncovered = await page.evaluate(() => {
     const copy = [
       ...document.querySelectorAll(
-        "#work h2, #work h3, #work p, #about p, [data-journey-ending] p, #contact a",
+        "#work h2, #work [data-information-active] h3, #work [data-information-active] p, #about p, [data-journey-ending] p, #contact a",
       ),
     ];
     return copy
@@ -15,12 +15,15 @@ test("selected content reveals while skills and career remain static", async ({
         (element) =>
           element.textContent?.trim() &&
           !element.matches("[data-element-reveal]") &&
-          !element.querySelector("[data-copy-reveal]"),
+          !element.querySelector("[data-copy-reveal], [data-gallery-lines]"),
       )
       .map((element) => element.textContent);
   });
   expect(uncovered).toEqual([]);
-  await expect(page.locator("#work [data-project-action]")).toHaveCount(4);
+  await expect(page.locator("#work [data-gallery-panel]")).toHaveCount(4);
+  await expect(page.locator("#work [data-selected-project] h3")).toHaveText(
+    "LEXUS",
+  );
   await expect(
     page.locator('#about [data-element-reveal="frame"]'),
   ).toHaveCount(1);

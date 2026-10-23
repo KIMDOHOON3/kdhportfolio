@@ -88,9 +88,16 @@ test("menu supports section navigation and mobile keyboard dismissal", async ({
     await expect(page).toHaveURL(new RegExp(`#${item.toLowerCase()}$`));
     await expect
       .poll(() =>
-        page
-          .locator(`#${item.toLowerCase()}`)
-          .evaluate((element) => Math.abs(element.getBoundingClientRect().top)),
+        page.locator(`#${item.toLowerCase()}`).evaluate((element) =>
+          Math.abs(
+            element.getBoundingClientRect().top -
+              // Reduced motion uses the native scroller: work reserves the
+              // header gap, while home/about align to the viewport edge.
+              (element.id === "work"
+                ? parseFloat(getComputedStyle(element).scrollMarginTop) || 0
+                : 0),
+          ),
+        ),
       )
       .toBeLessThan(3);
     if (mobile) {

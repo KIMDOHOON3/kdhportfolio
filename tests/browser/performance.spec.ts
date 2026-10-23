@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { GLASS_ASSETS } from "../../src/app/data/glassAssets";
+import { GLASS_ASSETS } from "../../src/data/glassAssets";
 
 test("the first screen only loads its lettering and scroll keeps connection geometry stable", async ({
   page,

@@ -334,7 +334,7 @@ test("career content is readable before JavaScript enhancement", async ({
     viewport: { width: 1280, height: 720 },
   });
   const page = await context.newPage();
-  await page.goto(process.env.PORTFOLIO_URL ?? "http://localhost:3010");
+  await page.goto(process.env.PORTFOLIO_URL ?? "http://localhost:3011");
   await expect(page.locator("[data-journey]")).toHaveAttribute(
     "data-enhanced",
     "false",

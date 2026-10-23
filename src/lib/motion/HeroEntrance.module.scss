@@ -1,0 +1,110 @@
+@use "./_entranceMotion.scss" as motion;
+@include motion.keyframes;
+
+.scope [data-intro-label] {
+  display: block;
+}
+
+// Cover the server-rendered frame too, before hydration can install listeners.
+.scope[data-intro-lock="true"],
+.scope[data-home="true"][data-intro="playing"] {
+  overflow-y: hidden;
+  overscroll-behavior: none;
+  touch-action: pinch-zoom;
+}
+
+// Preserve every measured section height; no reflow when the content opens.
+.scope[data-home="true"][data-intro="playing"]:not([data-intro-content="ready"])
+  [data-intro-below] {
+  visibility: hidden;
+}
+
+.scope[data-intro="playing"] {
+  [data-intro-logo] {
+    animation: inkWipe 650ms cubic-bezier(0.25, 0.1, 0.25, 1) 100ms both;
+  }
+  [data-intro-item] {
+    --menu-delay: 500ms;
+    &:nth-child(2) {
+      --menu-delay: 680ms;
+    }
+    &:nth-child(3) {
+      --menu-delay: 860ms;
+    }
+  }
+  [data-intro-line] {
+    animation: inkWipe 600ms ease var(--menu-delay) both;
+  }
+  [data-intro-label] {
+    animation: inkLift 650ms cubic-bezier(0.22, 0.61, 0.36, 1) var(--menu-delay)
+      both;
+  }
+  :global(#navTrigger) svg {
+    animation: buttonPop 480ms motion.$ease 550ms both;
+  }
+  [data-intro-summary] {
+    animation: contentLift motion.$duration motion.$ease 2450ms both;
+  }
+  [data-intro-cta] {
+    animation: buttonPop 480ms motion.$ease 2570ms both;
+  }
+  // Without JavaScript the timed CSS above still reveals readable content.
+  // With WebGL, release these animations only when every orb has appeared.
+  &[data-intro-copy="waiting"] {
+    [data-intro-summary],
+    [data-intro-cta] {
+      animation: none;
+      opacity: 0;
+    }
+    [data-intro-cta] {
+      scale: 0;
+    }
+    [data-intro-summary] {
+      translate: 0 6px;
+    }
+  }
+  &[data-intro-copy="ready"] {
+    [data-intro-summary] {
+      animation-delay: 120ms;
+    }
+    [data-intro-cta] {
+      animation-delay: 240ms;
+    }
+  }
+}
+
+@keyframes inkWipe {
+  from {
+    opacity: 0;
+    clip-path: inset(0 100% 0 0);
+  }
+  to {
+    opacity: 1;
+    clip-path: inset(0 0 0 0);
+  }
+}
+@keyframes inkLift {
+  from {
+    opacity: 0;
+    clip-path: inset(0 0 100% 0);
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    clip-path: inset(0 0 0 0);
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scope[data-intro="playing"] {
+    [data-intro-logo],
+    [data-intro-line],
+    [data-intro-label],
+    [data-intro-summary],
+    [data-intro-cta],
+    :global(#navTrigger) svg {
+      animation: none;
+    }
+  }
+}

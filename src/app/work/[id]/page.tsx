@@ -1,17 +1,15 @@
-﻿import Link from "next/link";
+﻿import { ButtonLink } from "@/components/ui/Button";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import { portfolioProjects } from "../../data/portfolio";
-import { GALLERY_ASSETS } from "../../data/staticAssets";
+import { portfolioProjects } from "@/data/portfolio";
+import { GALLERY_ASSETS } from "@/data/staticAssets";
 import Image from "next/image";
-import TechnologyIcon from "../../components/portfolio/TechnologyIcon";
-import ArrowIcon from "../../components/portfolio/ArrowIcon";
-import DetailAction from "../../components/portfolio/DetailAction";
-import {
-  ButtonLabel,
-  ButtonLight,
-} from "../../components/portfolio/ButtonEffect";
-import styles from "../../components/portfolio/ProjectDetail.module.scss";
+import TechnologyList from "@/components/ui/TechnologyList";
+import ArrowIcon from "@/components/ui/ArrowIcon";
+import DetailAction from "@/components/projects/detail/DetailAction";
+import { ButtonLabel, ButtonLight } from "@/components/ui/ButtonEffect";
+import styles from "@/components/projects/detail/ProjectDetail.module.scss";
 
 type Props = { params: Promise<{ id: string }> };
 
@@ -58,15 +56,14 @@ export default async function ProjectDetail({ params }: Props) {
   return (
     <main id="top" className={styles.detail} data-project-detail={project.id}>
       <div className={styles.topline}>
-        <Link
+        <ButtonLink
+          navigation="client"
           href="/#work"
           scroll={false}
           className={styles.backLink}
-          data-button-effect
         >
-          <ButtonLight />
           <ButtonLabel>← 프로젝트 목록으로</ButtonLabel>
-        </Link>
+        </ButtonLink>
         <span className={styles.projectIndex}>
           PROJECT {String(index + 1).padStart(2, "0")}
         </span>
@@ -170,11 +167,10 @@ export default async function ProjectDetail({ params }: Props) {
           <span>IN THIS PROJECT</span>
           <div>
             {sections.map((phase, sectionIndex) => (
-              <a href={`#${phase.id}`} key={phase.id} data-button-effect>
-                <ButtonLight />
+              <ButtonLink href={`#${phase.id}`} key={phase.id}>
                 <span>{String(sectionIndex + 1).padStart(2, "0")}</span>{" "}
                 <ButtonLabel>{phase.title}</ButtonLabel> <ArrowIcon down />
-              </a>
+              </ButtonLink>
             ))}
           </div>
         </nav>
@@ -193,14 +189,10 @@ export default async function ProjectDetail({ params }: Props) {
               <p className={styles.phaseYear}>{phase.year}</p>
               <h2 id={`${phase.id}-title`}>{phase.title}</h2>
               <p className={styles.phaseRole}>{phase.role}</p>
-              <div className={styles.stack}>
-                {phase.stack.map((tech) => (
-                  <span key={tech}>
-                    <TechnologyIcon name={tech} />
-                    {tech}
-                  </span>
-                ))}
-              </div>
+              <TechnologyList
+                technologies={phase.stack}
+                className={styles.stack}
+              />
             </header>
             <div className={styles.implementations}>
               {phase.highlights.map((item, i) => (

@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { GALLERY_ASSETS } from "../../src/data/staticAssets";
 
 test("presentation assets load while local documents remain excluded", async ({
   request,
@@ -15,10 +16,7 @@ test("presentation assets load while local documents remain excluded", async ({
     "/icons/github.svg",
     "/icons/react.svg",
     "/icons/zustand.png",
-    "/projects/mockups/lexus-desktop.png",
-    "/projects/mockups/lexus-mobile.png",
-    "/projects/mockups/kia-desktop.png",
-    "/projects/mockups/kia-mobile.png",
+    ...Object.values(GALLERY_ASSETS),
   ];
   for (const path of restored)
     expect((await request.get(path)).status(), path).toBe(200);
@@ -30,13 +28,22 @@ test("presentation assets load while local documents remain excluded", async ({
     "font-family",
     /NewYork/,
   );
+  await expect(page.locator("[data-scroll-viewport]")).toHaveAttribute(
+    "data-intro",
+    "done",
+  );
+  await page.locator("#work").scrollIntoViewIfNeeded();
+  await expect(page.locator("[data-gallery-canvas]")).toHaveAttribute(
+    "data-ready",
+    "true",
+  );
   await expect
     .poll(() =>
       page
-        .locator("[data-work-cover-mockup] img")
+        .locator("[data-project-gallery] img")
         .evaluateAll(
           (images) =>
-            images.length === 4 &&
+            images.length > 0 &&
             images.every(
               (image) =>
                 (image as HTMLImageElement).complete &&

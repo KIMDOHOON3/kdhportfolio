@@ -1,0 +1,57 @@
+@use "./_entranceMotion.scss" as motion;
+@include motion.keyframes;
+.item[data-element-state="pending"] {
+  opacity: 0;
+  clip-path: inset(0 0 100% 0);
+}
+.item[data-element-state="playing"] {
+  animation: contentLift motion.$duration motion.$ease
+    var(--entrance-delay, 0ms) both;
+}
+.item[data-element-reveal="button"] {
+  transform-origin: center;
+  &[data-element-state="pending"] {
+    clip-path: none;
+  }
+  &[data-element-state="playing"] {
+    animation: buttonPop 480ms motion.$ease var(--entrance-delay, 0ms) both;
+  }
+}
+// The diagram is the portal's measured origin; keep its geometry still.
+.item[data-element-reveal="frame"][data-element-state="playing"] {
+  animation-name: frameLift;
+}
+// Let the SVG's own stroke drawing remain visible while the copy lifts in.
+.item[data-element-draw][data-element-state="playing"] {
+  animation-name: drawingFrame;
+}
+@keyframes drawingFrame {
+  from {
+    opacity: 0;
+    clip-path: none;
+  }
+  20%,
+  to {
+    opacity: 1;
+    clip-path: none;
+  }
+}
+@keyframes frameLift {
+  from {
+    opacity: 0;
+    clip-path: inset(0 0 100% 0);
+  }
+  to {
+    opacity: 1;
+    clip-path: inset(0);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .item[data-element-state] {
+    opacity: 1;
+    clip-path: none;
+    translate: none;
+    scale: none;
+    animation: none;
+  }
+}

@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { FONT_ASSETS } from "../../src/app/data/staticAssets";
+import { FONT_ASSETS } from "../../src/data/staticAssets";
 
 test("copy fonts use small subsets with matching metrics and a complete Unicode fallback", async ({
   page,
@@ -60,7 +60,7 @@ test("large retina glass keeps its drawing buffer within budget without losing d
     const page = await context.newPage();
     const errors: string[] = [];
     page.on("pageerror", (error) => errors.push(error.message));
-    await page.goto(`${process.env.PORTFOLIO_URL ?? "http://localhost:3010"}/`);
+    await page.goto(`${process.env.PORTFOLIO_URL ?? "http://localhost:3011"}/`);
     const scene = page.locator("[data-glass-scene]");
     await expect(scene).toHaveAttribute("data-ready", "true");
     for (const target of ["#home", "#contact"]) {

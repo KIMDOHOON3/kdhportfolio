@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { GLASS_ASSETS } from "../../src/app/data/glassAssets";
+import { GLASS_ASSETS } from "../../src/data/glassAssets";
 
 test("navigation appears first, and copy waits for the complete glass entrance even on a slow connection", async ({
   page,

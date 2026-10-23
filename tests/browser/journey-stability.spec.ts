@@ -4,6 +4,10 @@ test("career navigation changes selection without shifting its text or dimension
   page,
 }) => {
   await page.goto("/");
+  await expect(page.locator("[data-scroll-viewport]")).toHaveAttribute(
+    "data-intro",
+    "done",
+  );
   await expect(page.locator("[data-journey]")).toHaveAttribute(
     "data-ready",
     "true",
@@ -39,6 +43,10 @@ test("timeline markers and rolling skills stay continuous through the portal han
   page,
 }) => {
   await page.goto("/");
+  await expect(page.locator("[data-scroll-viewport]")).toHaveAttribute(
+    "data-intro",
+    "done",
+  );
   const journey = page.locator("[data-journey]");
   await expect(journey).toHaveAttribute("data-ready", "true");
   await page.evaluate(() => document.fonts.ready);

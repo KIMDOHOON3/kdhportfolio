@@ -61,7 +61,7 @@ test("unchanged bytes retain their URL and files; changing one source preserves 
   assert.notEqual(changedFont.fonts["Test.woff2"], first.fonts["Test.woff2"]);
   assert.equal(changedFont.gallery[1], changedImage.gallery[1]);
   assert.match(
-    readFileSync(path.join(root, "src/app/styles/_asset-urls.scss"), "utf8"),
+    readFileSync(path.join(root, "src/styles/_asset-urls.scss"), "utf8"),
     new RegExp(changedFont.fonts["Test.woff2"].replaceAll(".", "\\.")),
   );
 });
@@ -70,7 +70,7 @@ test("check mode detects stale manifests and modified versioned files", (t) => {
   const root = fixture(t);
   const manifest = versionStaticAssets({ root });
   assert.deepEqual(versionStaticAssets({ root, check: true }), manifest);
-  writeFileSync(path.join(root, "src/app/data/staticAssets.ts"), "outdated");
+  writeFileSync(path.join(root, "src/data/staticAssets.ts"), "outdated");
   assert.throws(
     () => versionStaticAssets({ root, check: true }),
     /Stale asset output/,

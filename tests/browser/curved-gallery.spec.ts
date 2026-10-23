@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { GALLERY_ASSETS } from "../../src/app/data/staticAssets";
+import { GALLERY_ASSETS } from "../../src/data/staticAssets";
 
 test("the same curved surface unfolds into the detail hero and returns to the gallery", async ({
   page,
@@ -87,6 +87,12 @@ test("the gallery stops GPU drawing offscreen and reuses its canvas on return", 
   await page.goto("/#work");
   const host = page.locator("[data-gallery-canvas]");
   await expect(host).toHaveAttribute("data-ready", "true");
+  // Measure the steady gallery loop after entrance setup/finalization paints.
+  // Canvas readiness can precede the heading/filter and film entrance.
+  await expect(page.locator("[data-project-gallery]")).toHaveAttribute(
+    "data-gallery-entrance",
+    "done",
+  );
   const draws = () =>
     page.evaluate(
       () =>

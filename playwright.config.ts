@@ -26,7 +26,7 @@ export default defineConfig({
     ],
   ],
   use: {
-    baseURL: process.env.PORTFOLIO_URL ?? "http://localhost:3010",
+    baseURL: process.env.PORTFOLIO_URL ?? "http://localhost:3011",
     channel: "chrome",
     headless: true,
     reducedMotion: "no-preference",
