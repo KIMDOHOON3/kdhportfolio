@@ -53,14 +53,14 @@ export default function GalleryCanvas({
               current.current,
               (id) => callback.current(id),
             );
-            if (cancelled) {
-              engine.detach(element);
-              return;
-            }
+            // Cleanup already detached this subscription. A later attach may
+            // now own the same host, so an old request must not detach it again.
+            if (cancelled) return;
+            engine.select(current.current);
             configure();
             engine.setVisible(inView);
           } catch {
-            element.dataset.ready = "fallback";
+            if (!cancelled) element.dataset.ready = "fallback";
           }
         } else engine?.setVisible(entry.isIntersecting);
       },
@@ -80,14 +80,16 @@ export default function GalleryCanvas({
     const pick = (event: Event) => {
       if (!engine) return;
       const { x, y } = (event as CustomEvent<{ x: number; y: number }>).detail;
-      const id = engine.pick(x, y);
+      const target = engine.pickTarget(x, y);
+      if (!target) return;
+      const { id, slot } = target;
       if (id === current.current)
         element
           .closest("[data-project-gallery]")
           ?.querySelector<HTMLAnchorElement>("[data-gallery-open]")
           ?.click();
       else if (id) {
-        engine.select(id);
+        engine.select(id, slot);
         callback.current(id);
       }
     };

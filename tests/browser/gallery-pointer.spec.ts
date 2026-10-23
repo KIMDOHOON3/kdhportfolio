@@ -12,6 +12,7 @@ test("gallery cursor follows the image, yields to dragging and preserves touch a
     .getByRole("button", { name: "갤러리 자동 회전 일시 정지" })
     .click();
   const stage = page.getByRole("region", { name: "프로젝트 갤러리" });
+  await stage.scrollIntoViewIfNeeded();
   const cursor = page.locator("[data-gallery-pointer]");
   const link = page.getByRole("link", {
     name: "LEXUS 프로젝트 보기",
@@ -20,7 +21,14 @@ test("gallery cursor follows the image, yields to dragging and preserves touch a
   if (info.project.use.isMobile) {
     await expect(cursor).toHaveCSS("display", "none");
     await expect(link).toHaveCSS("opacity", "1");
-    await link.click();
+    await expect(link.locator("svg")).toBeHidden();
+    await expect(link).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
+    await expect(link).toHaveCSS("box-shadow", "none");
+    const box = (await stage.boundingBox())!;
+    await page.touchscreen.tap(
+      box.x + box.width * 0.38,
+      box.y + box.height * 0.4,
+    );
     await expect(page).toHaveURL(/\/work\/1$/);
     return;
   }

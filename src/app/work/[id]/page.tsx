@@ -2,6 +2,7 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { portfolioProjects } from "../../data/portfolio";
+import { GALLERY_ASSETS } from "../../data/staticAssets";
 import Image from "next/image";
 import TechnologyIcon from "../../components/portfolio/TechnologyIcon";
 import ArrowIcon from "../../components/portfolio/ArrowIcon";
@@ -87,7 +88,7 @@ export default async function ProjectDetail({ params }: Props) {
         data-project-transition-cover
       >
         <Image
-          src={`/projects/gallery/${project.id}.webp`}
+          src={GALLERY_ASSETS[project.id]}
           alt={`${project.title} 프로젝트 대표 이미지`}
           width={1200}
           height={800}

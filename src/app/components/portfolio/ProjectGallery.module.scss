@@ -174,6 +174,17 @@ $sans: "Pretendard-Regular", Arial, sans-serif;
     height: 22px;
   }
 }
+@media (max-width: 760px), (hover: none) and (pointer: coarse) {
+  .stageLink {
+    // Keep the image link accessible without a button covering the artwork.
+    background: transparent;
+    box-shadow: none;
+    backdrop-filter: none;
+    > span {
+      display: none;
+    }
+  }
+}
 @media (hover: hover) and (pointer: fine) {
   .pointer {
     display: block;
@@ -470,6 +481,19 @@ $sans: "Pretendard-Regular", Arial, sans-serif;
   overflow: hidden;
   clip-path: inset(50%);
   white-space: nowrap;
+}
+
+@media (min-width: 1024px) {
+  .controls,
+  .informationFrame,
+  .projectNav {
+    max-width: 1600px;
+    margin-inline: auto;
+  }
+  .information {
+    gap: clamp(32px, 5vw, 80px);
+    padding-block: 24px;
+  }
 }
 
 @media (max-width: 760px) {

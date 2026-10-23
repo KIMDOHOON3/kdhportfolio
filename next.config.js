@@ -2,15 +2,19 @@
 const nextConfig = {
   async headers() {
     return [
-      {
-        source: "/models/optimized/:file",
+      ...[
+        "/models/optimized/:file",
+        "/assets/gallery/:file",
+        "/assets/fonts/:file",
+      ].map((source) => ({
+        source,
         headers: [
           {
             key: "Cache-Control",
             value: "public, max-age=31536000, immutable",
           },
         ],
-      },
+      })),
     ];
   },
   async redirects() {

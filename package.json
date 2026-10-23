@@ -3,6 +3,11 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "assets:version": "node scripts/version-static-assets.mjs",
+    "assets:check": "node scripts/version-static-assets.mjs --check",
+    "test:assets": "node --test scripts/version-static-assets.test.mjs",
+    "predev": "npm run assets:version",
+    "prebuild": "npm run assets:version",
     "optimize:models": "node scripts/optimize-glass-models.mjs",
     "dev": "next dev",
     "build": "next build",

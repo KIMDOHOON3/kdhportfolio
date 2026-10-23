@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { FONT_ASSETS } from "../../src/app/data/staticAssets";
 
 test("copy fonts use small subsets with matching metrics and a complete Unicode fallback", async ({
   page,
@@ -14,18 +15,15 @@ test("copy fonts use small subsets with matching metrics and a complete Unicode 
     "data-intro",
     "done",
   );
-  expect(fonts).toContain("/font/PortfolioSans-Regular.woff2");
-  expect(fonts).toContain("/font/PortfolioSans-Bold.woff2");
-  expect(fonts).toContain("/font/Pacifico-Footer.woff2");
+  expect(fonts).toContain(FONT_ASSETS["PortfolioSans-Regular.woff2"]);
+  expect(fonts).toContain(FONT_ASSETS["PortfolioSans-Bold.woff2"]);
+  expect(fonts).toContain(FONT_ASSETS["Pacifico-Footer.woff2"]);
   expect(fonts).not.toContain("/font/Pacifico-Regular.ttf");
-  expect(fonts).not.toContain("/font/Pretendard-Regular.woff2");
-  expect(fonts).not.toContain("/font/Pretendard-Bold.woff2");
+  expect(fonts).not.toContain(FONT_ASSETS["Pretendard-Regular.woff2"]);
+  expect(fonts).not.toContain(FONT_ASSETS["Pretendard-Bold.woff2"]);
 
-  const widths = await page.evaluate(async () => {
-    const original = new FontFace(
-      "OriginalMetrics",
-      'url("/font/Pretendard-Regular.woff2")',
-    );
+  const widths = await page.evaluate(async (originalFont) => {
+    const original = new FontFace("OriginalMetrics", `url("${originalFont}")`);
     await original.load();
     document.fonts.add(original);
     // This syllable is absent from the initial copy: the full font must still work.
@@ -41,9 +39,9 @@ test("copy fonts use small subsets with matching metrics and a complete Unicode 
       ctx.font = '16px "OriginalMetrics"';
       return Math.abs(actual - ctx.measureText(text).width);
     });
-  });
+  }, FONT_ASSETS["Pretendard-Regular.woff2"]);
   expect(Math.max(...widths)).toBeLessThan(0.01);
-  expect(fonts).toContain("/font/Pretendard-Regular.woff2");
+  expect(fonts).toContain(FONT_ASSETS["Pretendard-Regular.woff2"]);
 });
 
 test("large retina glass keeps its drawing buffer within budget without losing device detail", async ({

@@ -1,4 +1,5 @@
 import { Metadata } from "next";
+import { FONT_ASSETS } from "./data/staticAssets";
 import "@/app/styles/globals.scss";
 import {
   PortfolioHeader,
@@ -53,7 +54,7 @@ export default function RootLayout({
       <head>
         <link
           rel="preload"
-          href="/font/NewYork.woff2"
+          href={FONT_ASSETS["NewYork.woff2"]}
           as="font"
           type="font/woff2"
           crossOrigin="anonymous"

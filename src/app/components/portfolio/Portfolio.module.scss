@@ -1530,6 +1530,14 @@ $label: "NewYork", "Pretendard-Regular", sans-serif;
 .workAside {
   grid-column: 7 / -1;
 }
+@media (min-width: 1024px) {
+  .workHeading,
+  .personalNote,
+  .filterResult {
+    max-width: 1600px;
+    margin-inline: auto;
+  }
+}
 .projectGrid {
   grid-template-columns: repeat(12, minmax(0, 1fr));
   gap: clamp(40px, 5vw, 72px) clamp(20px, 3vw, 40px);

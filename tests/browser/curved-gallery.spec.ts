@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { GALLERY_ASSETS } from "../../src/app/data/staticAssets";
 
 test("the same curved surface unfolds into the detail hero and returns to the gallery", async ({
   page,
@@ -37,10 +38,7 @@ test("the same curved surface unfolds into the detail hero and returns to the ga
   await expect(transition).toHaveAttribute("data-active", "false");
   const hero = page.locator("[data-project-transition-cover]");
   await expect(hero).toHaveCSS("visibility", "visible");
-  await expect(hero.locator("img")).toHaveAttribute(
-    "src",
-    "/projects/gallery/1.webp",
-  );
+  await expect(hero.locator("img")).toHaveAttribute("src", GALLERY_ASSETS[1]);
   const before = await hero.boundingBox();
   await page.waitForTimeout(100);
   expect(await hero.boundingBox()).toEqual(before);

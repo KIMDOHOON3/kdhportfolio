@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import { GALLERY_ASSETS } from "../../data/staticAssets";
 import { registerGalleryFlight } from "./galleryBridge";
 
 const radius = 6;
@@ -6,7 +7,6 @@ const ellipse = 2.25;
 // Compress the depth after rotation so adjacent frames pass like a shallow
 // ribbon, rather than disappearing around the sides of a round drum.
 const depthScale = 0.55;
-const frontZ = radius * depthScale;
 const slots = 8;
 const step = (Math.PI * 2) / slots;
 const arc = step - 0.004;
@@ -47,6 +47,7 @@ uniform float uSelected;
 uniform float uReflection;
 uniform float uTime;
 uniform float uFogStart;
+uniform float uImageReveal;
 varying vec2 vUv;
 varying float vDistance;
 varying float vScreenY;
@@ -77,7 +78,7 @@ void main() {
   float edge=smoothstep(0.,.001,vUv.x)*smoothstep(0.,.001,1.-vUv.x);
   float fog=1.-exp(-max(0.,vDistance-uFogStart)*.018);
   color=mix(color,vec3(.905,.930,.956),fog*(1.-uFlight));
-  float alpha=edge;
+  float alpha=edge*uImageReveal;
   if(uSelected<.5) alpha*=1.-smoothstep(0.,.48,uFlight);
   if(uReflection>.5) {
     color=mix(color,vec3(.905,.930,.956),.12);
@@ -102,6 +103,7 @@ export class GalleryScene {
   private geometry = new THREE.PlaneGeometry(width / ellipse, height, 64, 1);
   private panels: THREE.Mesh<THREE.PlaneGeometry, THREE.ShaderMaterial>[] = [];
   private textures = new Map<number, THREE.Texture>();
+  private textureLoads = new Map<number, Promise<THREE.Texture>>();
   private host: HTMLElement | null = null;
   private lastHost: HTMLElement | null = null;
   private lastBounds: DOMRect | null = null;
@@ -137,6 +139,94 @@ export class GalleryScene {
   private ticket = 0;
   private pauseTimer = 0;
   private entranceAt = 0;
+  private slotCount = slots;
+  private angleStep = step;
+  private curveRadius = radius;
+  private arcSize = arc;
+  private frustum = new THREE.Frustum();
+  private viewProjection = new THREE.Matrix4();
+  private worldBounds = new THREE.Box3();
+  // Bound the shader's actual bend (also conservative for larger radii).
+  private panelBounds = new THREE.Box3(
+    new THREE.Vector3(
+      -width / ellipse / 2,
+      -height / 2,
+      radius * (Math.cos(arc / 2) - 1),
+    ),
+    new THREE.Vector3(width / ellipse / 2, height / 2, 0),
+  );
+  private get frontZ() {
+    return this.curveRadius * depthScale;
+  }
+
+  private configureRibbon(w: number, h: number) {
+    // Extend the film on wide screens without stretching its 3:2 artwork.
+    // Four-slot increments keep both two- and four-project filters seamless.
+    const count =
+      w >= 1024
+        ? Math.min(32, Math.max(12, Math.ceil((w / h) * 1.5) * 4))
+        : slots;
+    if (count === this.slotCount) return false;
+    const oldStep = this.angleStep;
+    this.slotCount = count;
+    this.angleStep = (Math.PI * 2) / count;
+    this.arcSize = this.angleStep - 0.004;
+    this.curveRadius = width / ellipse / this.arcSize;
+    const ratio = this.angleStep / oldStep;
+    this.current *= ratio;
+    this.target *= ratio;
+    this.velocity *= ratio;
+    if (this.dragStart) this.dragStart.angle *= ratio;
+    return true;
+  }
+
+  private syncPanels() {
+    for (let i = 0; i < this.slotCount; i++) {
+      const id = this.ids[i % this.ids.length];
+      for (const reflection of [false, true]) {
+        let mesh = this.panels[i * 2 + (reflection ? 1 : 0)];
+        if (!mesh) {
+          const material = new THREE.ShaderMaterial({
+            vertexShader: vertex,
+            fragmentShader: fragment,
+            transparent: true,
+            side: THREE.FrontSide,
+            depthWrite: !reflection,
+            uniforms: {
+              uRadius: { value: this.curveRadius },
+              uMap: { value: null },
+              uFlight: { value: 0 },
+              uSelected: { value: 0 },
+              uReflection: { value: reflection ? 1 : 0 },
+              uTime: { value: 0 },
+              uFogStart: { value: 14 },
+              uImageReveal: { value: 1 },
+              uView: { value: new THREE.Vector4(0, 0, 1, 1) },
+              uTarget: { value: new THREE.Vector4(0, 0, 1, 1) },
+            },
+          });
+          mesh = new THREE.Mesh(this.geometry, material);
+          mesh.scale.y = reflection ? -0.46 : 1;
+          mesh.renderOrder = reflection ? 0 : 1;
+          mesh.userData = { id, slot: i, reflection };
+          mesh.frustumCulled = false;
+          this.group.add(mesh);
+          this.panels.push(mesh);
+        }
+        const angle = i * this.angleStep;
+        mesh.position.set(
+          Math.sin(angle) * this.curveRadius,
+          reflection ? bottomY - 0.025 - (height * 0.46) / 2 : centerY,
+          Math.cos(angle) * this.curveRadius,
+        );
+        mesh.rotation.y = angle;
+        mesh.material.uniforms.uRadius.value = this.curveRadius;
+        mesh.userData.id = id;
+        mesh.material.uniforms.uMap.value = this.textures.get(id) ?? null;
+        mesh.userData.imageReadyAt = 0;
+      }
+    }
+  }
 
   constructor() {
     this.renderer = new THREE.WebGLRenderer({
@@ -161,6 +251,67 @@ export class GalleryScene {
     });
   }
 
+  private loadTexture(id: number): Promise<THREE.Texture> {
+    const cached = this.textures.get(id);
+    if (cached) return Promise.resolve(cached);
+    const pending = this.textureLoads.get(id);
+    if (pending) return pending;
+    const request = new THREE.TextureLoader()
+      .loadAsync(GALLERY_ASSETS[id])
+      .then((texture) => {
+        texture.colorSpace = THREE.SRGBColorSpace;
+        texture.anisotropy = Math.min(
+          8,
+          this.renderer.capabilities.getMaxAnisotropy(),
+        );
+        this.textures.set(id, texture);
+        return texture;
+      })
+      .finally(() => this.textureLoads.delete(id));
+    this.textureLoads.set(id, request);
+    return request;
+  }
+
+  private prepareRemainingImages(ids: number[], selected: number) {
+    const index = ids.indexOf(selected);
+    // Start neighboring frames first, after the selected artwork's first draw.
+    const order = new Set([
+      ids[(index + 1) % ids.length],
+      ids[(index + ids.length - 1) % ids.length],
+      ...ids,
+    ]);
+    order.delete(selected);
+    for (const id of order) {
+      void this.loadTexture(id)
+        .then((texture) => {
+          // A pending request may outlive its filter or route. Only fill slots
+          // that still represent this image; never restore an old selection.
+          let changed = false;
+          for (const mesh of this.panels) {
+            if (
+              mesh.userData.id !== id ||
+              mesh.material.uniforms.uMap.value === texture
+            )
+              continue;
+            mesh.material.uniforms.uMap.value = texture;
+            changed = true;
+            mesh.userData.imageReadyAt =
+              this.visible && !this.reduced ? performance.now() : 0;
+          }
+          if (!changed) return;
+          if (this.flight && this.renderer.domElement.isConnected)
+            this.draw(performance.now());
+          // Several neighboring requests can finish in one turn. Let the
+          // existing RAF upload and paint them together, including when paused.
+          this.wake();
+        })
+        .catch(() => {
+          // An unavailable neighbor must not discard already usable artwork.
+          // Already usable images and project links remain available.
+        });
+    }
+  }
+
   async attach(
     host: HTMLElement,
     ids: number[],
@@ -171,90 +322,19 @@ export class GalleryScene {
     this.host = host;
     this.lastHost = host;
     this.callback = callback;
-    const textures = await Promise.all(
-      ids.map(async (id) => {
-        let texture = this.textures.get(id);
-        if (!texture) {
-          texture = await new THREE.TextureLoader().loadAsync(
-            `/projects/gallery/${id}.webp`,
-          );
-          texture.colorSpace = THREE.SRGBColorSpace;
-          texture.anisotropy = Math.min(
-            8,
-            this.renderer.capabilities.getMaxAnisotropy(),
-          );
-          this.textures.set(id, texture);
-        }
-        return texture;
-      }),
-    );
+    // Only this image is needed to show the selected project. Other textures
+    // may load slowly or fail without holding the whole gallery behind them.
+    await this.loadTexture(selected);
     if (ticket !== this.ticket || this.host !== host) return;
     const sameSelection =
       this.ids.join(",") === ids.join(",") && this.selected === selected;
     this.ids = ids;
     this.selected = selected;
-    // Repeated works form a shallow elliptical ribbon. The number of surfaces
-    // remains fixed when a filter reduces the set to two projects.
-    for (let i = 0; i < slots; i++) {
-      const id = ids[i % ids.length];
-      for (const reflection of [false, true]) {
-        let mesh = this.panels[i * 2 + (reflection ? 1 : 0)];
-        if (!mesh) {
-          const material = new THREE.ShaderMaterial({
-            vertexShader: vertex,
-            fragmentShader: fragment,
-            transparent: true,
-            side: THREE.FrontSide,
-            depthWrite: !reflection,
-            uniforms: {
-              uRadius: { value: radius },
-              uMap: { value: textures[i % ids.length] },
-              uFlight: { value: 0 },
-              uSelected: {
-                value:
-                  this.flight && i === this.selectedSlot() && !reflection
-                    ? 1
-                    : 0,
-              },
-              uReflection: { value: reflection ? 1 : 0 },
-              uTime: { value: 0 },
-              uFogStart: { value: 14 },
-              uView: { value: new THREE.Vector4(0, 0, 1, 1) },
-              uTarget: { value: new THREE.Vector4(0, 0, 1, 1) },
-            },
-          });
-          mesh = new THREE.Mesh(this.geometry, material);
-          const angle = i * step;
-          mesh.position.set(
-            Math.sin(angle) * radius,
-            reflection ? bottomY * 2 - centerY : centerY,
-            Math.cos(angle) * radius,
-          );
-          mesh.rotation.y = angle;
-          if (reflection) {
-            const compression = 0.46;
-            mesh.scale.y = -compression;
-            // Keep the reflection just below the artwork, with a tiny clear seam.
-            mesh.position.y = bottomY - 0.025 - (height * compression) / 2;
-          }
-          // Paint the artwork after every reflection, including adjacent panels.
-          mesh.renderOrder = reflection ? 0 : 1;
-          mesh.userData = { id, slot: i, reflection };
-          // The visual bend is performed in the vertex shader; do not cull using
-          // the unbent plane's bounds. Picking below uses the cylinder directly.
-          mesh.frustumCulled = false;
-          this.group.add(mesh);
-          this.panels.push(mesh);
-        }
-        // Filter/route changes only replace textures and selection. Geometry,
-        // meshes and their compiled material programs stay alive with the scene.
-        mesh.userData.id = id;
-        mesh.material.uniforms.uMap.value = textures[i % ids.length];
-      }
-    }
+    if (!this.flight) this.configureRibbon(host.clientWidth, host.clientHeight);
+    this.syncPanels();
     const slot = ids.indexOf(selected);
     if (!sameSelection) {
-      this.current = this.target = -Math.max(0, slot) * step;
+      this.current = this.target = -Math.max(0, slot) * this.angleStep;
       this.manualSelection = false;
     }
     const selectedSlot = this.selectedSlot();
@@ -269,6 +349,7 @@ export class GalleryScene {
     if (this.flight) {
       host.dataset.ready = "true";
       this.applyFlight(this.flight.progress);
+      this.prepareRemainingImages(ids, selected);
       return;
     }
     host.append(this.renderer.domElement);
@@ -276,6 +357,7 @@ export class GalleryScene {
     this.observer.observe(host);
     host.dataset.ready = "true";
     this.resize();
+    this.prepareRemainingImages(ids, selected);
   }
 
   detach(host: HTMLElement) {
@@ -315,7 +397,7 @@ export class GalleryScene {
     this.entranceAt = 0;
     if (this.host && !this.flight) this.draw(performance.now());
   }
-  select(id: number) {
+  select(id: number, pickedSlot?: number) {
     if (this.selected === id) return;
     const index = this.ids.indexOf(id);
     if (index < 0) return;
@@ -323,8 +405,10 @@ export class GalleryScene {
     this.selected = id;
     this.inertia = false;
     this.manualSelection = true;
-    const desired = -index * step;
-    const period = this.ids.length * step;
+    const desired = -(pickedSlot ?? index) * this.angleStep;
+    const period =
+      (pickedSlot === undefined ? this.ids.length : this.slotCount) *
+      this.angleStep;
     this.target =
       desired + Math.round((this.current - desired) / period) * period;
     if (this.reduced) this.current = this.target;
@@ -341,7 +425,10 @@ export class GalleryScene {
       this.dragStart = { angle: this.current, pixels: 0, time: now - 16 };
       this.velocity = 0;
     }
-    const factor = 1.65 / Math.max(300, this.host?.clientWidth ?? 1000);
+    const factor =
+      (1.65 * this.angleStep) /
+      step /
+      Math.max(300, this.host?.clientWidth ?? 1000);
     const elapsed = Math.max(0.016, (now - this.dragStart.time) / 1000);
     this.velocity = THREE.MathUtils.lerp(
       this.velocity,
@@ -371,7 +458,10 @@ export class GalleryScene {
     this.wake();
   }
   private notifyNearest() {
-    const slot = ((Math.round(-this.current / step) % slots) + slots) % slots;
+    const slot =
+      ((Math.round(-this.current / this.angleStep) % this.slotCount) +
+        this.slotCount) %
+      this.slotCount;
     const id = this.ids[slot % this.ids.length];
     if (id && id !== this.selected) {
       this.selected = id;
@@ -381,9 +471,9 @@ export class GalleryScene {
   private selectedSlot() {
     let nearest = 0,
       distance = Infinity;
-    for (let i = 0; i < slots; i++) {
+    for (let i = 0; i < this.slotCount; i++) {
       if (this.ids[i % this.ids.length] !== this.selected) continue;
-      const angle = i * step + this.current;
+      const angle = i * this.angleStep + this.current;
       const diff = Math.abs(Math.atan2(Math.sin(angle), Math.cos(angle)));
       if (diff < distance) {
         nearest = i;
@@ -399,7 +489,10 @@ export class GalleryScene {
   }
 
   pick(x: number, y: number): number | null {
-    if (!this.host || this.flight) return null;
+    return this.pickTarget(x, y)?.id ?? null;
+  }
+  pickTarget(x: number, y: number): { id: number; slot: number } | null {
+    if (!this.host || this.flight || !this.ids.length) return null;
     const rect = this.host.getBoundingClientRect();
     this.raycaster.setFromCamera(
       new THREE.Vector2(
@@ -418,7 +511,7 @@ export class GalleryScene {
     const c =
       (ray.origin.x / ellipse) ** 2 +
       (ray.origin.z / depthScale) ** 2 -
-      radius ** 2;
+      this.curveRadius ** 2;
     const d = b * b - 4 * a * c;
     if (d < 0) return null;
     const t = (-b - Math.sqrt(d)) / (2 * a);
@@ -427,11 +520,14 @@ export class GalleryScene {
     if (Math.abs(point.y - centerY) > height / 2) return null;
     const angle =
       Math.atan2(point.x / ellipse, point.z / depthScale) - this.current;
-    const slot = ((Math.round(angle / step) % slots) + slots) % slots;
-    const local = angle - slot * step;
+    const slot =
+      ((Math.round(angle / this.angleStep) % this.slotCount) + this.slotCount) %
+      this.slotCount;
+    const local = angle - slot * this.angleStep;
     const wrapped = Math.atan2(Math.sin(local), Math.cos(local));
-    return Math.abs(wrapped) <= arc / 2
-      ? this.ids[slot % this.ids.length]
+    const id = this.ids[slot % this.ids.length];
+    return Math.abs(wrapped) <= this.arcSize / 2 && this.textures.has(id)
+      ? { id, slot }
       : null;
   }
 
@@ -449,6 +545,7 @@ export class GalleryScene {
     const w = this.host.clientWidth,
       h = this.host.clientHeight;
     if (!w || !h) return;
+    if (this.configureRibbon(w, h)) this.syncPanels();
     this.sizeRenderer(w, h);
     this.camera.aspect = w / h;
     // A level camera keeps the top and bottom edges steady while frames pass.
@@ -463,7 +560,11 @@ export class GalleryScene {
       (width * 0.97) / (2 * halfFov * (w / h) * (w < 760 ? 0.9 : 1.16)),
     );
     this.cameraTargetY = centerY - height * 0.16;
-    this.camera.position.set(0, this.cameraTargetY, frontZ + this.baseDistance);
+    this.camera.position.set(
+      0,
+      this.cameraTargetY,
+      this.frontZ + this.baseDistance,
+    );
     this.camera.lookAt(0, this.cameraTargetY, 0);
     this.camera.updateProjectionMatrix();
     this.panels.forEach((mesh) => {
@@ -500,27 +601,26 @@ export class GalleryScene {
       ? Math.min(0.05, (time - this.previousTime) / 1000)
       : 1 / 60;
     this.previousTime = time;
-    const auto =
+    const canCruise =
       this.autoplay &&
       !this.reduced &&
-      !this.entranceAt &&
-      time > this.pauseUntil;
+      this.ids.every((id) => this.textures.has(id));
+    const auto = canCruise && !this.entranceAt && time > this.pauseUntil;
+    // More film frames must not make selection/copy advance more quickly.
+    const cruiseSpeed = (0.085 * this.angleStep) / step;
     if (this.manualSelection) {
       this.current = THREE.MathUtils.damp(this.current, this.target, 6, delta);
       if (Math.abs(this.current - this.target) < 0.0001)
         this.manualSelection = false;
     } else if (this.inertia) {
       this.current += this.velocity * delta;
-      const cruising = this.autoplay && !this.reduced ? -0.085 : 0;
+      const cruising = canCruise ? -cruiseSpeed : 0;
       this.velocity = THREE.MathUtils.damp(this.velocity, cruising, 5.2, delta);
       this.target = this.current;
-      if (
-        Math.abs(this.velocity - cruising) < 0.001 &&
-        (auto || !this.autoplay)
-      )
+      if (Math.abs(this.velocity - cruising) < 0.001 && (auto || !canCruise))
         this.inertia = false;
     } else if (auto) {
-      this.current -= delta * 0.085;
+      this.current -= delta * cruiseSpeed;
       this.target = this.current;
     } else
       this.current = THREE.MathUtils.damp(this.current, this.target, 6, delta);
@@ -532,6 +632,9 @@ export class GalleryScene {
       this.entranceAt ||
       auto ||
       this.inertia ||
+      this.panels.some(
+        (mesh) => mesh.material.uniforms.uImageReveal.value < 1,
+      ) ||
       Math.abs(this.current - this.target) > 0.0001
     )
       this.wake();
@@ -547,21 +650,41 @@ export class GalleryScene {
       ? Math.min(1, (time - this.entranceAt) / 850)
       : 1;
     // A short real arc movement shares the existing draw loop and reflection.
-    this.group.rotation.y = this.current + 0.16 * Math.pow(1 - entry, 3);
+    this.group.rotation.y =
+      this.current + ((0.16 * this.angleStep) / step) * Math.pow(1 - entry, 3);
     if (entry === 1) this.entranceAt = 0;
     const visibleEdge = Math.cos(
-      Math.acos(frontZ / this.camera.position.z) + arc / 2 + 0.12,
+      Math.acos(this.frontZ / this.camera.position.z) + this.arcSize / 2 + 0.12,
     );
+    this.camera.updateMatrixWorld();
+    this.scene.updateMatrixWorld();
+    this.viewProjection.multiplyMatrices(
+      this.camera.projectionMatrix,
+      this.camera.matrixWorldInverse,
+    );
+    this.frustum.setFromProjectionMatrix(this.viewProjection);
     this.panels.forEach((mesh) => {
       mesh.material.uniforms.uTime.value = time / 1000;
+      mesh.material.uniforms.uImageReveal.value =
+        this.reduced || !mesh.userData.imageReadyAt
+          ? 1
+          : THREE.MathUtils.smoothstep(
+              time - mesh.userData.imageReadyAt,
+              0,
+              240,
+            );
       // The shader bends a flat plane onto an ellipse, so its original bounds
       // cannot be used for frustum culling. Exclude an arc only when even its
       // nearest edge is behind the camera-facing part of the ellipse. The
       // extra margin preserves grazing neighbor frames throughout a drag.
-      const angle = mesh.userData.slot * step + this.group.rotation.y;
+      const angle = mesh.userData.slot * this.angleStep + this.group.rotation.y;
+      this.worldBounds.copy(this.panelBounds).applyMatrix4(mesh.matrixWorld);
       mesh.visible =
-        Math.cos(angle) > visibleEdge ||
-        (!!this.flight && mesh.material.uniforms.uSelected.value > 0);
+        mesh.userData.slot < this.slotCount &&
+        !!mesh.material.uniforms.uMap.value &&
+        ((Math.cos(angle) > visibleEdge &&
+          (!!this.flight || this.frustum.intersectsBox(this.worldBounds))) ||
+          (!!this.flight && mesh.material.uniforms.uSelected.value > 0));
     });
     this.renderer.render(this.scene, this.camera);
   }
@@ -572,12 +695,13 @@ export class GalleryScene {
     id?: number,
   ): GalleryFlight | null {
     if (!this.panels.length || this.flight) return null;
+    if (!this.textures.has(id ?? this.selected)) return null;
     if (id && !this.ids.includes(id)) return null;
     if (id) this.select(id);
     if (from) {
       // A detail can change without visiting the gallery. Align its current
       // image before unfolding back, rather than rotating after arrival.
-      this.current = this.target = -this.selectedSlot() * step;
+      this.current = this.target = -this.selectedSlot() * this.angleStep;
       this.manualSelection = false;
       this.inertia = false;
     }
@@ -725,7 +849,7 @@ export class GalleryScene {
       u.uFlight.value = progress;
     });
     // One projection for the whole morph avoids a camera recoil near arrival.
-    this.camera.position.z = frontZ + this.baseDistance;
+    this.camera.position.z = this.frontZ + this.baseDistance;
     this.camera.lookAt(0, this.cameraTargetY, 0);
     Object.assign(flight.background.style, {
       left: `${rect.x}px`,

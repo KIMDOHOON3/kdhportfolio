@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, type PointerEvent } from "react";
 import Link from "next/link";
 import type { PortfolioProject } from "../../data/portfolio";
 import { portfolioProjects } from "../../data/portfolio";
+import { GALLERY_ASSETS } from "../../data/staticAssets";
 import Image from "next/image";
 import GalleryCanvas from "./GalleryCanvas";
 import GalleryPointer from "./GalleryPointer";
@@ -247,12 +248,7 @@ export default function ProjectGallery({
         }}
       >
         <div className={styles.fallbackArtwork} aria-hidden="true">
-          <Image
-            src={`/projects/gallery/${project.id}.webp`}
-            alt=""
-            fill
-            sizes="80vw"
-          />
+          <Image src={GALLERY_ASSETS[project.id]} alt="" fill sizes="80vw" />
         </div>
         <GalleryCanvas
           ids={projects.map((item) => item.id)}
