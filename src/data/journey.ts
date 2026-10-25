@@ -19,7 +19,6 @@ export const JOURNEY_SKILLS = [
 export const JOURNEY = [
   {
     id: "2016",
-    year: "2016–2022",
     period: "2016.03–2022.02",
     label: "한경대학교",
     organization: "한경대학교 · 영어학과",
@@ -30,11 +29,9 @@ export const JOURNEY = [
   },
   {
     id: "2021",
-    year: "2021",
     period: "2021.01–09",
     label: "SBS아카데미컴퓨터아트학원",
-    organization:
-      "SBS아카데미컴퓨터아트학원 · 웹 퍼블리셔 과정 수료 · 2021.01–09",
+    organization: "SBS아카데미컴퓨터아트학원 · 웹 퍼블리셔 과정 수료",
     title: "디자인을 화면으로 옮기기 시작했습니다.",
     description:
       "포토샵과 일러스트레이터로 디자인의 기초를 익히고, HTML·CSS·JavaScript로 웹 화면을 만들었습니다. 웹 포트폴리오를 기획·제작하며 퍼블리싱을 배웠습니다.",
@@ -42,7 +39,6 @@ export const JOURNEY = [
   },
   {
     id: "2022",
-    year: "2022–2023",
     period: "2022.07–2023.10",
     label: "언제나 디자인",
     organization: "언제나 디자인 · 웹 퍼블리셔",
@@ -57,7 +53,6 @@ export const JOURNEY = [
   },
   {
     id: "2024",
-    year: "2024–2025",
     period: "2024.08–2025.02",
     label: "코드잇 스프린트",
     organization: "코드잇 스프린트 · 프론트엔드 부트캠프 11기",
@@ -72,8 +67,7 @@ export const JOURNEY = [
   },
   {
     id: "now",
-    year: "2025–현재",
-    period: "2025.06–현재 · 재직 중",
+    period: "2025.06–현재",
     label: "디자인피버",
     organization: "디자인피버 · 프론트엔드 개발자",
     title: "렉서스·기아 웹사이트의 UI와 인터랙션을 개발했습니다.",

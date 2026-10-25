@@ -333,7 +333,7 @@ $line: rgba(48, 71, 90, 0.17);
     transition: color 180ms;
   }
   a > span:first-of-type {
-    width: 84px;
+    width: 136px;
     flex-shrink: 0;
     white-space: nowrap;
     font:
@@ -443,7 +443,7 @@ $line: rgba(48, 71, 90, 0.17);
 }
 .year {
   font:
-    400 clamp(44px, 5.6vw, 78px) / 1.15 "NewYork",
+    400 clamp(24px, 3.2vw, 44px) / 1.15 "NewYork",
     "Pretendard-Regular",
     sans-serif;
   letter-spacing: -0.04em;
@@ -586,7 +586,9 @@ $line: rgba(48, 71, 90, 0.17);
     top: 280px;
   }
   .chapterNav a {
-    gap: 10px;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 3px;
     font-size: 10px;
   }
   .heading h2 {
@@ -599,7 +601,7 @@ $line: rgba(48, 71, 90, 0.17);
     font-size: 14px;
   }
   .year {
-    font-size: clamp(35px, 5.7vw, 58px);
+    font-size: clamp(24px, 3.7vw, 33px);
   }
   .chapter h3 {
     font-size: 23px;
@@ -726,7 +728,7 @@ $line: rgba(48, 71, 90, 0.17);
     }
   }
   .year {
-    font-size: 48px;
+    font-size: clamp(24px, 7vw, 40px);
   }
   .description {
     font-size: 14px;

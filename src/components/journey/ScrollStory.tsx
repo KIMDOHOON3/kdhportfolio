@@ -52,7 +52,7 @@ function JourneyAside({ preview = false }: { preview?: boolean }) {
             tabIndex={preview ? -1 : undefined}
             aria-current={index === 0 ? "step" : undefined}
           >
-            <span>{chapter.year}</span>
+            <span>{chapter.period}</span>
             <span>{chapter.label}</span>
           </a>
         ))}
@@ -85,7 +85,7 @@ function ChapterContent({
   return (
     <>
       <div className={styles.chapterTop}>
-        <p className={styles.year}>{chapter.year}</p>
+        <p className={styles.year}>{chapter.period}</p>
         <span className={styles.chapterNumber}>
           {String(index + 1).padStart(2, "0")}
         </span>
