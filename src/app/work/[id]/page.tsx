@@ -8,6 +8,7 @@ import Image from "next/image";
 import TechnologyList from "@/components/ui/TechnologyList";
 import ArrowIcon from "@/components/ui/ArrowIcon";
 import DetailAction from "@/components/projects/detail/DetailAction";
+import DetailCopy from "@/components/projects/detail/DetailCopy";
 import { ButtonLabel, ButtonLight } from "@/components/ui/ButtonEffect";
 import styles from "@/components/projects/detail/ProjectDetail.module.scss";
 
@@ -117,7 +118,12 @@ export default async function ProjectDetail({ params }: Props) {
         </header>
         <div className={styles.brief}>
           <p className={styles.eyebrow}>PROJECT OVERVIEW</p>
-          <p className={styles.description}>{project.description}</p>
+          <p className={styles.description}>
+            <DetailCopy
+              text={project.description}
+              emphasis={project.emphasis}
+            />
+          </p>
           <div className={styles.responsibilities}>
             <h2>
               {project.category === "실무 프로젝트"
@@ -200,13 +206,23 @@ export default async function ProjectDetail({ params }: Props) {
                   <span>0{i + 1}</span>
                   <div>
                     <h3>{item.title}</h3>
-                    <p>{item.description}</p>
+                    <p>
+                      <DetailCopy
+                        text={item.description}
+                        emphasis={item.emphasis}
+                      />
+                    </p>
                     {item.steps && (
                       <dl className={styles.caseSteps}>
                         {item.steps.map((step) => (
                           <div key={step.label}>
                             <dt>{step.label}</dt>
-                            <dd>{step.description}</dd>
+                            <dd>
+                              <DetailCopy
+                                text={step.description}
+                                emphasis={step.emphasis}
+                              />
+                            </dd>
                           </div>
                         ))}
                       </dl>

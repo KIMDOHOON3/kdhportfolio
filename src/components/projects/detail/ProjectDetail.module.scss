@@ -6,6 +6,12 @@ $blue: #3978b7;
 $sans: "Pretendard-Regular", Arial, sans-serif;
 $display: "NewYork", "Pretendard-Regular", serif;
 
+.emphasis {
+  font-family: "Pretendard-Bold", Arial, sans-serif;
+  font-weight: 700;
+  color: $ink;
+}
+
 .detail {
   position: relative;
   z-index: 2;
