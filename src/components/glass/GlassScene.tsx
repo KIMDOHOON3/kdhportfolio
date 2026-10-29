@@ -24,6 +24,7 @@ const ORB_STAGGER_MS = 220;
 const ORB_POP_MS = 520;
 const HERO_ENTRANCE_MS = ORB_START_MS + ORB_STAGGER_MS * 2 + ORB_POP_MS;
 const FOOTER_DRAW_MS = 2600;
+const MOBILE_FOOTER_DRAW_MS = 1400;
 import {
   readScroll,
   subscribeScroll,
@@ -850,20 +851,27 @@ export default function GlassScene() {
               element.dataset.heroEntrance = "revealing";
           }
           if (!footerFinished && contactVisible && footerWords.length === 2) {
+            const compactFooter = viewportSize.x <= 760;
+            const footerDrawMs = compactFooter
+              ? MOBILE_FOOTER_DRAW_MS
+              : FOOTER_DRAW_MS;
             const headingTop =
               (footerLayout?.words[0]?.top ?? Infinity) - scrollTop;
             if (motion.matches || footerRoot?.dataset.footerEntrance === "done")
               finishFooter();
-            else if (footerElapsed > 0 || headingTop <= viewportSize.y * 0.8) {
+            else if (
+              footerElapsed > 0 ||
+              headingTop <= viewportSize.y * (compactFooter ? 0.95 : 0.8)
+            ) {
               if (footerLastPaint !== null)
                 footerElapsed += Math.min(100, time - footerLastPaint);
               footerLastPaint = time;
               footerMaterial.uniforms.uStrokeReveal.value = entranceEase(
-                footerElapsed / FOOTER_DRAW_MS,
+                footerElapsed / footerDrawMs,
               );
               if (footerRoot && footerRoot.dataset.footerEntrance !== "drawing")
                 footerRoot.dataset.footerEntrance = "drawing";
-              if (footerElapsed >= FOOTER_DRAW_MS) finishFooter();
+              if (footerElapsed >= footerDrawMs) finishFooter();
             }
           } else footerLastPaint = null;
           const footerStroke =

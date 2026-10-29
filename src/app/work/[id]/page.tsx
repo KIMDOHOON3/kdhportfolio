@@ -45,7 +45,7 @@ export default async function ProjectDetail({ params }: Props) {
   const sections = project.phases ?? [
     {
       id: "implementation",
-      title: "주요 구현 내용",
+      title: project.implementationTitle ?? "주요 구현 내용",
       year: project.year,
       role: project.role,
       stack: project.stack,
@@ -194,7 +194,9 @@ export default async function ProjectDetail({ params }: Props) {
               </span>
               <p className={styles.phaseYear}>{phase.year}</p>
               <h2 id={`${phase.id}-title`}>{phase.title}</h2>
-              <p className={styles.phaseRole}>{phase.role}</p>
+              {project.phases && (
+                <p className={styles.phaseRole}>{phase.role}</p>
+              )}
               <TechnologyList
                 technologies={phase.stack}
                 className={styles.stack}

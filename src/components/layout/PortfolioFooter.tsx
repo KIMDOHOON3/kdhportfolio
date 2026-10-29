@@ -52,8 +52,8 @@ export default function PortfolioFooter() {
           <ButtonLabel>GitHub</ButtonLabel>
         </ButtonLink>
         <ButtonLink
-          href="/resume/김도훈-이력서.pdf"
-          download
+          href="/resume/김도훈-이력서.pdf?v=0d81c8ab5d0f"
+          download="김도훈-이력서.pdf"
           data-element-reveal="button"
         >
           <DownloadIcon

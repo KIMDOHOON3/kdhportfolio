@@ -58,8 +58,8 @@ function JourneyAside({ preview = false }: { preview?: boolean }) {
         ))}
       </nav>
       <ButtonLink
-        href="/resume/김도훈-이력서.pdf"
-        download
+        href="/resume/김도훈-이력서.pdf?v=0d81c8ab5d0f"
+        download="김도훈-이력서.pdf"
         tabIndex={preview ? -1 : undefined}
         className={styles.resume}
       >
