@@ -279,6 +279,11 @@ $display: "NewYork", "Pretendard-Regular", serif;
     color: #526573;
   }
 }
+.caseSteps .measurementNote {
+  margin-top: 10px;
+  color: #64727c;
+  font: 12px/1.8 $sans;
+}
 .reading {
   display: flow-root;
   position: relative;

@@ -224,6 +224,11 @@ export default async function ProjectDetail({ params }: Props) {
                                 text={step.description}
                                 emphasis={step.emphasis}
                               />
+                              {step.note && (
+                                <p className={styles.measurementNote}>
+                                  {step.note}
+                                </p>
+                              )}
                             </dd>
                           </div>
                         ))}
